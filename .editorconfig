@@ -14,3 +14,5 @@ indent_size = 2
 csharp_style_namespace_declarations = file_scoped:warning
 # в тестах имена методов вида Method_Condition_Result
 dotnet_diagnostic.CA1707.severity = none
+# IDomainEventHandler<T> — устоявшееся имя для подписчиков доменных событий
+dotnet_diagnostic.CA1711.severity = none
