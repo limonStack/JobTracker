@@ -1,6 +1,8 @@
 using JobTracker.Api;
+using JobTracker.Api.BackgroundJobs;
 using JobTracker.Api.Endpoints;
 using JobTracker.Application;
+using JobTracker.Application.VacancyChecking;
 using JobTracker.Infrastructure;
 using JobTracker.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +12,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration);
+
+builder.Services.AddOptions<VacancyCheckOptions>()
+    .BindConfiguration(VacancyCheckOptions.Section)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+builder.Services.AddHostedService<VacancyCheckWorker>();
 
 builder.Services.ConfigureHttpJsonOptions(o => JsonDefaults.Configure(o.SerializerOptions));
 builder.Services.AddProblemDetails();
@@ -29,6 +37,7 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.MapApplicationEndpoints();
+app.MapVacancyCheckEndpoints();
 
 await app.RunAsync();
 

@@ -1,9 +1,13 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using JobTracker.Application.Abstractions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace JobTracker.IntegrationTests;
 
@@ -17,8 +21,20 @@ public sealed class JobTrackerApiFactory : WebApplicationFactory<Program>
 
     private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"jobtracker-test-{Guid.NewGuid():N}.db");
 
-    protected override void ConfigureWebHost(IWebHostBuilder builder) =>
+    /// <summary>Вместо настоящего DOU: тесты не ходят в сеть и сами задают, какая вакансия закрыта.</summary>
+    public FakeVacancyChecker Checker { get; } = new();
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
         builder.UseSetting("ConnectionStrings:JobTracker", $"Data Source={_dbPath}");
+        builder.UseSetting("VacancyChecks:CheckOnStartup", "false");
+        builder.UseSetting("VacancyChecks:DelayBetweenRequests", "00:00:00");
+        builder.ConfigureTestServices(services =>
+        {
+            services.RemoveAll<IVacancyChecker>();
+            services.AddSingleton<IVacancyChecker>(Checker);
+        });
+    }
 
     protected override void Dispose(bool disposing)
     {

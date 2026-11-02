@@ -18,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<IJobApplicationRepository, JobApplicationRepository>();
         services.AddScoped<DomainEventDispatcher>();
 
+        services.AddSingleton<IVacancyCheckQueue, ChannelVacancyCheckQueue>();
         services.AddVacancyChecker<DouChecker>();
 
         return services;
@@ -28,12 +29,21 @@ public static class DependencyInjection
         where TChecker : class, IVacancyChecker
     {
         services.AddHttpClient<TChecker>(client =>
-        {
-            // без браузерного User-Agent сайты за Cloudflare чаще отвечают 403
-            client.DefaultRequestHeaders.UserAgent.ParseAdd(BrowserUserAgent);
-            client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("uk,ru;q=0.9,en;q=0.8");
-            client.Timeout = TimeSpan.FromSeconds(20);
-        });
+            {
+                // без браузерного User-Agent сайты за Cloudflare чаще отвечают 403
+                client.DefaultRequestHeaders.UserAgent.ParseAdd(BrowserUserAgent);
+                client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("uk,ru;q=0.9,en;q=0.8");
+            })
+            // Polly в цепочке DelegatingHandler-ов: повтор при сбое сети, 5xx, 408 и 429, таймаут на попытку и на всё.
+            // 404 не повторяется — это ответ, а не сбой
+            .AddStandardResilienceHandler(o =>
+            {
+                o.Retry.MaxRetryAttempts = 2;
+                o.Retry.Delay = TimeSpan.FromSeconds(2);
+                o.AttemptTimeout.Timeout = TimeSpan.FromSeconds(15);
+                o.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(60);
+                o.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
+            });
         services.AddTransient<IVacancyChecker>(sp => sp.GetRequiredService<TChecker>());
     }
 
