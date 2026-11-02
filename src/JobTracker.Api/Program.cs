@@ -24,8 +24,11 @@ await using (var scope = app.Services.CreateAsyncScope())
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
+// фронтенд — статические файлы из wwwroot с того же адреса, поэтому запросы к API не упираются в CORS
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.MapApplicationEndpoints();
-app.MapGet("/", () => "JobTracker");
 
 await app.RunAsync();
 
