@@ -7,10 +7,10 @@ namespace JobTracker.Infrastructure.Persistence;
 internal sealed class JobApplicationRepository(JobTrackerDbContext db) : IJobApplicationRepository
 {
     public Task<JobApplication?> GetAsync(Guid id, CancellationToken ct = default) =>
-        db.Applications.Include(x => x.Events).FirstOrDefaultAsync(x => x.Id == id, ct);
+        db.Applications.Include(x => x.Events.OrderBy(e => e.Date)).FirstOrDefaultAsync(x => x.Id == id, ct);
 
     public async Task<IReadOnlyList<JobApplication>> ListAsync(CancellationToken ct = default) =>
-        await db.Applications.AsNoTracking().Include(x => x.Events)
+        await db.Applications.AsNoTracking().Include(x => x.Events.OrderBy(e => e.Date))
             .OrderByDescending(x => x.AppliedOn)
             .ToListAsync(ct);
 

@@ -115,7 +115,8 @@ public sealed class ApplicationsApiTests : IDisposable
         var bank = all.Single(a => a.Company == "Bank Pivdenny");
         Assert.Equal(Stage.Rejected, bank.Stage);
         Assert.Equal(Stage.Tech, bank.ReachedStage);
-        Assert.Equal(2, bank.Events.Count);
+        // события из базы приходят по дате — последнее в списке и есть последнее по времени
+        Assert.Equal(["разговор с HR", "отказ"], bank.Events.Select(e => e.Text));
         Assert.Null(all.Single(a => a.Company == "DIIT").Url);
     }
 }
