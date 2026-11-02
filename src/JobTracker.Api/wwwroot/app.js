@@ -59,7 +59,46 @@
     offer: j => reached(j) >= 4,
     rejected: j => j.stage === 'rejected',
     active: j => ['replied', 'hr', 'tech'].includes(j.stage),
+    inactive: j => j.vacancyStatus === 'inactive',
   };
+  let checking = false;                               // идёт фоновая проверка всех вакансий
+
+  // статус вакансии на сайте: значок у компании и подробная строка в раскрытой записи
+  const VACANCY = {
+    active: { icon: '●', label: 'вакансия открыта' },
+    inactive: { icon: '🔒', label: 'вакансия закрыта' },
+    checkFailed: { icon: '⚠', label: 'проверить не удалось' },
+  };
+  const fmtTime = iso => {
+    const d = new Date(iso);
+    return `${fmtShort(dayKey(d))} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  };
+  const vacancyTip = j => {
+    const v = VACANCY[j.vacancyStatus];
+    if (!v) return '';
+    const closed = j.vacancyStatus === 'inactive' && j.closedAt ? `, закрытие замечено ${fmtTime(j.closedAt)}` : '';
+    return `${v.label}${closed} · проверено ${fmtTime(j.lastCheckedAt)}`;
+  };
+  const vacancyBadge = j => VACANCY[j.vacancyStatus]
+    ? `<span class="job-vac ${j.vacancyStatus}" title="${escAttr(vacancyTip(j))}">${VACANCY[j.vacancyStatus].icon}</span>` : '';
+
+  // «Проверить все» идёт в фоне: опрашиваем ход, пока не закончится, потом перечитываем список
+  async function checkAll() {
+    checking = true;
+    render();
+    await api('POST', '/api/checks');
+    let status;
+    do {
+      await new Promise(r => setTimeout(r, 1500));
+      status = await api('GET', '/api/checks');
+    } while (status.running);
+    await load();
+    checking = false;
+    const r = status.lastResult;
+    message = r
+      ? { error: r.failed > 0, text: `Проверено вакансий: ${r.checked}, закрылось: ${r.closed}` + (r.failed ? `, не удалось проверить: ${r.failed}` : '') }
+      : { error: true, text: 'Проверка завершилась ошибкой — подробности в логе приложения' };
+  }
 
   // выполняет запрос и перерисовывает; ошибку сервера показывает над списком, а не в alert
   async function run(action) {
@@ -91,6 +130,7 @@
       ['offer', offers, plural(offers, 'оффер', 'оффера', 'офферов'), 'Получили оффер'],
       ['rejected', rejected, plural(rejected, 'отказ', 'отказа', 'отказов'), 'Отказали'],
       ['active', count('active'), 'в процессе', 'Идут сейчас: этап «Ответили», «HR» или «Тех. собес» — без оффера, отказа и «нет ответа»'],
+      ['inactive', count('inactive'), plural(count('inactive'), 'закрыта', 'закрыты', 'закрыты'), 'Вакансия на сайте закрыта — по последней проверке'],
     ].map(([f, v, l, tip]) => `<button type="button" class="jf${f === filter ? ' on' : ''}" data-act="filter" data-f="${f}" title="${tip}"><b>${v}</b>${l}</button>`).join('');
 
     const today = dayKey();
@@ -104,17 +144,22 @@
       const st = stageOf(j.stage), last = j.events[j.events.length - 1];
       const opened = openJobs.has(j.id);
       const options = STAGES.map(s => `<option value="${s.id}"${s.id === j.stage ? ' selected' : ''}>${s.label}</option>`).join('');
-      return head + `<div class="job${['rejected', 'silent'].includes(j.stage) ? ' closed' : ''}${opened ? ' open' : ''}" data-job="${j.id}">` +
+      const closed = ['rejected', 'silent'].includes(j.stage) || j.vacancyStatus === 'inactive';
+      return head + `<div class="job${closed ? ' closed' : ''}${opened ? ' open' : ''}" data-job="${j.id}">` +
         `<div class="job-row" data-act="toggle">` +
           `<span class="job-date">${fmtDate(j.appliedOn)}</span>` +
+          `<span class="job-name">` +
           (j.url ? `<a class="job-company" data-act="open" href="${escAttr(j.url)}" target="_blank" rel="noopener" title="Открыть вакансию">${esc(j.company)}<span>↗</span></a>`
             : `<span class="job-company">${esc(j.company)}</span>`) +
+          vacancyBadge(j) + `</span>` +
           `<select class="job-stage" data-act="stage" style="--st:${st.color}" aria-label="Этап">${options}</select>` +
           `<span class="job-last">${last ? `${fmtShort(last.date)} · ${esc(last.text)}` : j.note ? esc(j.note) : ''}</span>` +
           `<span class="job-arrow">${opened ? '▾' : '▸'}</span>` +
         `</div>` +
         (opened ? `<div class="job-detail">` +
           `<label class="job-field">Ссылка на вакансию<input data-act="url" inputmode="url" value="${escAttr(j.url)}" placeholder="https://…"></label>` +
+          (j.url ? `<div class="job-check"><span>${VACANCY[j.vacancyStatus] ? `${VACANCY[j.vacancyStatus].icon} ${esc(vacancyTip(j))}` : 'вакансию ещё не проверяли'}</span>` +
+            `<button type="button" class="jobs-btn" data-act="check">Проверить сейчас</button></div>` : '') +
           `<label class="job-field">Заметка<textarea data-act="note" rows="2" placeholder="Что важно: стек, зарплата, что спросили, что подтянуть">${esc(j.note)}</textarea></label>` +
           `<div class="job-events">${j.events.map(ev => `<div class="job-ev"><time>${fmtShort(ev.date)}</time><span>${esc(ev.text)}</span>` +
             `<button type="button" data-act="ev-del" data-ev="${ev.id}" title="Удалить событие">✕</button></div>`).join('') || '<div class="job-empty">событий пока нет</div>'}</div>` +
@@ -128,6 +173,7 @@
     panel.innerHTML =
       `<div class="jobs-head"><span class="jobs-title">💼 Собеседования</span>` +
         `<button type="button" class="jobs-btn primary" data-act="add-toggle">${adding ? 'Отмена' : '+ Отклик'}</button>` +
+        `<button type="button" class="jobs-btn" data-act="check-all"${checking ? ' disabled' : ''} title="Проверить на сайтах, открыты ли ещё вакансии (в процессе, со ссылкой)">${checking ? '⟳ Проверяю…' : '⟳ Проверить все'}</button>` +
         `<button type="button" class="jobs-btn" data-act="import-toggle" title="Перенести записи из старого трекера">⬆ Импорт</button>` +
         `<button type="button" class="jobs-btn" data-act="csv" title="Скачать таблицу для Excel">⬇ CSV</button>` +
         `<a class="jobs-btn" href="/api/export" title="Резервная копия всех данных">⬇ JSON</a></div>` +
@@ -165,6 +211,12 @@
       case 'add-toggle': adding = !adding; importing = false; render(); break;
       case 'import-toggle': importing = !importing; adding = false; render(); break;
       case 'csv': exportCsv(); break;
+      case 'check-all': if (!checking) run(() => checkAll().finally(() => { checking = false; })); break;
+      case 'check':
+        t.disabled = true;
+        t.textContent = 'Проверяю…';
+        run(async () => replaceJob(await api('POST', `/api/applications/${j.id}/check`)));
+        break;
       case 'filter': filter = filter === t.dataset.f ? 'all' : t.dataset.f; render(); break;
       case 'toggle': if (j) { if (openJobs.has(j.id)) openJobs.delete(j.id); else openJobs.add(j.id); render(); } break;
       case 'ev-del': run(async () => replaceJob(await api('DELETE', `/api/applications/${j.id}/events/${t.dataset.ev}`))); break;
