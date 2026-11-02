@@ -1,10 +1,19 @@
+using JobTracker.Api;
+using JobTracker.Api.Endpoints;
+using JobTracker.Application;
 using JobTracker.Infrastructure;
 using JobTracker.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services
+    .AddApplication()
+    .AddInfrastructure(builder.Configuration);
+
+builder.Services.ConfigureHttpJsonOptions(o => JsonDefaults.Configure(o.SerializerOptions));
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 
 var app = builder.Build();
 
@@ -12,6 +21,10 @@ var app = builder.Build();
 await using (var scope = app.Services.CreateAsyncScope())
     await scope.ServiceProvider.GetRequiredService<JobTrackerDbContext>().Database.MigrateAsync();
 
+app.UseExceptionHandler();
+app.UseStatusCodePages();
+
+app.MapApplicationEndpoints();
 app.MapGet("/", () => "JobTracker");
 
 await app.RunAsync();
