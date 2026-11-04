@@ -1,9 +1,6 @@
-:root{--bg:#f7f7f8;--panel:#ffffff;--text:#1f2328;--muted:#59636e;--line:#d8dee4;--accent:#0e639c;--table:#f0f2f4}
-@media (prefers-color-scheme:dark){:root{--bg:#18181b;--panel:#1f1f23;--text:#e4e4e7;--muted:#a1a1aa;--line:#33333a;--accent:#4fa3e0;--table:#26262b}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 "Segoe UI",system-ui,-apple-system,sans-serif}
-
-.jobs{width:min(960px,calc(100vw - 20px));margin:16px auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-size:13.5px}
+/* Отклики — панель поверх страницы базы знаний: положение, фон и тема — из css/knowledge.css,
+   здесь только содержимое панели. Подключается после knowledge.css и переопределяет прежние стили строк. */
+.jobs,.jobs *{box-sizing:border-box}
 .jobs-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .jobs-title{flex:1;font-weight:700;font-size:16px}
 .jobs-btn{padding:4px 10px;font:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:7px;background:none;color:var(--text);cursor:pointer;text-decoration:none}
