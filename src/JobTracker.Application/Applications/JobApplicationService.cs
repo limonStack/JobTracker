@@ -7,10 +7,8 @@ namespace JobTracker.Application.Applications;
 /// Сценарии работы с откликами. Сервис только загружает агрегат, вызывает его метод и сохраняет —
 /// сами правила живут в <see cref="JobApplication"/>. Null означает «отклик не найден».
 /// </summary>
-public sealed class JobApplicationService(IJobApplicationRepository repository, IUnitOfWork unitOfWork, TimeProvider time)
+public sealed class JobApplicationService(IJobApplicationRepository repository, IUnitOfWork unitOfWork, IUserClock clock)
 {
-    private DateOnly Today => DateOnly.FromDateTime(time.GetLocalNow().DateTime);
-
     public async Task<IReadOnlyList<JobApplicationDto>> ListAsync(CancellationToken ct) =>
         [.. (await repository.ListAsync(ct)).Select(JobApplicationDto.From)];
 
@@ -28,8 +26,12 @@ public sealed class JobApplicationService(IJobApplicationRepository repository, 
     public Task<JobApplicationDto?> UpdateAsync(Guid id, SaveApplicationRequest request, CancellationToken ct) =>
         ModifyAsync(id, a => a.UpdateDetails(request.Company, request.AppliedOn, request.Url, request.Note), ct);
 
-    public Task<JobApplicationDto?> ChangeStageAsync(Guid id, Stage stage, CancellationToken ct) =>
-        ModifyAsync(id, a => a.MoveTo(stage, Today), ct);
+    // событие о смене этапа датируется днём пользователя, а не сервера
+    public async Task<JobApplicationDto?> ChangeStageAsync(Guid id, Stage stage, CancellationToken ct)
+    {
+        var today = await clock.TodayAsync(ct);
+        return await ModifyAsync(id, a => a.MoveTo(stage, today), ct);
+    }
 
     public Task<JobApplicationDto?> AddEventAsync(Guid id, AddEventRequest request, CancellationToken ct) =>
         ModifyAsync(id, a => a.AddEvent(request.Date, request.Text), ct);

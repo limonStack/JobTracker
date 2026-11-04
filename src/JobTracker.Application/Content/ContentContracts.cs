@@ -25,6 +25,11 @@ public interface IContentRepository
 
     /// <summary>Разделы по порядку, с группами и вопросами.</summary>
     Task<IReadOnlyList<Section>> ListAsync(CancellationToken ct);
+
+    Task<bool> QuestionExistsAsync(QuestionCode code, CancellationToken ct);
+
+    /// <summary>Номера всех вопросов — для проверки импортируемых данных без загрузки текстов.</summary>
+    Task<HashSet<QuestionCode>> ListCodesAsync(CancellationToken ct);
 }
 
 /// <summary>Настройки текстов ответов — секция «Content» в appsettings.json.</summary>

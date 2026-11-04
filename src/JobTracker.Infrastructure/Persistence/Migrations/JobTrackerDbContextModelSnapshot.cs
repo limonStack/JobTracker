@@ -208,6 +208,116 @@ namespace JobTracker.Infrastructure.Persistence.Migrations
                     b.ToTable("Sections", (string)null);
                 });
 
+            modelBuilder.Entity("JobTracker.Domain.Study.ActivityDay", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "Kind", "Day")
+                        .IsUnique();
+
+                    b.ToTable("ActivityDays", (string)null);
+                });
+
+            modelBuilder.Entity("JobTracker.Domain.Study.ReviewMark", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "Day", "Code")
+                        .IsUnique();
+
+                    b.ToTable("ReviewMarks", (string)null);
+                });
+
+            modelBuilder.Entity("JobTracker.Domain.Study.StudyMark", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("StudiedOn")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "Code")
+                        .IsUnique();
+
+                    b.ToTable("StudyMarks", (string)null);
+                });
+
+            modelBuilder.Entity("JobTracker.Domain.Study.UserSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool?>("CalendarOpen")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DailyTheoryGoal")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("FocusMode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TimeZone")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("WeeklyWorkoutGoal")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("UserSettings", (string)null);
+                });
+
             modelBuilder.Entity("JobTracker.Infrastructure.Persistence.ContentVersion", b =>
                 {
                     b.Property<int>("Id")

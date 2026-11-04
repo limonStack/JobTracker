@@ -42,6 +42,12 @@ internal sealed class ContentRepository(JobTrackerDbContext db) : IContentReposi
         db.ChangeTracker.Clear();
     }
 
+    public Task<bool> QuestionExistsAsync(QuestionCode code, CancellationToken ct) =>
+        db.Set<Question>().AnyAsync(q => q.Code == code, ct);
+
+    public async Task<HashSet<QuestionCode>> ListCodesAsync(CancellationToken ct) =>
+        (await db.Set<Question>().Select(q => q.Code).ToListAsync(ct)).ToHashSet();
+
     public async Task<IReadOnlyList<Section>> ListAsync(CancellationToken ct)
     {
         var sections = await db.Set<Section>()

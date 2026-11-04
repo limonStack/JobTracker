@@ -57,6 +57,7 @@ app.UseStaticFiles(new StaticFileOptions
 app.MapApplicationEndpoints();
 app.MapVacancyCheckEndpoints();
 app.MapContentEndpoints();
+app.MapStudyEndpoints();
 
 await app.RunAsync();
 
