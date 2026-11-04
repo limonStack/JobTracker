@@ -46,10 +46,7 @@ internal sealed class QuestionConfiguration : IEntityTypeConfiguration<Question>
     {
         builder.ToTable("Questions");
         builder.HasKey(x => x.Code);
-        builder.Property(x => x.Code)
-            .HasConversion(code => code.ToString(), value => QuestionCode.Parse(value))
-            .HasMaxLength(10)
-            .ValueGeneratedNever();
+        builder.Property(x => x.Code).AsQuestionCode().ValueGeneratedNever();
         builder.Property(x => x.Title).HasMaxLength(500).IsRequired();
         builder.Property(x => x.Importance).HasConversion<string>().HasMaxLength(20);
         builder.Property(x => x.BodyHtml).IsRequired();

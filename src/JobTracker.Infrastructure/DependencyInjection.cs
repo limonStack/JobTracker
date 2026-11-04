@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<IJobApplicationRepository, JobApplicationRepository>();
         services.AddScoped<DomainEventDispatcher>();
         services.AddScoped<IContentRepository, ContentRepository>();
+        services.AddScoped<IStudyRepository, StudyRepository>();
         services.AddSingleton<IContentSource, FileContentSource>();
 
         services.AddSingleton<IVacancyCheckQueue, ChannelVacancyCheckQueue>();

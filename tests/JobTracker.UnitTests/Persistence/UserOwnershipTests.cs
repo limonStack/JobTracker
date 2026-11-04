@@ -104,6 +104,26 @@ public sealed class UserOwnershipTests : IDisposable
         Assert.Equal(2, all.Count);
     }
 
+    /// <summary>Страховка на будущее: новая пользовательская сущность без UserId и фильтра не пройдёт этот тест.</summary>
+    [Fact]
+    public void EveryUserOwnedEntity_HasUserIdAndFilter()
+    {
+        using var scope = AsUser(Alice);
+        var model = scope.ServiceProvider.GetRequiredService<JobTrackerDbContext>().Model;
+        var owned = typeof(JobApplication).Assembly.GetTypes()
+            .Where(t => t is { IsClass: true, IsAbstract: false } && typeof(JobTracker.Domain.Common.IUserOwned).IsAssignableFrom(t))
+            .ToList();
+
+        Assert.NotEmpty(owned);
+        foreach (var type in owned)
+        {
+            var entity = model.FindEntityType(type);
+            Assert.True(entity is not null, $"{type.Name} не в модели EF");
+            Assert.True(entity.FindProperty("UserId") is not null, $"у {type.Name} нет UserId");
+            Assert.True(entity.GetDeclaredQueryFilters().Count > 0, $"у {type.Name} нет фильтра по пользователю");
+        }
+    }
+
     [Fact]
     public async Task Save_WithoutUser_Throws()
     {
