@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<DomainEventDispatcher>();
         services.AddScoped<IContentRepository, ContentRepository>();
         services.AddScoped<IStudyRepository, StudyRepository>();
+        services.AddScoped<INotesRepository, NotesRepository>();
         services.AddSingleton<IContentSource, FileContentSource>();
 
         services.AddSingleton<IVacancyCheckQueue, ChannelVacancyCheckQueue>();
