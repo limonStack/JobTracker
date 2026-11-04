@@ -7,6 +7,9 @@ public sealed class VacancyCheckOptions
 {
     public const string Section = "VacancyChecks";
 
+    /// <summary>Проверять ли по таймеру раз в <see cref="Interval"/>. Выключено — только по кнопке «Проверить все».</summary>
+    public bool ScheduleEnabled { get; set; } = true;
+
     /// <summary>Как часто проверять все вакансии автоматически.</summary>
     [Range(typeof(TimeSpan), "00:01:00", "7.00:00:00")]
     public TimeSpan Interval { get; set; } = TimeSpan.FromDays(1);

@@ -21,7 +21,9 @@ internal sealed partial class VacancyCheckWorker(
         if (options.Value.CheckOnStartup)
             queue.RequestCheckAll();
 
-        return Task.WhenAll(ScheduleAsync(stoppingToken), ConsumeAsync(stoppingToken));
+        return options.Value.ScheduleEnabled
+            ? Task.WhenAll(ScheduleAsync(stoppingToken), ConsumeAsync(stoppingToken))
+            : ConsumeAsync(stoppingToken);
     }
 
     private async Task ScheduleAsync(CancellationToken ct)
