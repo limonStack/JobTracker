@@ -16,7 +16,14 @@
   ];
   const FUNNEL = ['applied', 'replied', 'hr', 'tech', 'offer'];
   const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-  const OLD_STORE = 'net-interview-jobs-v1';
+  // выгрузка всех данных старого сайта из его localStorage — только чтение
+  const EXPORT_SNIPPET = "copy(JSON.stringify(Object.fromEntries(Object.keys(localStorage).filter(k => k.startsWith('net-interview-')).map(k => [k, localStorage.getItem(k)]))))";
+  const IMPORT_PARTS = [['progress', 'изучено'], ['workouts', 'тренировки'], ['ai', 'ИИ'], ['reviews', 'повторение'],
+    ['jobs', 'отклики'], ['ideas', 'идеи'], ['highlights', 'выделения']];
+  const importErrors = r => IMPORT_PARTS.flatMap(([k, l]) => (r[k]?.errors || []).map(e => `${l}: ${e}`));
+  const importSummary = r => 'Перенесено — ' + IMPORT_PARTS.filter(([k]) => r[k])
+    .map(([k, l]) => `${l}: ${r[k].imported}${r[k].skipped ? ` (уже были ${r[k].skipped})` : ''}`).join(', ') +
+    (importErrors(r).length ? `. Не перенеслось: ${importErrors(r).join('; ')}` : '');
 
   const stageOf = id => STAGES.find(s => s.id === id) || STAGES[0];
   const reached = j => Math.max(0, FUNNEL.indexOf(j.reachedStage));
@@ -224,14 +231,17 @@
         `<button type="button" class="jobs-btn primary" data-act="add-toggle">${adding ? 'Отмена' : '+ Отклик'}</button>` +
         `<button type="button" class="jobs-btn" data-act="check-all"${checking ? ' disabled' : ''} title="Проверить на сайтах, открыты ли ещё вакансии (в процессе, со ссылкой)">${checkAllLabel()}</button>` +
         `<button type="button" class="jobs-btn${logOpen ? ' on' : ''}" data-act="log-toggle" title="Ход и результаты последней проверки">📋 Журнал</button>` +
-        `<button type="button" class="jobs-btn" data-act="import-toggle" title="Перенести записи из старого трекера">⬆ Импорт</button>` +
+        `<button type="button" class="jobs-btn" data-act="import-toggle" title="Перенести все данные из старого сайта 300questions">⬆ Импорт</button>` +
         `<button type="button" class="jobs-btn" data-act="csv" title="Скачать таблицу для Excel">⬇ CSV</button>` +
-        `<a class="jobs-btn" href="/api/export" title="Резервная копия всех данных">⬇ JSON</a></div>` +
+        `<a class="jobs-btn" href="/api/export" title="Резервная копия всех данных">⬇ JSON</a>` +
+        `<button type="button" class="cal-close" data-act="close" title="Закрыть" aria-label="Закрыть">✕</button></div>` +
       (message ? `<div class="${message.error ? 'jobs-error' : 'jobs-info'}">${esc(message.text)}</div>` : '') +
       `<div class="jobs-funnel">${funnel}</div>` +
       (importing ? `<form class="jobs-import" data-act="import">` +
-        `<span>Откройте старый трекер, нажмите F12 → Console и выполните <code>copy(localStorage.getItem('${OLD_STORE}'))</code> — данные окажутся в буфере обмена. Вставьте их сюда. Повторный импорт не создаёт дублей.</span>` +
-        `<textarea name="json" rows="5" placeholder='[{"id":"…","d":"2026-09-21","c":"…"}]' required></textarea>` +
+        `<span>Откройте старый сайт, нажмите F12 → Console и выполните команду ниже — она только <b>читает</b> данные и копирует их в буфер обмена. ` +
+          `Сохраните копию в файл (резервная копия), затем вставьте сюда. Переносятся прогресс, календарь, повторение, отклики, идеи и выделения; повторный импорт не создаёт дублей.</span>` +
+        `<code>${esc(EXPORT_SNIPPET)}</code>` +
+        `<textarea name="json" rows="5" placeholder='{"net-interview-progress-v1":"…", …}' required></textarea>` +
         `<button type="submit" class="jobs-btn primary">Импортировать</button></form>` : '') +
       (adding ? `<form class="jobs-add" data-act="add"><input type="date" name="d" value="${today}" required>` +
         `<input name="u" data-act="add-url" inputmode="url" placeholder="Ссылка на вакансию — вставьте, компания подставится"><input name="c" placeholder="Компания" required>` +
@@ -323,12 +333,16 @@
       }
       case 'import':
         run(async () => {
-          let records;
-          try { records = JSON.parse(get('json')); } catch { throw new Error('Это не JSON — скопируйте данные целиком, как в подсказке.'); }
-          const r = await api('POST', '/api/import', records);
-          await load();
+          let storage;
+          try { storage = JSON.parse(get('json')); } catch { throw new Error('Это не JSON — скопируйте данные целиком, как в подсказке.'); }
+          if (Array.isArray(storage) || typeof storage !== 'object') throw new Error('Нужна выгрузка всего сайта — объект { "net-interview-…": … }, команда в подсказке.');
+          const r = await api('POST', '/api/import/site', storage);
           importing = false;
-          message = { error: r.errors.length > 0, text: `Импортировано: ${r.imported}, уже были: ${r.skipped}` + (r.errors.length ? `. Ошибки: ${r.errors.join('; ')}` : '') };
+          message = { error: importErrors(r).length > 0, text: importSummary(r) };
+          await load();
+          // прогресс, календарь, идеи и выделения рисует база знаний — перечитываем страницу, сообщение показываем после
+          sessionStorage.setItem('import-message', JSON.stringify(message));
+          location.reload();
         });
         break;
     }
@@ -336,7 +350,15 @@
 
   // страницу открыли посреди обхода (запущен из другой вкладки или при старте) — подхватываем ход
   run(async () => {
+    // страница перезагрузилась после импорта — показываем его итог в открытой панели
+    const saved = sessionStorage.getItem('import-message');
+    if (saved) {
+      sessionStorage.removeItem('import-message');
+      panel.hidden = false;
+      document.getElementById('jobs-toggle')?.setAttribute('aria-pressed', 'true');
+    }
     await load();
+    if (saved) message = JSON.parse(saved);
     checkStatus = await api('GET', '/api/checks');
     if (checkStatus.running) { logOpen = true; run(() => pollChecks().finally(() => { checking = false; })); }
   });

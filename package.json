@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "description": "Только для тестов фронтенда (node --test): скрипты страницы — ES-модули без сборки и без зависимостей",
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"tests/js/*.test.mjs\""
+  }
+}
