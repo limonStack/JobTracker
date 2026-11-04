@@ -16,3 +16,7 @@ csharp_style_namespace_declarations = file_scoped:warning
 dotnet_diagnostic.CA1707.severity = none
 # IDomainEventHandler<T> — устоявшееся имя для подписчиков доменных событий
 dotnet_diagnostic.CA1711.severity = none
+
+# миграции EF Core генерирует инструмент — правила стиля и анализаторы к ним не применяем
+[**/Migrations/*.cs]
+generated_code = true

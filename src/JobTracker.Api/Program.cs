@@ -1,6 +1,8 @@
 using JobTracker.Api;
 using JobTracker.Api.BackgroundJobs;
 using JobTracker.Api.Endpoints;
+using JobTracker.Api.Users;
+using JobTracker.Application.Abstractions;
 using JobTracker.Application;
 using JobTracker.Application.VacancyChecking;
 using JobTracker.Infrastructure;
@@ -12,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration);
+builder.Services.AddSingleton<ICurrentUser, LocalCurrentUser>();
 
 builder.Services.AddOptions<VacancyCheckOptions>()
     .BindConfiguration(VacancyCheckOptions.Section)
