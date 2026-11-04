@@ -63,6 +63,8 @@
   };
   let checking = false;                               // идёт фоновая проверка всех вакансий
   const CHECK_ONE_ENABLED = false;                    // временно: проверка только кнопкой «Проверить все»
+  let checkStatus = null;                             // ход и журнал обхода с сервера (GET /api/checks)
+  let logOpen = false;                                // показана панель «Журнал проверки»
 
   // статус вакансии на сайте: значок у компании и подробная строка в раскрытой записи
   const VACANCY = {
@@ -80,27 +82,70 @@
     const closed = j.vacancyStatus === 'inactive' && j.closedAt ? `, закрытие замечено ${fmtTime(j.closedAt)}` : '';
     return `${v.label}${closed} · проверено ${fmtTime(j.lastCheckedAt)}`;
   };
+  const fmtClock = iso => new Date(iso).toLocaleTimeString('ru-RU');
+
+  // журнал текущего или последнего обхода: что проверяется сейчас и результаты, новые сверху.
+  // Живёт отдельно от списка — плавающая панель поверх страницы, поэтому список не сдвигается
+  const logPanel = document.getElementById('check-log');
+  function renderLog() {
+    logPanel.hidden = !logOpen;
+    if (logOpen) logPanel.innerHTML = checkLog();
+    const btn = panel.querySelector('[data-act="check-all"]');
+    if (btn) btn.textContent = checkAllLabel();
+  }
+  const checkAllLabel = () => checking
+    ? `⟳ Проверяю…${checkStatus?.total ? ` ${checkStatus.done}/${checkStatus.total}` : ''}`
+    : '⟳ Проверить все';
+
+  function checkLog() {
+    const s = checkStatus;
+    if (!s) return `<div class="jobs-log-head"><b>Журнал проверки</b><span>загрузка…</span></div>`;
+    const r = s.lastResult;
+    const summary = s.running
+      ? (s.total ? `проверено ${s.done} из ${s.total}` : 'готовлюсь…')
+      : s.lastFinishedAt
+        ? `${fmtTime(s.lastFinishedAt)} · ` + (r ? `проверено ${r.checked}, закрылось ${r.closed}, не удалось ${r.failed}` : 'обход завершился ошибкой — подробности в логе приложения')
+        : 'с запуска приложения проверок не было';
+    const pct = s.total ? Math.round(s.done * 100 / s.total) : 0;
+    const rows = s.log.slice().reverse().map(e => {
+      const v = VACANCY[e.status] || { icon: '?', label: e.status };
+      return `<div class="jobs-log-row ${e.status}"><time>${fmtClock(e.at)}</time><span class="job-vac ${e.status}">${v.icon}</span>` +
+        `<b>${esc(e.company)}</b><span>${esc(e.error || v.label)}</span></div>`;
+    }).join('');
+    return `<div class="jobs-log-head"><b>Журнал проверки</b><span>${summary}</span>` +
+        `<button type="button" class="jobs-btn" data-act="log-toggle" title="Скрыть журнал">✕</button></div>` +
+      (s.running ? `<div class="jobs-log-bar"><i style="width:${pct}%"></i></div>` : '') +
+      (s.current ? `<div class="jobs-log-now">⟳ Сейчас: <b>${esc(s.current)}</b>…</div>` : '') +
+      (rows ? `<div class="jobs-log-rows">${rows}</div>` : '');
+  }
+
   // своя колонка в строке: пустой span у непроверенных держит сетку, значки встают друг под другом
   const vacancyBadge = j => VACANCY[j.vacancyStatus]
     ? `<span class="job-vac ${j.vacancyStatus}" title="${escAttr(vacancyTip(j))}">${VACANCY[j.vacancyStatus].icon}</span>`
     : `<span class="job-vac"></span>`;
 
-  // «Проверить все» идёт в фоне: опрашиваем ход, пока не закончится, потом перечитываем список
+  // «Проверить все» идёт в фоне: опрашиваем ход, пока не закончится. Каждую секунду обновляется только журнал;
+  // список перерисовывается, лишь когда готова очередная вакансия, — строки остаются на месте, меняется значок.
+  // Итог — в журнале, а не сообщением над списком: оно сдвигало бы список вниз
   async function checkAll() {
     checking = true;
+    logOpen = true;
     render();
-    await api('POST', '/api/checks');
-    let status;
+    checkStatus = await api('POST', '/api/checks');
+    await pollChecks();
+  }
+
+  async function pollChecks() {
+    checking = true;
+    let status, done = -1;
     do {
-      await new Promise(r => setTimeout(r, 1500));
-      status = await api('GET', '/api/checks');
+      await new Promise(r => setTimeout(r, 1000));
+      status = checkStatus = await api('GET', '/api/checks');
+      if (status.done !== done) { done = status.done; await load(); render(); }
+      else renderLog();
     } while (status.running);
     await load();
     checking = false;
-    const r = status.lastResult;
-    message = r
-      ? { error: r.failed > 0, text: `Проверено вакансий: ${r.checked}, закрылось: ${r.closed}` + (r.failed ? `, не удалось проверить: ${r.failed}` : '') }
-      : { error: true, text: 'Проверка завершилась ошибкой — подробности в логе приложения' };
   }
 
   // выполняет запрос и перерисовывает; ошибку сервера показывает над списком, а не в alert
@@ -177,7 +222,8 @@
     panel.innerHTML =
       `<div class="jobs-head"><span class="jobs-title">💼 Собеседования</span>` +
         `<button type="button" class="jobs-btn primary" data-act="add-toggle">${adding ? 'Отмена' : '+ Отклик'}</button>` +
-        `<button type="button" class="jobs-btn" data-act="check-all"${checking ? ' disabled' : ''} title="Проверить на сайтах, открыты ли ещё вакансии (в процессе, со ссылкой)">${checking ? '⟳ Проверяю…' : '⟳ Проверить все'}</button>` +
+        `<button type="button" class="jobs-btn" data-act="check-all"${checking ? ' disabled' : ''} title="Проверить на сайтах, открыты ли ещё вакансии (в процессе, со ссылкой)">${checkAllLabel()}</button>` +
+        `<button type="button" class="jobs-btn${logOpen ? ' on' : ''}" data-act="log-toggle" title="Ход и результаты последней проверки">📋 Журнал</button>` +
         `<button type="button" class="jobs-btn" data-act="import-toggle" title="Перенести записи из старого трекера">⬆ Импорт</button>` +
         `<button type="button" class="jobs-btn" data-act="csv" title="Скачать таблицу для Excel">⬇ CSV</button>` +
         `<a class="jobs-btn" href="/api/export" title="Резервная копия всех данных">⬇ JSON</a></div>` +
@@ -192,6 +238,7 @@
         `<input class="full" name="n" placeholder="Заметка (необязательно)"><button type="submit" class="jobs-btn primary full">Добавить отклик</button></form>` : '') +
       `<div class="jobs-list">${rows || `<div class="job-empty">${filter === 'all' ? 'Откликов пока нет' : 'Под этот фильтр записей нет'}</div>`}</div>`;
     if (adding) panel.querySelector('.jobs-add [name="u"]').focus();
+    renderLog();
   }
 
   function exportCsv() {
@@ -207,6 +254,16 @@
   }
 
   // ---------- События интерфейса ----------
+  // журнал открывается с тем, что сейчас на сервере; список при этом не перерисовывается
+  function toggleLog() {
+    logOpen = !logOpen;
+    panel.querySelector('[data-act="log-toggle"]')?.classList.toggle('on', logOpen);
+    renderLog();
+    if (logOpen && !checking)
+      api('GET', '/api/checks').then(s => { checkStatus = s; renderLog(); }, err => { message = { error: true, text: err.message }; render(); });
+  }
+  logPanel.addEventListener('click', e => { if (e.target.closest('[data-act="log-toggle"]')) toggleLog(); });
+
   panel.addEventListener('click', e => {
     const t = e.target.closest('[data-act]');
     if (!t) return;
@@ -215,6 +272,7 @@
       case 'add-toggle': adding = !adding; importing = false; render(); break;
       case 'import-toggle': importing = !importing; adding = false; render(); break;
       case 'csv': exportCsv(); break;
+      case 'log-toggle': toggleLog(); break;
       case 'check-all': if (!checking) run(() => checkAll().finally(() => { checking = false; })); break;
       case 'check':
         t.disabled = true;
@@ -276,5 +334,10 @@
     }
   });
 
-  run(load);
+  // страницу открыли посреди обхода (запущен из другой вкладки или при старте) — подхватываем ход
+  run(async () => {
+    await load();
+    checkStatus = await api('GET', '/api/checks');
+    if (checkStatus.running) { logOpen = true; run(() => pollChecks().finally(() => { checking = false; })); }
+  });
 })();

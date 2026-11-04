@@ -67,6 +67,11 @@ public sealed class VacancyCheckApiTests : IDisposable
         var status = await WaitUntilFinishedAsync();
 
         Assert.Equal(new CheckAllResult(Checked: 2, Closed: 1, Failed: 0), status.LastResult);
+        Assert.Equal((2, 2), (status.Total, status.Done));
+        Assert.Null(status.Current);
+        Assert.Equal(
+            [(closed.Id, VacancyStatus.Inactive), (open.Id, VacancyStatus.Active)],
+            status.Log.Select(e => (e.ApplicationId, e.Status)).OrderBy(e => e.Status == VacancyStatus.Active));
         Assert.Equal(VacancyStatus.Inactive, (await GetAsync(closed.Id)).VacancyStatus);
         Assert.Equal(VacancyStatus.Active, (await GetAsync(open.Id)).VacancyStatus);
         Assert.Equal(VacancyStatus.Unknown, (await GetAsync(otherSite.Id)).VacancyStatus);

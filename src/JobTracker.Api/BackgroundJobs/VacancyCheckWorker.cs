@@ -55,7 +55,7 @@ internal sealed partial class VacancyCheckWorker(
 
     private async Task RunCheckAsync(CancellationToken ct)
     {
-        progress.Started();
+        progress.Started(time.GetUtcNow());
         CheckAllResult? result = null;
         try
         {
