@@ -21,9 +21,17 @@ public sealed class StudyMark : Entity, IUserOwned
 {
     public QuestionCode Code { get; private set; }
 
-    public DateOnly StudiedOn { get; private set; }
+    /// <summary>
+    /// День, на который засчитана тема. Null — только у отметок из старого сайта, поставленных до того,
+    /// как он начал хранить даты: тема изучена, но в календаре не считается.
+    /// </summary>
+    public DateOnly? StudiedOn { get; private set; }
 
     private StudyMark() { } // для EF Core
+
+    /// <summary>Перенос из старого сайта: день может быть неизвестен, будущий день отбрасывается.</summary>
+    public static StudyMark Restore(QuestionCode code, DateOnly? studiedOn, DateOnly today) =>
+        new() { Code = code, StudiedOn = studiedOn <= today ? studiedOn : null };
 
     public static StudyMark Create(QuestionCode code, DateOnly studiedOn, DateOnly today)
     {

@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<NotesService>();
         services.AddScoped<IUserClock, UserClock>();
         services.AddScoped<LegacyImportService>();
+        services.AddScoped<LegacySiteImportService>();
         services.AddScoped<VacancyCheckerResolver>();
         services.AddScoped<VacancyCheckService>();
         services.AddSingleton<VacancyCheckProgress>();
