@@ -18,11 +18,19 @@ public abstract class HtmlVacancyChecker(HttpClient http) : IVacancyChecker
 
     protected abstract VacancyCheckResult Analyze(IDocument document);
 
+    /// <summary>
+    /// Решение по самому ответу, до разбора HTML: некоторые сайты сообщают о закрытии кодом (410)
+    /// или редиректом. <c>null</c> — ответ ничего не говорит, дальше обычная обработка.
+    /// </summary>
+    protected virtual VacancyCheckResult? AnalyzeResponse(HttpResponseMessage response) => null;
+
     public async Task<VacancyCheckResult> CheckAsync(Uri url, CancellationToken ct)
     {
         try
         {
             using var response = await http.GetAsync(url, ct);
+            if (AnalyzeResponse(response) is { } decided)
+                return decided;
             if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.Gone)
                 return VacancyCheckResult.Failed($"Страница не найдена ({(int)response.StatusCode})");
             if (!response.IsSuccessStatusCode)

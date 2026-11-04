@@ -18,6 +18,16 @@ public class VacancyCheckerResolverTests
     }
 
     [Fact]
+    public void Resolve_SeveralCheckers_PicksBySite()
+    {
+        var workUa = new WorkUaChecker(new HttpClient(StubHttpHandler.Html("")));
+        var resolver = new VacancyCheckerResolver([Dou, workUa]);
+
+        Assert.Same(workUa, resolver.Resolve(new Uri("https://www.work.ua/jobs/7062997/")));
+        Assert.Same(Dou, resolver.Resolve(new Uri("https://jobs.dou.ua/companies/x/vacancies/1/")));
+    }
+
+    [Fact]
     public async Task CheckAsync_UnsupportedSite_ReturnsUnknownWithoutRequest()
     {
         var resolver = new VacancyCheckerResolver(Array.Empty<IVacancyChecker>());
