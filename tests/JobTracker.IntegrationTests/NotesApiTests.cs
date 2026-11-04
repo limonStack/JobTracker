@@ -74,6 +74,22 @@ public sealed class NotesApiTests : IDisposable
     }
 
     [Fact]
+    public async Task Export_ContainsAllUserData()
+    {
+        await CreateIdeaAsync("Outbox");
+        await _client.PostJsonAsync("/api/applications",
+            new JobTracker.Application.Applications.SaveApplicationRequest("ACME", new DateOnly(2026, 10, 1), null, null));
+
+        using var json = System.Text.Json.JsonDocument.Parse(await (await _client.GetAsync("/api/export")).Content.ReadAsStringAsync());
+        var root = json.RootElement;
+
+        Assert.Equal(1, root.GetProperty("applications").GetArrayLength());
+        Assert.Equal(1, root.GetProperty("ideas").GetArrayLength());
+        Assert.True(root.GetProperty("study").TryGetProperty("settings", out _));
+        Assert.True(root.TryGetProperty("highlights", out _));
+    }
+
+    [Fact]
     public async Task Highlights_CreateRecolorDelete()
     {
         var created = await (await _client.PostJsonAsync("/api/highlights",
