@@ -3,8 +3,21 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+# ---- Личное и секреты: репозиторий публичный ----
+# личные разделы ответов (20, 21) и выгрузки данных из браузера — только на этом компьютере
+content/private/
+backups/
+# секреты и локальные переопределения настроек (строки подключения, ключи API)
+appsettings.*.local.json
+*.local.json
+secrets.json
+*.pem
+*.key
+*.p12
+
 # dotenv files
 .env
+.env.*
 
 # User-specific files
 *.rsuser
