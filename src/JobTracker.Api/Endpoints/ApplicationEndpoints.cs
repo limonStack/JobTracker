@@ -38,6 +38,10 @@ internal static class ApplicationEndpoints
         app.MapPost("/api/import", (IReadOnlyList<LegacyJob> jobs, LegacyImportService service, CancellationToken ct) =>
             service.ImportAsync(jobs, ct)).WithTags("Import");
 
+        // весь старый сайт разом: { "net-interview-progress-v1": "<JSON как в localStorage>", ... }
+        app.MapPost("/api/import/site", (Dictionary<string, string?> storage, LegacySiteImportService service, CancellationToken ct) =>
+            service.ImportAsync(storage, ct)).WithTags("Import");
+
         app.MapGet("/api/export", async (JobApplicationService service, CancellationToken ct) =>
             Results.File(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(await service.ListAsync(ct), JsonDefaults.Options),
                 "application/json", $"jobtracker-{DateTime.Now:yyyy-MM-dd}.json")).WithTags("Import");

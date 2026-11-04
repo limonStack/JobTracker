@@ -373,7 +373,7 @@ namespace JobTracker.Infrastructure.Persistence.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("TEXT");
 
-                    b.Property<DateOnly>("StudiedOn")
+                    b.Property<DateOnly?>("StudiedOn")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("UserId")

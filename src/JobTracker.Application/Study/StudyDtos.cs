@@ -2,7 +2,8 @@ using JobTracker.Domain.Study;
 
 namespace JobTracker.Application.Study;
 
-public sealed record StudyMarkDto(string Code, DateOnly Day);
+/// <summary>Day = null — изучено, но день неизвестен (перенесено из старого сайта без даты).</summary>
+public sealed record StudyMarkDto(string Code, DateOnly? Day);
 
 public sealed record ActivityDto(ActivityKind Kind, DateOnly Day);
 
