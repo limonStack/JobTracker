@@ -62,6 +62,7 @@
     inactive: j => j.vacancyStatus === 'inactive',
   };
   let checking = false;                               // идёт фоновая проверка всех вакансий
+  const CHECK_ONE_ENABLED = false;                    // временно: проверка только кнопкой «Проверить все»
 
   // статус вакансии на сайте: значок у компании и подробная строка в раскрытой записи
   const VACANCY = {
@@ -79,8 +80,10 @@
     const closed = j.vacancyStatus === 'inactive' && j.closedAt ? `, закрытие замечено ${fmtTime(j.closedAt)}` : '';
     return `${v.label}${closed} · проверено ${fmtTime(j.lastCheckedAt)}`;
   };
+  // своя колонка в строке: пустой span у непроверенных держит сетку, значки встают друг под другом
   const vacancyBadge = j => VACANCY[j.vacancyStatus]
-    ? `<span class="job-vac ${j.vacancyStatus}" title="${escAttr(vacancyTip(j))}">${VACANCY[j.vacancyStatus].icon}</span>` : '';
+    ? `<span class="job-vac ${j.vacancyStatus}" title="${escAttr(vacancyTip(j))}">${VACANCY[j.vacancyStatus].icon}</span>`
+    : `<span class="job-vac"></span>`;
 
   // «Проверить все» идёт в фоне: опрашиваем ход, пока не закончится, потом перечитываем список
   async function checkAll() {
@@ -148,10 +151,11 @@
       return head + `<div class="job${closed ? ' closed' : ''}${opened ? ' open' : ''}" data-job="${j.id}">` +
         `<div class="job-row" data-act="toggle">` +
           `<span class="job-date">${fmtDate(j.appliedOn)}</span>` +
+          vacancyBadge(j) +
           `<span class="job-name">` +
           (j.url ? `<a class="job-company" data-act="open" href="${escAttr(j.url)}" target="_blank" rel="noopener" title="Открыть вакансию">${esc(j.company)}<span>↗</span></a>`
             : `<span class="job-company">${esc(j.company)}</span>`) +
-          vacancyBadge(j) + `</span>` +
+          `</span>` +
           `<select class="job-stage" data-act="stage" style="--st:${st.color}" aria-label="Этап">${options}</select>` +
           `<span class="job-last">${last ? `${fmtShort(last.date)} · ${esc(last.text)}` : j.note ? esc(j.note) : ''}</span>` +
           `<span class="job-arrow">${opened ? '▾' : '▸'}</span>` +
@@ -159,7 +163,7 @@
         (opened ? `<div class="job-detail">` +
           `<label class="job-field">Ссылка на вакансию<input data-act="url" inputmode="url" value="${escAttr(j.url)}" placeholder="https://…"></label>` +
           (j.url ? `<div class="job-check"><span>${VACANCY[j.vacancyStatus] ? `${VACANCY[j.vacancyStatus].icon} ${esc(vacancyTip(j))}` : 'вакансию ещё не проверяли'}</span>` +
-            `<button type="button" class="jobs-btn" data-act="check">Проверить сейчас</button></div>` : '') +
+            (CHECK_ONE_ENABLED ? `<button type="button" class="jobs-btn" data-act="check">Проверить сейчас</button>` : '') + `</div>` : '') +
           `<label class="job-field">Заметка<textarea data-act="note" rows="2" placeholder="Что важно: стек, зарплата, что спросили, что подтянуть">${esc(j.note)}</textarea></label>` +
           `<div class="job-events">${j.events.map(ev => `<div class="job-ev"><time>${fmtShort(ev.date)}</time><span>${esc(ev.text)}</span>` +
             `<button type="button" data-act="ev-del" data-ev="${ev.id}" title="Удалить событие">✕</button></div>`).join('') || '<div class="job-empty">событий пока нет</div>'}</div>` +

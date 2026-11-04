@@ -31,13 +31,14 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 "Segoe UI",s
 .job-month span{font-weight:400;font-size:12px;color:var(--muted)}
 .job-month + .job{border-top:0}
 .jobs-list > .job-month:first-child{margin-top:0}
-.job-row{display:grid;grid-template-columns:82px minmax(0,1.2fr) 118px minmax(0,1.5fr) 14px;align-items:center;gap:10px;padding:7px 6px;border-radius:6px;cursor:pointer}
+.job-row{display:grid;grid-template-columns:82px 14px minmax(0,1.2fr) 118px minmax(0,1.5fr) 14px;align-items:center;gap:10px;padding:7px 6px;border-radius:6px;cursor:pointer}
 .job-row:hover{background:var(--table)}
 .job-date{color:var(--muted);font-variant-numeric:tabular-nums}
 .job-name{display:flex;align-items:center;gap:6px;min-width:0}
 .job-company{overflow:hidden;font-weight:600;text-overflow:ellipsis;white-space:nowrap}
 .job-name .job-company{min-width:0}
-.job-vac{flex:none;font-size:12px;cursor:help}
+.job-vac{justify-self:center;font-size:12px;line-height:1;cursor:help}
+.job-vac:empty{cursor:inherit}
 .job-vac.active{color:#22c55e;font-size:10px}
 .job-vac.checkFailed{color:#f0883e}
 .job-check{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12.5px}
@@ -49,7 +50,7 @@ a.job-company:hover{color:var(--accent);text-decoration:underline}
 .job-arrow{color:var(--muted)}
 .job-stage{padding:2px 6px;font:inherit;font-size:12px;border:1px solid var(--st);border-radius:12px;background:color-mix(in srgb,var(--st) 20%,var(--panel));color:var(--text);cursor:pointer}
 .job.closed .job-company,.job.closed .job-date{opacity:.6}
-.job-detail{display:grid;gap:8px;padding:4px 6px 14px 98px}
+.job-detail{display:grid;gap:8px;padding:4px 6px 14px 122px}
 .job-field{display:grid;gap:4px;color:var(--muted);font-size:12px}
 .job-ev{display:flex;align-items:center;gap:10px}
 .job-ev time{width:42px;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -57,5 +58,7 @@ a.job-company:hover{color:var(--accent);text-decoration:underline}
 .job-ev button{padding:0 4px;border:0;background:none;color:var(--muted);cursor:pointer;opacity:.5}
 .job-ev button:hover{color:#ef4444;opacity:1}
 .job-empty{color:var(--muted);font-size:12.5px}
+.tab-overlay{position:fixed;inset:0;z-index:10;display:grid;place-items:center;background:color-mix(in srgb,var(--bg) 85%,transparent);text-align:center}
+.tab-overlay p{margin:0 0 12px}
 .job-evadd{display:grid;grid-template-columns:140px 1fr auto;gap:6px}
-@media (max-width:700px){.job-row{grid-template-columns:72px minmax(0,1fr) 108px 12px}.job-last{display:none}.job-detail{padding-left:6px}.jobs-add{grid-template-columns:1fr}}
+@media (max-width:700px){.job-row{grid-template-columns:72px 14px minmax(0,1fr) 108px 12px}.job-last{display:none}.job-detail{padding-left:6px}.jobs-add{grid-template-columns:1fr}}
