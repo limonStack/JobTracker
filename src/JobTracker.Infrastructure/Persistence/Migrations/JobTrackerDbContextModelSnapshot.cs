@@ -127,6 +127,108 @@ namespace JobTracker.Infrastructure.Persistence.Migrations
                     b.ToTable("VacancyChecks", (string)null);
                 });
 
+            modelBuilder.Entity("JobTracker.Domain.Knowledge.Question", b =>
+                {
+                    b.Property<string>("Code")
+                        .HasMaxLength(10)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BodyHtml")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("GroupOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Importance")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SectionNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Code");
+
+                    b.HasIndex("SectionNumber", "GroupOrder");
+
+                    b.ToTable("Questions", (string)null);
+                });
+
+            modelBuilder.Entity("JobTracker.Domain.Knowledge.QuestionGroup", b =>
+                {
+                    b.Property<int>("SectionNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("IntroHtml")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("SectionNumber", "Order");
+
+                    b.ToTable("QuestionGroups", (string)null);
+                });
+
+            modelBuilder.Entity("JobTracker.Domain.Knowledge.Section", b =>
+                {
+                    b.Property<int>("Number")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("IntroHtml")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Number");
+
+                    b.ToTable("Sections", (string)null);
+                });
+
+            modelBuilder.Entity("JobTracker.Infrastructure.Persistence.ContentVersion", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset>("ImportedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("QuestionCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ContentVersions", (string)null);
+                });
+
             modelBuilder.Entity("JobTracker.Domain.Applications.ApplicationEvent", b =>
                 {
                     b.HasOne("JobTracker.Domain.Applications.JobApplication", null)
@@ -143,11 +245,39 @@ namespace JobTracker.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
+            modelBuilder.Entity("JobTracker.Domain.Knowledge.Question", b =>
+                {
+                    b.HasOne("JobTracker.Domain.Knowledge.QuestionGroup", null)
+                        .WithMany("Questions")
+                        .HasForeignKey("SectionNumber", "GroupOrder")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("JobTracker.Domain.Knowledge.QuestionGroup", b =>
+                {
+                    b.HasOne("JobTracker.Domain.Knowledge.Section", null)
+                        .WithMany("Groups")
+                        .HasForeignKey("SectionNumber")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("JobTracker.Domain.Applications.JobApplication", b =>
                 {
                     b.Navigation("Checks");
 
                     b.Navigation("Events");
+                });
+
+            modelBuilder.Entity("JobTracker.Domain.Knowledge.QuestionGroup", b =>
+                {
+                    b.Navigation("Questions");
+                });
+
+            modelBuilder.Entity("JobTracker.Domain.Knowledge.Section", b =>
+                {
+                    b.Navigation("Groups");
                 });
 #pragma warning restore 612, 618
         }
