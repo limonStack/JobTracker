@@ -8,7 +8,7 @@ namespace JobTracker.IntegrationTests;
 public sealed class VacancyCheckApiTests : IDisposable
 {
     private const string ClosedUrl = "https://jobs.dou.ua/companies/unity-bars/vacancies/373938/";
-    private const string OpenUrl = "https://jobs.dou.ua/companies/freitty/vacancies/366693/";
+    private const string OpenUrl = "https://jobs.dou.ua/companies/acme/vacancies/366693/";
 
     private readonly JobTrackerApiFactory _factory = new();
     private readonly HttpClient _client;
@@ -56,7 +56,7 @@ public sealed class VacancyCheckApiTests : IDisposable
     public async Task CheckAll_RunsInBackground_AndSkipsWhatShouldNotBeChecked()
     {
         var closed = await CreateAsync("UNITY-BARS", ClosedUrl);
-        var open = await CreateAsync("FREITTY", OpenUrl);
+        var open = await CreateAsync("ACME", OpenUrl);
         var otherSite = await CreateAsync("Djinni company", "https://djinni.co/jobs/1/");
         var noUrl = await CreateAsync("DIIT", null);
         var rejected = await CreateAsync("Bank", "https://jobs.dou.ua/companies/pivdenny/vacancies/297084/");
