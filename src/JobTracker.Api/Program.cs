@@ -34,7 +34,11 @@ app.UseStatusCodePages();
 
 // фронтенд — статические файлы из wwwroot с того же адреса, поэтому запросы к API не упираются в CORS
 app.UseDefaultFiles();
-app.UseStaticFiles();
+// no-cache: браузер каждый раз сверяет ETag (ответ 304, если файл не менялся) и не показывает старый JS/CSS после правок
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx => ctx.Context.Response.Headers.CacheControl = "no-cache",
+});
 
 app.MapApplicationEndpoints();
 app.MapVacancyCheckEndpoints();
