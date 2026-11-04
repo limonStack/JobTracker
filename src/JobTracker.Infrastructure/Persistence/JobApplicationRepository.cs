@@ -14,9 +14,13 @@ internal sealed class JobApplicationRepository(JobTrackerDbContext db) : IJobApp
             .OrderByDescending(x => x.AppliedOn)
             .ToListAsync(ct);
 
-    /// <summary>Есть ссылка, отклик ещё в игре и вакансия не закрыта — такие имеет смысл проверять.</summary>
+    /// <summary>
+    /// Есть ссылка, отклик ещё в игре и вакансия не закрыта — такие имеет смысл проверять.
+    /// Фоновая проверка общая для всех: фильтр по пользователю здесь снят намеренно.
+    /// </summary>
     public async Task<IReadOnlyList<JobApplication>> ListForVacancyCheckAsync(CancellationToken ct = default) =>
         await db.Applications
+            .IgnoreQueryFilters([UserOwnership.Filter])
             .Where(x => x.Url != null
                         && x.VacancyStatus != VacancyStatus.Inactive
                         && x.Stage != Stage.Offer && x.Stage != Stage.Rejected && x.Stage != Stage.Silent)

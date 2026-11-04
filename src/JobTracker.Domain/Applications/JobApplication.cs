@@ -6,7 +6,7 @@ namespace JobTracker.Domain.Applications;
 /// Отклик на вакансию — корень агрегата: этап воронки, история событий и проверки вакансии
 /// меняются только через его методы, чтобы правила воронки нельзя было обойти.
 /// </summary>
-public sealed class JobApplication : Entity
+public sealed class JobApplication : Entity, IUserOwned
 {
     private readonly List<ApplicationEvent> _events = [];
     private readonly List<VacancyCheck> _checks = [];

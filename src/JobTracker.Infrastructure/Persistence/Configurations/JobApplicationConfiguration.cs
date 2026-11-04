@@ -25,8 +25,10 @@ internal sealed class JobApplicationConfiguration : IEntityTypeConfiguration<Job
         builder.Property(x => x.ReachedStage).HasConversion<string>().HasMaxLength(20);
         builder.Property(x => x.VacancyStatus).HasConversion<string>().HasMaxLength(20);
 
+        // id из старого трекера уникален у каждого пользователя, а не во всей базе
         builder.Property(x => x.LegacyId).HasMaxLength(50);
-        builder.HasIndex(x => x.LegacyId).IsUnique();
+        builder.Property<Guid>(UserOwnership.Property);
+        builder.HasIndex(UserOwnership.Property, nameof(JobApplication.LegacyId)).IsUnique();
 
         builder.HasMany(x => x.Events).WithOne().HasForeignKey("ApplicationId").OnDelete(DeleteBehavior.Cascade);
         builder.HasMany(x => x.Checks).WithOne().HasForeignKey("ApplicationId").OnDelete(DeleteBehavior.Cascade);

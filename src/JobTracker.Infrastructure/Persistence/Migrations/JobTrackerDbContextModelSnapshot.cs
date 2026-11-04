@@ -82,6 +82,9 @@ namespace JobTracker.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("VacancyStatus")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -89,7 +92,9 @@ namespace JobTracker.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LegacyId")
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "LegacyId")
                         .IsUnique();
 
                     b.ToTable("Applications", (string)null);
