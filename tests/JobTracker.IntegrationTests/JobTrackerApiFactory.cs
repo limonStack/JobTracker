@@ -24,9 +24,13 @@ public sealed class JobTrackerApiFactory : WebApplicationFactory<Program>
     /// <summary>Вместо настоящего DOU: тесты не ходят в сеть и сами задают, какая вакансия закрыта.</summary>
     public FakeVacancyChecker Checker { get; } = new();
 
+    /// <summary>Импортировать тексты ответов при старте. По умолчанию нет: разбор 2 МБ HTML не нужен тестам откликов.</summary>
+    public bool ImportContent { get; init; }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting("ConnectionStrings:JobTracker", $"Data Source={_dbPath}");
+        builder.UseSetting("Content:ImportOnStartup", ImportContent ? "true" : "false");
         builder.UseSetting("VacancyChecks:CheckOnStartup", "false");
         builder.UseSetting("VacancyChecks:DelayBetweenRequests", "00:00:00");
         builder.ConfigureTestServices(services =>

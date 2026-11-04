@@ -1,5 +1,6 @@
 using JobTracker.Application.Abstractions;
 using JobTracker.Application.Applications;
+using JobTracker.Application.Content;
 using JobTracker.Application.Import;
 using JobTracker.Application.VacancyChecking;
 using JobTracker.Domain.Applications;
@@ -13,6 +14,7 @@ public static class DependencyInjection
     {
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<JobApplicationService>();
+        services.AddScoped<ContentService>();
         services.AddScoped<LegacyImportService>();
         services.AddScoped<VacancyCheckerResolver>();
         services.AddScoped<VacancyCheckService>();

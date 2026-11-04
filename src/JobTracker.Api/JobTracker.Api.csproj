@@ -6,6 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- тексты ответов рядом с приложением: content/answers.html и, если есть на этой машине, content/private (не в git) -->
+    <None Include="..\..\content\**\*.html" LinkBase="content" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\JobTracker.Infrastructure\JobTracker.Infrastructure.csproj" />
   </ItemGroup>
 

@@ -1,4 +1,6 @@
 using JobTracker.Application.Abstractions;
+using JobTracker.Application.Content;
+using JobTracker.Infrastructure.Content;
 using JobTracker.Infrastructure.Persistence;
 using JobTracker.Infrastructure.VacancyChecking;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +19,8 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<JobTrackerDbContext>());
         services.AddScoped<IJobApplicationRepository, JobApplicationRepository>();
         services.AddScoped<DomainEventDispatcher>();
+        services.AddScoped<IContentRepository, ContentRepository>();
+        services.AddSingleton<IContentSource, FileContentSource>();
 
         services.AddSingleton<IVacancyCheckQueue, ChannelVacancyCheckQueue>();
         services.AddVacancyChecker<DouChecker>();
