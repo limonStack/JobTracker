@@ -13,6 +13,7 @@ public sealed partial class VacancyCheckService(
     IJobApplicationRepository repository,
     IUnitOfWork unitOfWork,
     VacancyCheckerResolver resolver,
+    VacancyCheckProgress progress,
     IOptions<VacancyCheckOptions> options,
     TimeProvider time,
     ILogger<VacancyCheckService> logger)
@@ -46,6 +47,7 @@ public sealed partial class VacancyCheckService(
             .Where(a => resolver.Resolve(a.Url!.ToUri()) is not null)   // сайты без проверяльщика не дёргаем
             .ToList();
         int closed = 0, failed = 0;
+        progress.Planned(candidates.Count);
 
         for (var i = 0; i < candidates.Count; i++)
         {
@@ -53,19 +55,24 @@ public sealed partial class VacancyCheckService(
                 await Task.Delay(options.Value.DelayBetweenRequests, time, ct);
 
             var application = candidates[i];
+            progress.Checking(application.Company);
             var result = await resolver.CheckAsync(application.Url!.ToUri(), ct);
             var wasInactive = application.VacancyStatus == VacancyStatus.Inactive;
-            application.RecordCheck(result.Status, time.GetUtcNow(), result.Error);
+            var now = time.GetUtcNow();
+            application.RecordCheck(result.Status, now, result.Error);
             await unitOfWork.SaveChangesAsync(ct);
+            progress.Checked(new VacancyCheckLogEntry(now, application.Id, application.Company, result.Status, result.Error));
 
             if (result.Status == VacancyStatus.CheckFailed)
             {
                 failed++;
                 LogCheckFailed(application.Company, result.Error);
             }
-            else if (!wasInactive && application.VacancyStatus == VacancyStatus.Inactive)
+            else
             {
-                closed++;
+                LogChecked(application.Company, result.Status);
+                if (!wasInactive && application.VacancyStatus == VacancyStatus.Inactive)
+                    closed++;
             }
         }
 
@@ -75,6 +82,9 @@ public sealed partial class VacancyCheckService(
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Не удалось проверить вакансию {Company}: {Error}")]
     private partial void LogCheckFailed(string company, string? error);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Вакансия {Company}: {Status}")]
+    private partial void LogChecked(string company, VacancyStatus status);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Проверка вакансий: проверено {Checked}, закрылось {Closed}, ошибок {Failed}")]
     private partial void LogCheckAllDone(int @checked, int closed, int failed);
