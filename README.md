@@ -3,8 +3,8 @@
 [![CI](https://github.com/limonStack/JobTracker/actions/workflows/ci.yml/badge.svg)](https://github.com/limonStack/JobTracker/actions/workflows/ci.yml)
 
 Трекер откликов на вакансии: воронка (отклик → HR → тех. собес → оффер), история событий по каждой компании
-и **автоматическая проверка — открыта ли ещё вакансия на сайте**. Сейчас поддерживается [DOU](https://jobs.dou.ua),
-архитектура рассчитана на добавление других сайтов.
+и **автоматическая проверка — открыта ли ещё вакансия на сайте**. Сейчас поддерживаются [DOU](https://jobs.dou.ua)
+и [Work.ua](https://www.work.ua), архитектура рассчитана на добавление других сайтов.
 
 ![Скриншот](docs/screenshot.png)
 
@@ -50,9 +50,10 @@ dotnet test
 
 ```jsonc
 "VacancyChecks": {
+  "ScheduleEnabled": false,           // проверять по таймеру (сейчас выключено — только «Проверить все»)
   "Interval": "1.00:00:00",          // как часто проверять все вакансии
   "DelayBetweenRequests": "00:00:02", // пауза между запросами к сайту
-  "CheckOnStartup": true              // проверить сразу при запуске
+  "CheckOnStartup": false             // проверить сразу при запуске
 }
 ```
 
@@ -65,7 +66,7 @@ src/
   JobTracker.Infrastructure  — EF Core/SQLite, проверка вакансий по HTTP, очередь
   JobTracker.Api             — Minimal API, фоновый воркер, фронтенд (wwwroot)
 tests/
-  JobTracker.UnitTests        — домен, DouChecker на сохранённых страницах
+  JobTracker.UnitTests        — домен, DouChecker и WorkUaChecker на сохранённых страницах
   JobTracker.IntegrationTests — API целиком через WebApplicationFactory
 ```
 
@@ -78,7 +79,8 @@ tests/
 кнопка «Проверить все» ┴─► Channel ─► VacancyCheckWorker ─► VacancyCheckService
                                         (BackgroundService)      │
                                                                  ▼
-                               VacancyCheckerResolver ─► DouChecker ─► jobs.dou.ua
+                               VacancyCheckerResolver ─► DouChecker    ─► jobs.dou.ua
+                                                       └► WorkUaChecker ─► www.work.ua
                                                                  │
                               JobApplication.RecordCheck ◄───────┘
                                      │ вакансия закрылась
@@ -90,6 +92,10 @@ tests/
 `__inactive`. `DouChecker` смотрит на оба признака. Если на странице нет ни того, ни другого (капча, новая
 разметка), результат — «не удалось проверить», а не «открыта».
 
+Work.ua закрытые вакансии не помечает, а убирает: недавно снятая отдаёт 301 на поиск с `?job_removed=1`,
+давняя — 410 «вакансію не знайдено». `WorkUaChecker` решает по ответу ещё до разбора HTML
+(хук `AnalyzeResponse` в `HtmlVacancyChecker`), а открытой считает страницу с `h1#h1-name`.
+
 ### Паттерны и решения
 
 | Что | Где | Зачем |
@@ -97,7 +103,7 @@ tests/
 | Rich Domain Model, Aggregate | `JobApplication` | правила воронки внутри сущности: этап меняется только через `MoveTo` |
 | Value Object | `VacancyUrl` | ссылка всегда валидная и нормализованная |
 | Domain Events / Observer | `VacancyClosedEvent`, `IDomainEventHandler<T>` | реакции на закрытие добавляются без изменения проверки |
-| Strategy | `IVacancyChecker` → `DouChecker` | своя проверка для каждого сайта |
+| Strategy | `IVacancyChecker` → `DouChecker`, `WorkUaChecker` | своя проверка для каждого сайта |
 | Template Method | `HtmlVacancyChecker` | общий скелет «загрузить → разобрать → решить» |
 | Open/Closed | `VacancyCheckerResolver` | новый сайт = новый класс + строка регистрации |
 | Result pattern | `VacancyCheckResult` | сбой сети — ожидаемый исход, а не исключение |
@@ -117,6 +123,6 @@ tests/
 
 ## Планы
 
-- Проверка вакансий на Djinni и Work.ua
+- Проверка вакансий на Djinni
 - Уведомление в Telegram о закрытии вакансии (ещё один подписчик `VacancyClosedEvent`)
 - Запуск как Windows Service

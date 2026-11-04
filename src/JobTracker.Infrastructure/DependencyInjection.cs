@@ -20,6 +20,7 @@ public static class DependencyInjection
 
         services.AddSingleton<IVacancyCheckQueue, ChannelVacancyCheckQueue>();
         services.AddVacancyChecker<DouChecker>();
+        services.AddVacancyChecker<WorkUaChecker>();
 
         return services;
     }
@@ -33,6 +34,12 @@ public static class DependencyInjection
                 // без браузерного User-Agent сайты за Cloudflare чаще отвечают 403
                 client.DefaultRequestHeaders.UserAgent.ParseAdd(BrowserUserAgent);
                 client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("uk,ru;q=0.9,en;q=0.8");
+                client.DefaultRequestHeaders.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+                // Work.ua (Cloudflare) без Sec-Fetch-* отвечает 403 даже с браузерным User-Agent.
+                // Этого мало: HttpClient Cloudflare всё равно отсекает по TLS-отпечатку (curl с теми же заголовками проходит)
+                client.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "document");
+                client.DefaultRequestHeaders.Add("Sec-Fetch-Mode", "navigate");
+                client.DefaultRequestHeaders.Add("Sec-Fetch-Site", "none");
             })
             // Polly в цепочке DelegatingHandler-ов: повтор при сбое сети, 5xx, 408 и 429, таймаут на попытку и на всё.
             // 404 не повторяется — это ответ, а не сбой
