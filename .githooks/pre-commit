@@ -1,0 +1,39 @@
+#!/bin/sh
+# Защита публичного репозитория: не даёт закоммитить личные данные и секреты.
+# Подключение (один раз после клона): git config core.hooksPath .githooks
+# Обойти в крайнем случае: git commit --no-verify — но сначала убедитесь, что это не секрет.
+
+fail=0
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+
+# 1. Файлы, которым не место в репозитории, даже если их добавили через git add -f
+for f in $staged; do
+  case "$f" in
+    content/private/*|backups/*|*.db|*.db-shm|*.db-wal|.env|.env.*|*.local.json|secrets.json|*.pfx|*.p12|*.pem|*.key)
+      echo "pre-commit: файл не должен попасть в публичный репозиторий: $f"
+      fail=1 ;;
+  esac
+done
+
+# 2. Похожее на секрет в добавленных строках: ключи API, токены, пароли в строках подключения
+#    Ключи и токены ищем везде; «Password=» — кроме учебных текстов content/, где это намеренные примеры
+tokens='-----BEGIN [A-Z ]*PRIVATE KEY-----|sk-ant-[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{32,}|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|AKIA[0-9A-Z]{16}|AccountKey=[A-Za-z0-9+/=]{20,}|SharedAccessKey=[A-Za-z0-9+/=]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_-]{35}'
+passwords='(Password|Pwd)=[^;"[:space:]]{3,}'
+added() { git diff --cached -U0 --diff-filter=ACMR -- "$@" | grep '^+' | grep -v '^+++'; }
+hits=$( (added . ':(exclude).githooks/pre-commit' | grep -E -n -e "$tokens"
+         added . ':(exclude).githooks/pre-commit' ':(exclude)content/' | grep -E -n -e "$passwords") )
+if [ -n "$hits" ]; then
+  echo "pre-commit: в изменениях похоже на секрет:"
+  echo "$hits" | cut -c1-160
+  fail=1
+fi
+
+# 3. gitleaks, если установлен, — проверка шире наших шаблонов
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks git --staged --no-banner --redact || fail=1
+fi
+
+if [ "$fail" -ne 0 ]; then
+  echo "pre-commit: коммит остановлен. Секреты — в user-secrets или переменные окружения (см. README, «Секреты»)."
+  exit 1
+fi
