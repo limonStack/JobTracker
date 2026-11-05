@@ -1,54 +1,27 @@
-// Данные пользователя для базы знаний: загружаются из API, изменения уходят обратно на сервер.
+// Данные пользователя для базы знаний. Читаются из локального снимка (sync.js), поэтому страница
+// работает без сервера; изменения применяются к снимку и уходят в очередь на сервер.
 // Старый код (knowledge.js) работает с данными в прежнем формате localStorage — здесь он переводится
-// в запросы API. Списки (идеи, выделения, отметки) сравниваются с последним сохранённым состоянием,
-// и на сервер уходит только разница. Запросы идут по очереди: правка только что созданной идеи
-// дождётся, пока сервер выдаст ей id.
+// в формат API. Списки (идеи, выделения, отметки) сравниваются с последним сохранённым состоянием,
+// и в очередь попадает только разница. Новые записи сразу получают настоящий id (UUID v7 из браузера).
+import { uuidv7 } from './sync.js';
 
-export async function api(method, url, body) {
-  const r = await fetch(url, {
-    method,
-    headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  if (!r.ok) {
-    let text = `${r.status} ${r.statusText}`;
-    try { const p = await r.json(); text = p.detail || p.title || text; } catch { /* не JSON */ }
-    throw new Error(text);
-  }
-  return r.status === 204 ? null : r.json();
-}
-
-// сбой сохранения не должен пройти незаметно: данные теперь на сервере, а не в браузере
-function showError(message) {
-  let box = document.getElementById('sync-error');
-  if (!box) {
-    box = document.createElement('div');
-    box.id = 'sync-error';
-    box.className = 'sync-error';
-    box.addEventListener('click', () => box.remove());
-    document.body.append(box);
-  }
-  box.textContent = `⚠ Не сохранилось: ${message}. Обновите страницу (клик — скрыть)`;
-}
-
-let queue = Promise.resolve();
-const enqueue = job => (queue = queue.then(job).catch(err => showError(err.message)));
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
 const ideaFrom = x => ({ id: x.id, d: x.createdOn, t: x.title, n: x.note, p: x.project, q: x.question, s: x.status, done: x.doneOn || '' });
+const ideaTo = x => ({ id: x.id, title: x.t, note: x.n, project: x.p, question: x.q, status: x.s, createdOn: x.d, doneOn: x.done || null });
 const ideaKey = x => JSON.stringify([x.t, x.n, x.p, x.q]);
 const hlFrom = h => ({ id: h.id, sec: h.section, text: h.text, prefix: h.prefix, suffix: h.suffix, start: h.start, end: h.start + h.text.length, color: h.color });
 const hlBody = h => ({ section: h.sec, text: h.text, prefix: h.prefix, suffix: h.suffix, start: h.start, color: h.color });
 const hlKey = h => JSON.stringify(hlBody(h));
+const enc = encodeURIComponent;
 
-export async function loadStore() {
-  const [study, ideaList, highlightList] = await Promise.all([
-    api('GET', '/api/study'), api('GET', '/api/ideas'), api('GET', '/api/highlights'),
-  ]);
-
-  const settings = { ...study.settings };
+export function loadStore(sync) {
+  const snap = sync.state;
+  const study = snap.study;
+  const settings = study.settings;
   // «сегодня» сервер считает по часовому поясу пользователя — сообщаем ему пояс браузера
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  if (zone && settings.timeZone !== zone) { settings.timeZone = zone; enqueue(() => api('PUT', '/api/settings', settings)); }
+  if (zone && settings.timeZone !== zone) { settings.timeZone = zone; sync.enqueue('PUT', '/api/settings', { ...settings }, 'настройки'); }
 
   // ---- отметки «изучено»: Set + { код: день }, как в старом сайте ----
   const done = new Set(study.marks.map(m => m.code));
@@ -60,76 +33,79 @@ export async function loadStore() {
   for (const a of study.activities) activities[a.kind]?.add(a.day);
   const review = {};
   for (const r of study.reviews) (review[r.day] ||= []).push(r.code);
+  const saveActivities = () => {
+    sync.state.study.activities = Object.entries(activities).flatMap(([kind, days]) => [...days].map(day => ({ kind, day })));
+  };
+  const saveReviews = () => {
+    sync.state.study.reviews = Object.entries(review).flatMap(([day, codes]) => codes.map(code => ({ day, code })));
+  };
 
-  // ---- идеи и выделения: временный id новой записи → id на сервере ----
-  const serverId = new Map();
-  const idOf = id => serverId.get(id) || id;
-  const ideas = ideaList.map(ideaFrom);
+  // ---- идеи и выделения ----
+  const ideas = snap.ideas.map(ideaFrom);
   let savedIdeas = new Map(ideas.map(x => [x.id, { key: ideaKey(x), s: x.s }]));
-  const highlights = highlightList.map(hlFrom);
+  const highlights = snap.highlights.map(hlFrom);
   let savedHighlights = new Map(highlights.map(h => [h.id, hlKey(h)]));
 
   return {
     study, settings, done, doneAt, review, ideas, highlights,
-
+    newId: uuidv7,
     activityDays: kind => activities[kind],
 
     syncMarks(currentDone, currentAt) {
       const next = new Map([...currentDone].map(c => [c, currentAt[c] || null]));
+      sync.state.study.marks = [...next].map(([code, day]) => ({ code, day }));
+      // день отметки отправляем явно: офлайн-отметка за вторник уйдёт на сервер в среду, но останется вторником
       for (const [code, day] of next)
         if (!savedMarks.has(code) || savedMarks.get(code) !== day)
-          enqueue(() => api('PUT', `/api/study/marks/${encodeURIComponent(code)}`, { day }));
+          sync.enqueue('PUT', `/api/study/marks/${enc(code)}`, { day: day ?? today() }, `изучено ${code}`);
       for (const code of savedMarks.keys())
-        if (!next.has(code)) enqueue(() => api('DELETE', `/api/study/marks/${encodeURIComponent(code)}`));
+        if (!next.has(code)) sync.enqueue('DELETE', `/api/study/marks/${enc(code)}`, undefined, `снять «изучено» ${code}`);
       savedMarks = next;
     },
 
-    setActivity: (kind, day, on) => enqueue(() => api(on ? 'PUT' : 'DELETE', `/api/study/activities/${kind}/${day}`)),
+    setActivity(kind, day, on) {
+      saveActivities();
+      sync.enqueue(on ? 'PUT' : 'DELETE', `/api/study/activities/${kind}/${day}`, undefined, `${kind === 'ai' ? 'ИИ' : 'тренировка'} ${day}`);
+    },
 
-    setReviewed: (day, code, on) => enqueue(() => api(on ? 'PUT' : 'DELETE', `/api/study/reviews/${day}/${encodeURIComponent(code)}`)),
+    setReviewed(day, code, on) {
+      saveReviews();
+      sync.enqueue(on ? 'PUT' : 'DELETE', `/api/study/reviews/${day}/${enc(code)}`, undefined, `повторение ${code}`);
+    },
 
     saveSettings(patch) {
       Object.assign(settings, patch);
-      const body = { ...settings };
-      enqueue(() => api('PUT', '/api/settings', body));
+      sync.enqueue('PUT', '/api/settings', { ...settings }, 'настройки');
     },
 
     syncIdeas(current) {
+      sync.state.ideas = current.map(ideaTo);
       const next = new Map();
       for (const x of current) {
-        const key = ideaKey(x), was = savedIdeas.get(x.id), id = x.id;
-        // тело — на момент изменения: запрос выполнится позже, а объект к тому времени могут поправить снова
-        const fields = { title: x.t, note: x.n, project: x.p, question: x.q }, status = x.s;
-        next.set(id, { key, s: status });
-        if (!was) {
-          enqueue(async () => {
-            const created = await api('POST', '/api/ideas', { title: fields.title });
-            serverId.set(id, created.id);
-            if (fields.note || fields.project || fields.question) await api('PUT', `/api/ideas/${created.id}`, fields);
-            if (status !== 'new') await api('PUT', `/api/ideas/${created.id}/status`, { status });
-          });
-          continue;
-        }
-        if (was.key !== key) enqueue(() => api('PUT', `/api/ideas/${idOf(id)}`, fields));
-        if (was.s !== status) enqueue(() => api('PUT', `/api/ideas/${idOf(id)}/status`, { status }));
+        const key = ideaKey(x), was = savedIdeas.get(x.id);
+        next.set(x.id, { key, s: x.s });
+        // PUT создаёт идею с этим id или обновляет; день записи — как в браузере
+        if (!was || was.key !== key)
+          sync.enqueue('PUT', `/api/ideas/${x.id}`, { title: x.t, note: x.n, project: x.p, question: x.q, createdOn: x.d }, `идея «${x.t}»`);
+        if ((was?.s ?? 'new') !== x.s)
+          sync.enqueue('PUT', `/api/ideas/${x.id}/status`, { status: x.s, day: x.done || today() }, `статус идеи «${x.t}»`);
       }
       for (const id of savedIdeas.keys())
-        if (!next.has(id)) enqueue(() => api('DELETE', `/api/ideas/${idOf(id)}`));
+        if (!next.has(id)) sync.enqueue('DELETE', `/api/ideas/${id}`, undefined, 'удалить идею');
       savedIdeas = next;
     },
 
     syncHighlights(current) {
+      sync.state.highlights = current.map(h => ({ id: h.id, ...hlBody(h) }));
       const next = new Map();
       for (const h of current) {
-        const key = hlKey(h), was = savedHighlights.get(h.id), id = h.id, body = hlBody(h);
-        next.set(id, key);
-        if (was === undefined)
-          enqueue(async () => serverId.set(id, (await api('POST', '/api/highlights', body)).id));
-        else if (was !== key)
-          enqueue(() => api('PUT', `/api/highlights/${idOf(id)}`, body));
+        const key = hlKey(h);
+        next.set(h.id, key);
+        if (savedHighlights.get(h.id) !== key)
+          sync.enqueue('PUT', `/api/highlights/${h.id}`, hlBody(h), 'выделение');
       }
       for (const id of savedHighlights.keys())
-        if (!next.has(id)) enqueue(() => api('DELETE', `/api/highlights/${idOf(id)}`));
+        if (!next.has(id)) sync.enqueue('DELETE', `/api/highlights/${id}`, undefined, 'снять выделение');
       savedHighlights = next;
     },
   };

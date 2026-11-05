@@ -23,21 +23,38 @@ public sealed class JobApplicationService(IJobApplicationRepository repository, 
         return JobApplicationDto.From(application);
     }
 
-    public Task<JobApplicationDto?> UpdateAsync(Guid id, SaveApplicationRequest request, CancellationToken ct) =>
-        ModifyAsync(id, a => a.UpdateDetails(request.Company, request.AppliedOn, request.Url, request.Note), ct);
-
-    // событие о смене этапа датируется днём пользователя, а не сервера
-    public async Task<JobApplicationDto?> ChangeStageAsync(Guid id, Stage stage, CancellationToken ct)
+    /// <summary>
+    /// Создать с id от клиента или обновить. Идемпотентно: офлайн-очередь может отправить тот же запрос
+    /// повторно после обрыва связи — дубля не будет.
+    /// </summary>
+    public async Task<JobApplicationDto> UpsertAsync(Guid id, SaveApplicationRequest request, CancellationToken ct)
     {
-        var today = await clock.TodayAsync(ct);
-        return await ModifyAsync(id, a => a.MoveTo(stage, today), ct);
+        if (await repository.GetAsync(id, ct) is { } existing)
+        {
+            existing.UpdateDetails(request.Company, request.AppliedOn, request.Url, request.Note);
+            await unitOfWork.SaveChangesAsync(ct);
+            return JobApplicationDto.From(existing);
+        }
+
+        var application = JobApplication.Create(request.Company, request.AppliedOn, request.Url, request.Note, id: id);
+        repository.Add(application);
+        await unitOfWork.SaveChangesAsync(ct);
+        return JobApplicationDto.From(application);
     }
 
-    public Task<JobApplicationDto?> AddEventAsync(Guid id, AddEventRequest request, CancellationToken ct) =>
-        ModifyAsync(id, a => a.AddEvent(request.Date, request.Text), ct);
+    /// <summary>Событие о смене этапа датируется днём пользователя: переданным клиентом или сегодняшним.</summary>
+    public async Task<JobApplicationDto?> ChangeStageAsync(Guid id, Stage stage, DateOnly? day, CancellationToken ct)
+    {
+        var date = day ?? await clock.TodayAsync(ct);
+        return await ModifyAsync(id, a => a.MoveTo(stage, date), ct);
+    }
 
+    public Task<JobApplicationDto?> AddEventAsync(Guid id, AddEventRequest request, CancellationToken ct, Guid? eventId = null) =>
+        ModifyAsync(id, a => a.AddEvent(request.Date, request.Text, eventId), ct);
+
+    // уже удалённое событие — не ошибка: повтор удаления из офлайн-очереди
     public Task<JobApplicationDto?> RemoveEventAsync(Guid id, Guid eventId, CancellationToken ct) =>
-        ModifyAsync(id, a => a.RemoveEvent(eventId), ct);
+        ModifyAsync(id, a => { if (a.Events.Any(e => e.Id == eventId)) a.RemoveEvent(eventId); }, ct);
 
     public async Task<bool> DeleteAsync(Guid id, CancellationToken ct)
     {

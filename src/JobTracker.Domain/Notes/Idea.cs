@@ -38,9 +38,9 @@ public sealed class Idea : Entity, IUserOwned
 
     private Idea() { } // для EF Core
 
-    public static Idea Create(string title, DateOnly createdOn, string? legacyId = null)
+    public static Idea Create(string title, DateOnly createdOn, string? legacyId = null, Guid? id = null)
     {
-        var idea = new Idea { CreatedOn = createdOn, LegacyId = legacyId };
+        var idea = new Idea { CreatedOn = createdOn, LegacyId = legacyId, Id = id ?? Guid.CreateVersion7() };
         idea.Update(title, "", "", "");
         return idea;
     }

@@ -36,10 +36,11 @@ public sealed class JobApplication : Entity, IUserOwned
 
     private JobApplication() { } // для EF Core
 
+    /// <param name="id">Id, выданный клиентом (офлайн-режим: запись создаётся в браузере и уходит на сервер позже).</param>
     public static JobApplication Create(string company, DateOnly appliedOn, string? url = null, string? note = null,
-        string? legacyId = null)
+        string? legacyId = null, Guid? id = null)
     {
-        var application = new JobApplication { LegacyId = legacyId };
+        var application = new JobApplication { LegacyId = legacyId, Id = id ?? Guid.CreateVersion7() };
         application.UpdateDetails(company, appliedOn, url, note);
         return application;
     }
@@ -79,12 +80,18 @@ public sealed class JobApplication : Entity, IUserOwned
         AddEvent(today, stage.Label().ToLowerInvariant());
     }
 
-    public ApplicationEvent AddEvent(DateOnly date, string text)
+    /// <summary>
+    /// Добавляет событие. С id от клиента — идемпотентно: событие с таким id уже есть — возвращается оно,
+    /// так повторная отправка из офлайн-очереди не создаёт дубль.
+    /// </summary>
+    public ApplicationEvent AddEvent(DateOnly date, string text, Guid? id = null)
     {
+        if (id is { } given && _events.Find(e => e.Id == given) is { } existing)
+            return existing;
         if (string.IsNullOrWhiteSpace(text))
             throw new DomainException("Пустое событие.");
 
-        var applicationEvent = new ApplicationEvent(date, text.Trim());
+        var applicationEvent = new ApplicationEvent(date, text.Trim(), id);
         // вставка с сохранением порядка по дате: новое событие встаёт после событий того же дня
         var index = _events.FindLastIndex(e => e.Date <= date) + 1;
         _events.Insert(index, applicationEvent);

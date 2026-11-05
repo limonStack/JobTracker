@@ -22,14 +22,18 @@ internal static class ApplicationEndpoints
             return Results.Created($"/api/applications/{created.Id}", created);
         });
 
+        // PUT с id от клиента — создать или обновить: офлайн-очередь может повторить запрос без дублей
         group.MapPut("/{id:guid}", async (Guid id, SaveApplicationRequest request, JobApplicationService service,
-            CancellationToken ct) => OkOrNotFound(await service.UpdateAsync(id, request, ct)));
+            CancellationToken ct) => Results.Ok(await service.UpsertAsync(id, request, ct)));
 
         group.MapPut("/{id:guid}/stage", async (Guid id, ChangeStageRequest request, JobApplicationService service,
-            CancellationToken ct) => OkOrNotFound(await service.ChangeStageAsync(id, request.Stage, ct)));
+            CancellationToken ct) => OkOrNotFound(await service.ChangeStageAsync(id, request.Stage, request.Day, ct)));
 
         group.MapPost("/{id:guid}/events", async (Guid id, AddEventRequest request, JobApplicationService service,
             CancellationToken ct) => OkOrNotFound(await service.AddEventAsync(id, request, ct)));
+
+        group.MapPut("/{id:guid}/events/{eventId:guid}", async (Guid id, Guid eventId, AddEventRequest request,
+            JobApplicationService service, CancellationToken ct) => OkOrNotFound(await service.AddEventAsync(id, request, ct, eventId)));
 
         group.MapDelete("/{id:guid}/events/{eventId:guid}", async (Guid id, Guid eventId, JobApplicationService service,
             CancellationToken ct) => OkOrNotFound(await service.RemoveEventAsync(id, eventId, ct)));

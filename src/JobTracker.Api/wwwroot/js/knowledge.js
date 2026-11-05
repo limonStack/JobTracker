@@ -922,7 +922,7 @@ export function startKnowledge(store) {
     e.preventDefault();
     const t = (new FormData(e.target).get('t') || '').toString().trim();
     if (!t) return;
-    ideas.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), d: dayKey(), t, n: '', p: '', q: '', s: 'new', done: '' });
+    ideas.push({ id: store.newId(), d: dayKey(), t, n: '', p: '', q: '', s: 'new', done: '' });
     saveIdeas(); renderIdeas();
     ideasPanel.querySelector('.idea-add input').focus();
   });
@@ -1116,7 +1116,7 @@ export function startKnowledge(store) {
       const overlap = hlOverlap(key, start, end);
       for (const x of overlap) { start = Math.min(start, x.start); end = Math.max(end, x.end); }
       hlList = hlList.filter(x => !overlap.includes(x));
-      if (!b.dataset.del) hlList.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), sec: key, color: b.dataset.color,
+      if (!b.dataset.del) hlList.push({ id: store.newId(), sec: key, color: b.dataset.color,
                     text: text.slice(start, end), prefix: text.slice(Math.max(0, start - 30), start), suffix: text.slice(end, end + 30),
                     start, end, at: dayKey() });
       hlSave();

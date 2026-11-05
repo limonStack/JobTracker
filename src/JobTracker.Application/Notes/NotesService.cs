@@ -13,9 +13,11 @@ public sealed record IdeaDto(Guid Id, string Title, string Note, string Project,
 
 public sealed record CreateIdeaRequest(string Title);
 
-public sealed record UpdateIdeaRequest(string Title, string? Note, string? Project, string? Question);
+/// <summary>CreatedOn — только при создании: день, когда идею записали (может быть офлайн, раньше отправки).</summary>
+public sealed record UpdateIdeaRequest(string Title, string? Note, string? Project, string? Question, DateOnly? CreatedOn = null);
 
-public sealed record ChangeIdeaStatusRequest(IdeaStatus Status);
+/// <summary>Day — когда сменили статус; для «применил» это дата применения.</summary>
+public sealed record ChangeIdeaStatusRequest(IdeaStatus Status, DateOnly? Day = null);
 
 public sealed record HighlightDto(Guid Id, string Section, string Text, string Prefix, string Suffix, int Start, HighlightColor Color)
 {
@@ -45,11 +47,23 @@ public sealed class NotesService(INotesRepository repository, IUnitOfWork unitOf
         return IdeaDto.From(idea);
     }
 
-    public Task<IdeaDto?> UpdateIdeaAsync(Guid id, UpdateIdeaRequest request, CancellationToken ct) =>
-        ModifyIdeaAsync(id, (x, _) => x.Update(request.Title, request.Note, request.Project, request.Question), ct);
+    /// <summary>Создать с id от клиента или обновить — идемпотентно, для офлайн-очереди.</summary>
+    public async Task<IdeaDto> UpsertIdeaAsync(Guid id, UpdateIdeaRequest request, CancellationToken ct)
+    {
+        var idea = await repository.GetIdeaAsync(id, ct);
+        if (idea is null)
+        {
+            idea = Idea.Create(request.Title, request.CreatedOn ?? await clock.TodayAsync(ct), id: id);
+            repository.Add(idea);
+        }
 
-    public Task<IdeaDto?> ChangeIdeaStatusAsync(Guid id, IdeaStatus status, CancellationToken ct) =>
-        ModifyIdeaAsync(id, (x, today) => x.SetStatus(status, today), ct);
+        idea.Update(request.Title, request.Note, request.Project, request.Question);
+        await unitOfWork.SaveChangesAsync(ct);
+        return IdeaDto.From(idea);
+    }
+
+    public Task<IdeaDto?> ChangeIdeaStatusAsync(Guid id, IdeaStatus status, DateOnly? day, CancellationToken ct) =>
+        ModifyIdeaAsync(id, (x, today) => x.SetStatus(status, day ?? today), ct);
 
     public async Task<bool> DeleteIdeaAsync(Guid id, CancellationToken ct)
     {
@@ -98,12 +112,22 @@ public sealed class NotesService(INotesRepository repository, IUnitOfWork unitOf
         return HighlightDto.From(highlight);
     }
 
-    /// <summary>Смена цвета или слияние с новым выделением; раздел не меняется.</summary>
-    public async Task<HighlightDto?> UpdateHighlightAsync(Guid id, SaveHighlightRequest r, CancellationToken ct)
+    /// <summary>
+    /// Создать с id от клиента или обновить (смена цвета, слияние с новым выделением; раздел не меняется).
+    /// Идемпотентно — для офлайн-очереди.
+    /// </summary>
+    public async Task<HighlightDto> UpsertHighlightAsync(Guid id, SaveHighlightRequest r, CancellationToken ct)
     {
-        if (await repository.GetHighlightAsync(id, ct) is not { } highlight)
-            return null;
-        highlight.Update(r.Text, r.Prefix, r.Suffix, r.Start, r.Color);
+        if (await repository.GetHighlightAsync(id, ct) is { } highlight)
+        {
+            highlight.Update(r.Text, r.Prefix, r.Suffix, r.Start, r.Color);
+        }
+        else
+        {
+            highlight = Highlight.Create(r.Section, r.Text, r.Prefix, r.Suffix, r.Start, r.Color, id: id);
+            repository.Add(highlight);
+        }
+
         await unitOfWork.SaveChangesAsync(ct);
         return HighlightDto.From(highlight);
     }

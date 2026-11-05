@@ -37,12 +37,12 @@ public sealed class Highlight : Entity, IUserOwned
     private Highlight() { } // для EF Core
 
     public static Highlight Create(string section, string text, string? prefix, string? suffix, int start, HighlightColor color,
-        string? legacyId = null)
+        string? legacyId = null, Guid? id = null)
     {
         if (string.IsNullOrWhiteSpace(section))
             throw new DomainException("Не указан раздел выделения.");
 
-        var highlight = new Highlight { Section = section.Trim(), LegacyId = legacyId };
+        var highlight = new Highlight { Section = section.Trim(), LegacyId = legacyId, Id = id ?? Guid.CreateVersion7() };
         highlight.Update(text, prefix, suffix, start, color);
         return highlight;
     }
