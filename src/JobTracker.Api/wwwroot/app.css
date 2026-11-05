@@ -5,7 +5,7 @@
 /* текущий вопрос в меню — куда привела ссылка или «назад»/«вперёд» */
 #side li.current > a{color:var(--accent);font-weight:600}
 
-/* мотивационная фраза под прогрессом (меняется сама при открытии и раз в 5 минут): тихо, без анимации; внутри #progress — в режиме собеседования скрыта вместе с ним */
+/* мотивационная фраза под прогрессом (меняется при каждом открытии страницы): тихо, без анимации; внутри #progress — в режиме собеседования скрыта вместе с ним */
 .daily-note{margin:8px 0 0;padding-left:8px;border-left:2px solid var(--line);font-size:11.5px;font-style:italic;line-height:1.4;color:var(--muted)}
 .daily-note:empty{display:none}
 

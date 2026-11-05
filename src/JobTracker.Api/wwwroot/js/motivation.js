@@ -1,5 +1,5 @@
-// Короткая мотивационная фраза под прогрессом изучения. Меняется сама: при каждом открытии страницы
-// и раз в 5 минут; фразы идут по кругу, поэтому не повторяются, пока список не пройден целиком.
+// Короткая мотивационная фраза под прогрессом изучения. Меняется сама при каждом открытии
+// и обновлении страницы; фразы идут по кругу, поэтому не повторяются, пока список не пройден целиком.
 // Тихая — мелкий серый текст без анимации; в режиме собеседования скрыта вместе с прогрессом.
 
 export const PHRASES = [
@@ -75,10 +75,8 @@ const KEY = 'kb-338-note';
 const readLast = () => { try { return parseInt(localStorage.getItem(KEY), 10); } catch { return NaN; } };
 const saveLast = i => { try { localStorage.setItem(KEY, String(i)); } catch { } };
 
-export const EVERY_MS = 5 * 60_000;
-
-/** Новая фраза при каждом открытии страницы и сама раз в 5 минут — только пока вкладка на виду. */
-export function startDailyNote(el, every = EVERY_MS) {
+/** Новая фраза при каждом открытии и обновлении страницы; во время чтения не меняется. */
+export function startDailyNote(el) {
   let i = readLast();
   const show = () => {
     i = nextIndex(i);
@@ -86,5 +84,4 @@ export function startDailyNote(el, every = EVERY_MS) {
     el.textContent = PHRASES[i];
   };
   show();
-  setInterval(() => { if (!document.hidden) show(); }, every);
 }
