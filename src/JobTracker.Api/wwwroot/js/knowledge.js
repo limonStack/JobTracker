@@ -1145,13 +1145,26 @@ export function startKnowledge(store) {
     const a = e.target.closest('a[href^="#"]');
     if (a) revealAnswer(decodeURIComponent(a.getAttribute('href').slice(1)));   // до перехода — браузер прокрутит к уже видимому
   }, true);
+  // меню следует за переходами — по ссылке, кнопками «назад»/«вперёд» (в том числе на мышке) и при открытии
+  // по ссылке: раскрыт раздел текущего места, текущий вопрос подсвечен и виден в меню.
+  // Во время поиска меню показывает результаты — его не трогаем.
+  function syncMenu(id) {
+    const it = items.find(x => x.id === id);
+    const d = it ? it.d : groups.find(g => g.querySelector('summary a')?.getAttribute('href') === '#' + id);
+    items.forEach(x => x.li.classList.toggle('current', x === it));
+    if (!d || side.classList.contains('searching')) return;
+    if (!d.open) d.open = true;                      // аккордеон сам свернёт остальные разделы
+    (it ? it.li : d.querySelector('summary')).scrollIntoView({ block: 'nearest' });
+  }
   addEventListener('hashchange', () => {
     const id = decodeURIComponent(location.hash.slice(1)), el = document.getElementById(id);
     if (el?.closest('.flt-out')) { revealAnswer(id); el.scrollIntoView({ block: 'start' }); }
+    syncMenu(id);
   });
 
   renderProgress();
   apply();
   revealAnswer(decodeURIComponent(location.hash.slice(1)));
+  if (location.hash) syncMenu(decodeURIComponent(location.hash.slice(1)));
   setTimeout(() => input.focus({ preventScroll: true }), 0);   // вкладка сразу готова к вводу
 }
