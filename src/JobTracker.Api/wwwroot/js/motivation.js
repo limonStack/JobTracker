@@ -1,7 +1,6 @@
-// Короткая мысль дня под прогрессом изучения: одна фраза на день, меняется сама в полночь.
+// Короткая мотивационная фраза под прогрессом изучения. Меняется сама: при каждом открытии страницы
+// и раз в 5 минут; фразы идут по кругу, поэтому не повторяются, пока список не пройден целиком.
 // Тихая — мелкий серый текст без анимации; в режиме собеседования скрыта вместе с прогрессом.
-// Выбор зависит только от даты: в один день — одна и та же фраза (и после перезагрузки, и офлайн),
-// дни подряд идут по списку, поэтому фраза не повторяется, пока список не пройден целиком.
 
 export const PHRASES = [
   'Одна тема, понятая до конца, полезнее пяти пролистанных.',
@@ -66,26 +65,26 @@ export const PHRASES = [
   'Через месяц ты будешь рад, что занимался сегодня.',
 ];
 
-// номер дня по местной дате «ГГГГ-ММ-ДД»: соседние даты — соседние номера, без влияния часового пояса и перевода часов
-const dayNumber = key => Math.floor(Date.UTC(+key.slice(0, 4), +key.slice(5, 7) - 1, +key.slice(8, 10)) / 86_400_000);
-
-/** Фраза для дня (ключ «ГГГГ-ММ-ДД» по местному времени). */
-export function phraseFor(key, list = PHRASES) {
-  const n = list.length;
-  return list[((dayNumber(key) % n) + n) % n];
+/** Номер следующей фразы: по кругу за прошлой; в первый раз — случайный. */
+export function nextIndex(last, n = PHRASES.length, random = Math.random) {
+  return Number.isInteger(last) && last >= 0 ? (last + 1) % n : Math.floor(random() * n);
 }
 
-/** Показывает фразу дня в элементе и обновляет её, когда наступил новый день (вкладка открыта с вечера). */
-export function startDailyNote(el, dayKey) {
-  let shown = '';
-  const update = () => {
-    const key = dayKey();
-    if (key === shown) return;
-    shown = key;
-    el.textContent = phraseFor(key);
+// какая фраза была показана последней — удобство этого браузера, не данные пользователя: в базу не идёт
+const KEY = 'kb-338-note';
+const readLast = () => { try { return parseInt(localStorage.getItem(KEY), 10); } catch { return NaN; } };
+const saveLast = i => { try { localStorage.setItem(KEY, String(i)); } catch { } };
+
+export const EVERY_MS = 5 * 60_000;
+
+/** Новая фраза при каждом открытии страницы и сама раз в 5 минут — только пока вкладка на виду. */
+export function startDailyNote(el, every = EVERY_MS) {
+  let i = readLast();
+  const show = () => {
+    i = nextIndex(i);
+    saveLast(i);
+    el.textContent = PHRASES[i];
   };
-  update();
-  addEventListener('focus', update);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) update(); });
-  setInterval(update, 60_000);
+  show();
+  setInterval(() => { if (!document.hidden) show(); }, every);
 }

@@ -1,25 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { PHRASES, phraseFor } from '../../src/JobTracker.Api/wwwroot/js/motivation.js';
+import { PHRASES, nextIndex } from '../../src/JobTracker.Api/wwwroot/js/motivation.js';
 
-test('в один день — одна и та же фраза', () => {
-  assert.equal(phraseFor('2026-11-05'), phraseFor('2026-11-05'));
+test('первый показ — случайная фраза из списка', () => {
+  assert.equal(nextIndex(NaN, 10, () => 0.55), 5);
+  assert.equal(nextIndex(undefined, 10, () => 0.999), 9);
 });
 
-test('дни подряд не повторяются, пока список не пройден целиком', () => {
+test('дальше — следующая по кругу: повторов нет, пока список не пройден целиком', () => {
   const seen = new Set();
-  const d = new Date(Date.UTC(2026, 0, 1));
-  for (let i = 0; i < PHRASES.length; i++) {
-    seen.add(phraseFor(d.toISOString().slice(0, 10)));
-    d.setUTCDate(d.getUTCDate() + 1);
-  }
+  let i = nextIndex(NaN);
+  for (let k = 0; k < PHRASES.length; k++) { seen.add(PHRASES[i]); i = nextIndex(i); }
   assert.equal(seen.size, PHRASES.length);
-});
-
-test('переход через месяц и год — следующая фраза по списку', () => {
-  const i = key => PHRASES.indexOf(phraseFor(key));
-  assert.equal((i('2026-12-31') + 1) % PHRASES.length, i('2027-01-01'));
-  assert.equal((i('2027-02-28') + 1) % PHRASES.length, i('2027-03-01'));
+  assert.equal(nextIndex(PHRASES.length - 1), 0);
 });
 
 test('фразы короткие и без повторов', () => {
