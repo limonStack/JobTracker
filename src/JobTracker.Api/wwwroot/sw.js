@@ -1,12 +1,12 @@
 // Service worker: оболочка страницы (HTML, CSS, JS, значки) открывается и без сервера.
 // Стратегия — «сначала сеть»: сервер доступен — всегда свежие файлы (без старого кэша после правок),
 // недоступен — копия из кэша. Запросы /api/* не трогаем: данные и очередь изменений ведёт sync.js.
-const CACHE = 'kb-339-shell-v1';
+const CACHE = 'kb-338-shell-v1';
 const SHELL = [
   '/', '/index.html', '/app.css', '/app.js', '/single-tab.js', '/manifest.webmanifest',
   '/css/knowledge.css',
   '/js/main.js', '/js/db.js', '/js/sync.js', '/js/render.js', '/js/store.js', '/js/knowledge.js',
-  '/icons/icon-192.png', '/icons/icon-512.png',
+  '/icons/favicon.svg', '/icons/icon-192.png', '/icons/icon-512.png',
 ];
 
 self.addEventListener('install', event => {
@@ -16,7 +16,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   // кэши прежних версий оболочки больше не нужны
   event.waitUntil(caches.keys()
-    .then(keys => Promise.all(keys.filter(k => k.startsWith('kb-339-shell-') && k !== CACHE).map(k => caches.delete(k))))
+    .then(keys => Promise.all(keys.filter(k => /^kb-33\d-shell-/.test(k) && k !== CACHE).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 
