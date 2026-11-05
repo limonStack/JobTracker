@@ -17,11 +17,12 @@ internal static class NotesEndpoints
             return Results.Created($"/api/ideas/{created.Id}", created);
         });
 
+        // PUT с id от клиента — создать или обновить (офлайн-очередь)
         ideas.MapPut("/{id:guid}", async (Guid id, UpdateIdeaRequest request, NotesService service, CancellationToken ct) =>
-            OkOrNotFound(await service.UpdateIdeaAsync(id, request, ct)));
+            Results.Ok(await service.UpsertIdeaAsync(id, request, ct)));
 
         ideas.MapPut("/{id:guid}/status", async (Guid id, ChangeIdeaStatusRequest request, NotesService service, CancellationToken ct) =>
-            OkOrNotFound(await service.ChangeIdeaStatusAsync(id, request.Status, ct)));
+            OkOrNotFound(await service.ChangeIdeaStatusAsync(id, request.Status, request.Day, ct)));
 
         ideas.MapDelete("/{id:guid}", async (Guid id, NotesService service, CancellationToken ct) =>
             await service.DeleteIdeaAsync(id, ct) ? Results.NoContent() : Results.NotFound());
@@ -41,7 +42,7 @@ internal static class NotesEndpoints
         });
 
         highlights.MapPut("/{id:guid}", async (Guid id, SaveHighlightRequest request, NotesService service, CancellationToken ct) =>
-            OkOrNotFound(await service.UpdateHighlightAsync(id, request, ct)));
+            Results.Ok(await service.UpsertHighlightAsync(id, request, ct)));
 
         highlights.MapDelete("/{id:guid}", async (Guid id, NotesService service, CancellationToken ct) =>
             await service.DeleteHighlightAsync(id, ct) ? Results.NoContent() : Results.NotFound());

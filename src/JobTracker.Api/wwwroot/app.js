@@ -1,7 +1,10 @@
-'use strict';
-// Отклики и собеседования: данные — в API (SQLite), страница только показывает и отправляет изменения.
+// Отклики и собеседования. Данные — в локальном снимке (sync.js): правки применяются сразу и уходят
+// на сервер через очередь, поэтому панель работает и без сервера. Проверка вакансий, журнал,
+// импорт и экспорт JSON — только при доступном сервере.
 // Разметка и поведение перенесены из трекера в 300questions/ANSWERS.html.
-(() => {
+import { uuidv7 } from './js/sync.js';
+
+export function startJobs(sync) {
   const panel = document.getElementById('jobs');
 
   // этапы по порядку воронки; отказ и «нет ответа» — финал, дошедший этап сервер помнит в reachedStage
@@ -39,13 +42,19 @@
     return slug ? decodeURIComponent(slug).split(/[-_]+/).map(w => w && w[0].toUpperCase() + w.slice(1)).join(' ') : '';
   };
 
-  // ---------- API ----------
+  // ---------- Сервер: только то, что без него невозможно (проверка вакансий, журнал, импорт) ----------
+  const NEED_SERVER = 'Нужен сервер: запустите JobTracker и повторите';
   async function api(method, url, body) {
-    const res = await fetch(url, {
-      method,
-      headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
+    let res;
+    try {
+      res = await fetch(url, {
+        method,
+        headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+    } catch {
+      throw new Error(NEED_SERVER);
+    }
     if (!res.ok) {
       const problem = await res.json().catch(() => null);
       throw new Error(problem?.detail || problem?.title || `Ошибка ${res.status}`);
@@ -148,10 +157,10 @@
     do {
       await new Promise(r => setTimeout(r, 1000));
       status = checkStatus = await api('GET', '/api/checks');
-      if (status.done !== done) { done = status.done; await load(); render(); }
+      if (status.done !== done) { done = status.done; await refresh(); render(); }
       else renderLog();
     } while (status.running);
-    await load();
+    await refresh();
     checking = false;
   }
 
@@ -166,9 +175,33 @@
     render();
   }
 
-  const replaceJob = updated => { jobs = jobs.map(j => j.id === updated.id ? updated : j); };
-  const load = async () => { jobs = await api('GET', '/api/applications'); };
-  const details = (j, patch) => ({ company: j.company, appliedOn: j.appliedOn, url: j.url, note: j.note, ...patch });
+  // ---------- Локальные изменения: сразу в снимок, на сервер — через очередь ----------
+  const load = () => { jobs = sync.state.applications; };
+  // свежие данные с сервера (после проверки вакансий): очередь → снимок
+  const refresh = async () => { await sync.syncNow(); load(); };
+  const details = j => ({ company: j.company, appliedOn: j.appliedOn, url: j.url, note: j.note });
+  const commit = (method, url, body, label) => {
+    sync.state.applications = jobs;
+    sync.enqueue(method, url, body, label);
+  };
+  const saveDetails = j => commit('PUT', `/api/applications/${j.id}`, details(j), `отклик «${j.company}»`);
+  // события по порядку дат; новое — после событий того же дня (как на сервере)
+  const insertEvent = (j, ev) => { const i = j.events.findLastIndex(e => e.date <= ev.date) + 1; j.events.splice(i, 0, ev); };
+
+  // смена этапа — те же правила, что в JobApplication.MoveTo: шаг назад по воронке — исправление ошибки
+  // (дошедший этап откатывается, событие не пишется), иначе в историю добавляется событие с названием этапа
+  function moveTo(j, stage, today) {
+    if (stage === j.stage) return;
+    const idx = s => FUNNEL.indexOf(s);
+    const funnel = idx(stage) >= 0;
+    j.stage = stage;
+    if (funnel && idx(stage) < reached(j)) { j.reachedStage = stage; return; }
+    if (funnel && idx(stage) > reached(j)) j.reachedStage = stage;
+    insertEvent(j, { id: uuidv7(), date: today, text: stageOf(stage).label.toLowerCase() });
+  }
+
+  // кнопки, которым нужен сервер, офлайн неактивны
+  const serverAttr = () => sync.status().online === false ? ` disabled title="${NEED_SERVER}"` : '';
 
   // ---------- Отрисовка ----------
   function render() {
@@ -229,11 +262,11 @@
     panel.innerHTML =
       `<div class="jobs-head"><span class="jobs-title">💼 Собеседования</span>` +
         `<button type="button" class="jobs-btn primary" data-act="add-toggle">${adding ? 'Отмена' : '+ Отклик'}</button>` +
-        `<button type="button" class="jobs-btn" data-act="check-all"${checking ? ' disabled' : ''} title="Проверить на сайтах, открыты ли ещё вакансии (в процессе, со ссылкой)">${checkAllLabel()}</button>` +
-        `<button type="button" class="jobs-btn${logOpen ? ' on' : ''}" data-act="log-toggle" title="Ход и результаты последней проверки">📋 Журнал</button>` +
-        `<button type="button" class="jobs-btn" data-act="import-toggle" title="Перенести все данные из старого сайта 300questions">⬆ Импорт</button>` +
-        `<button type="button" class="jobs-btn" data-act="csv" title="Скачать таблицу для Excel">⬇ CSV</button>` +
-        `<a class="jobs-btn" href="/api/export" title="Резервная копия всех данных">⬇ JSON</a>` +
+        `<button type="button" class="jobs-btn" data-act="check-all" data-server${checking ? ' disabled' : serverAttr() || ' title="Проверить на сайтах, открыты ли ещё вакансии (в процессе, со ссылкой)"'}>${checkAllLabel()}</button>` +
+        `<button type="button" class="jobs-btn${logOpen ? ' on' : ''}" data-act="log-toggle" data-server${serverAttr() || ' title="Ход и результаты последней проверки"'}>📋 Журнал</button>` +
+        `<button type="button" class="jobs-btn" data-act="import-toggle" data-server${serverAttr() || ' title="Перенести все данные из старого сайта 300questions"'}>⬆ Импорт</button>` +
+        `<button type="button" class="jobs-btn" data-act="csv" title="Скачать таблицу для Excel (работает и без сервера)">⬇ CSV</button>` +
+        `<button type="button" class="jobs-btn" data-act="json" data-server${serverAttr() || ' title="Резервная копия всех данных с сервера"'}>⬇ JSON</button>` +
         `<button type="button" class="cal-close" data-act="close" title="Закрыть" aria-label="Закрыть">✕</button></div>` +
       (message ? `<div class="${message.error ? 'jobs-error' : 'jobs-info'}">${esc(message.text)}</div>` : '') +
       `<div class="jobs-funnel">${funnel}</div>` +
@@ -282,32 +315,43 @@
       case 'add-toggle': adding = !adding; importing = false; render(); break;
       case 'import-toggle': importing = !importing; adding = false; render(); break;
       case 'csv': exportCsv(); break;
+      case 'json': location.href = '/api/export'; break;
       case 'log-toggle': toggleLog(); break;
       case 'check-all': if (!checking) run(() => checkAll().finally(() => { checking = false; })); break;
       case 'check':
         t.disabled = true;
         t.textContent = 'Проверяю…';
-        run(async () => replaceJob(await api('POST', `/api/applications/${j.id}/check`)));
+        run(async () => { await api('POST', `/api/applications/${j.id}/check`); await refresh(); });
         break;
       case 'filter': filter = filter === t.dataset.f ? 'all' : t.dataset.f; render(); break;
       case 'toggle': if (j) { if (openJobs.has(j.id)) openJobs.delete(j.id); else openJobs.add(j.id); render(); } break;
-      case 'ev-del': run(async () => replaceJob(await api('DELETE', `/api/applications/${j.id}/events/${t.dataset.ev}`))); break;
+      case 'ev-del':
+        j.events = j.events.filter(ev => ev.id !== t.dataset.ev);
+        commit('DELETE', `/api/applications/${j.id}/events/${t.dataset.ev}`, undefined, `удалить событие «${j.company}»`);
+        render();
+        break;
       case 'del':
-        if (confirm(`Удалить запись «${j.company}»?`))
-          run(async () => { await api('DELETE', `/api/applications/${j.id}`); jobs = jobs.filter(x => x !== j); });
+        if (confirm(`Удалить запись «${j.company}»?`)) {
+          jobs = jobs.filter(x => x !== j);
+          commit('DELETE', `/api/applications/${j.id}`, undefined, `удалить отклик «${j.company}»`);
+          render();
+        }
         break;
     }
   });
-  // смена этапа: событие с сегодняшней датой пишет сервер (клик по выпадающему списку запись не раскрывает)
+  // смена этапа сама пишет событие с сегодняшней датой; день уходит на сервер явно — офлайн-правка
+  // попадёт туда позже, но с этим днём (клик по выпадающему списку запись не раскрывает)
   panel.addEventListener('change', e => {
     const t = e.target, j = jobs.find(x => x.id === t.closest('[data-job]')?.dataset.job);
     if (!j) return;
-    if (t.dataset.act === 'stage')
-      run(async () => replaceJob(await api('PUT', `/api/applications/${j.id}/stage`, { stage: t.value })));
-    else if (t.dataset.act === 'note')
-      run(async () => replaceJob(await api('PUT', `/api/applications/${j.id}`, details(j, { note: t.value }))));
-    else if (t.dataset.act === 'url')
-      run(async () => replaceJob(await api('PUT', `/api/applications/${j.id}`, details(j, { url: t.value }))));
+    if (t.dataset.act === 'stage') {
+      const today = dayKey();
+      moveTo(j, t.value, today);
+      commit('PUT', `/api/applications/${j.id}/stage`, { stage: t.value, day: today }, `этап «${j.company}»`);
+    } else if (t.dataset.act === 'note') { j.note = t.value.trim(); saveDetails(j); }
+    else if (t.dataset.act === 'url') { j.url = t.value.trim() || null; saveDetails(j); }
+    else return;
+    render();
   });
   // вставили ссылку в форму нового отклика — пустое поле «Компания» заполняется само
   panel.addEventListener('input', e => {
@@ -320,15 +364,22 @@
     e.preventDefault();
     const f = new FormData(e.target), get = k => (f.get(k) || '').toString().trim();
     switch (e.target.dataset.act) {
-      case 'add':
-        run(async () => {
-          jobs.push(await api('POST', '/api/applications', { company: get('c'), appliedOn: get('d'), url: get('u'), note: get('n') }));
-          adding = false;
-        });
+      case 'add': {
+        // id выдаёт браузер: запись появляется сразу, на сервер уходит PUT с этим id (без дублей при повторе)
+        const j = { id: uuidv7(), company: get('c'), url: get('u') || null, appliedOn: get('d'), note: get('n'),
+          stage: 'applied', reachedStage: 'applied', vacancyStatus: 'unknown', lastCheckedAt: null, closedAt: null, events: [] };
+        jobs.push(j);
+        adding = false;
+        saveDetails(j);
+        render();
         break;
+      }
       case 'ev-add': {
-        const id = e.target.closest('[data-job]').dataset.job;
-        run(async () => replaceJob(await api('POST', `/api/applications/${id}/events`, { date: get('d'), text: get('t') })));
+        const j = jobs.find(x => x.id === e.target.closest('[data-job]').dataset.job);
+        const ev = { id: uuidv7(), date: get('d'), text: get('t') };
+        insertEvent(j, ev);
+        commit('PUT', `/api/applications/${j.id}/events/${ev.id}`, { date: ev.date, text: ev.text }, `событие «${j.company}»`);
+        render();
         break;
       }
       case 'import':
@@ -339,7 +390,6 @@
           const r = await api('POST', '/api/import/site', storage);
           importing = false;
           message = { error: importErrors(r).length > 0, text: importSummary(r) };
-          await load();
           // прогресс, календарь, идеи и выделения рисует база знаний — перечитываем страницу, сообщение показываем после
           sessionStorage.setItem('import-message', JSON.stringify(message));
           location.reload();
@@ -357,9 +407,20 @@
       panel.hidden = false;
       document.getElementById('jobs-toggle')?.setAttribute('aria-pressed', 'true');
     }
-    await load();
+    load();
     if (saved) message = JSON.parse(saved);
-    checkStatus = await api('GET', '/api/checks');
-    if (checkStatus.running) { logOpen = true; run(() => pollChecks().finally(() => { checking = false; })); }
+    // ход проверки — только с сервера; без него панель просто работает с локальными данными
+    try {
+      checkStatus = await api('GET', '/api/checks');
+      if (checkStatus.running) { logOpen = true; run(() => pollChecks().finally(() => { checking = false; })); }
+    } catch { /* офлайн */ }
   });
-})();
+
+  // пришёл свежий снимок с сервера — перерисовать список, но не посреди ввода в панели
+  sync.onReplaced(() => { load(); if (!panel.contains(document.activeElement)) render(); });
+  // сервер появился или пропал — включить или выключить кнопки, которым он нужен
+  sync.onChange(() => {
+    for (const b of panel.querySelectorAll('[data-server]'))
+      if (b.dataset.act !== 'check-all' || !checking) b.disabled = sync.status().online === false;
+  });
+}

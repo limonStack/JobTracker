@@ -45,6 +45,48 @@ public sealed class ApplicationsApiTests : IDisposable
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
     }
 
+    /// <summary>
+    /// Офлайн-очередь: отклик и событие созданы в браузере со своими id, этап сменили вчера,
+    /// а на сервер всё ушло сегодня — и, после обрыва связи, ещё раз.
+    /// </summary>
+    [Fact]
+    public async Task OfflineQueue_Replayed_NoDuplicates_KeepsClientDates()
+    {
+        var id = Guid.CreateVersion7();
+        var eventId = Guid.CreateVersion7();
+        var yesterday = new DateOnly(2026, 11, 3);
+        var details = new SaveApplicationRequest("ACME", new DateOnly(2026, 11, 1), null, "офлайн");
+
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            await _client.PutJsonAsync($"/api/applications/{id}", details);
+            await _client.PutJsonAsync($"/api/applications/{id}/stage", new ChangeStageRequest(Stage.Hr, yesterday));
+            await _client.PutJsonAsync($"/api/applications/{id}/events/{eventId}", new AddEventRequest(yesterday, "звонок"));
+        }
+
+        var all = await (await _client.GetAsync("/api/applications")).ReadAsync<List<JobApplicationDto>>();
+        var app = Assert.Single(all);
+        Assert.Equal((id, Stage.Hr), (app.Id, app.Stage));
+        Assert.Equal(["hr", "звонок"], app.Events.Select(e => e.Text));
+        Assert.All(app.Events, e => Assert.Equal(yesterday, e.Date));
+
+        // удаление события дважды — не ошибка
+        await _client.DeleteAsync($"/api/applications/{id}/events/{eventId}");
+        Assert.Equal(HttpStatusCode.OK, (await _client.DeleteAsync($"/api/applications/{id}/events/{eventId}")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Sync_ReturnsAllUserData()
+    {
+        await CreateAsync();
+
+        using var json = System.Text.Json.JsonDocument.Parse(await (await _client.GetAsync("/api/sync")).Content.ReadAsStringAsync());
+
+        Assert.Equal(1, json.RootElement.GetProperty("applications").GetArrayLength());
+        foreach (var part in new[] { "study", "ideas", "highlights", "contentVersion" })
+            Assert.True(json.RootElement.TryGetProperty(part, out _), part);
+    }
+
     [Fact]
     public async Task Get_Unknown_Returns404()
     {

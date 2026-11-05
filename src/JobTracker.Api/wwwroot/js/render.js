@@ -21,11 +21,31 @@ function menuHtml(s) {
   return `<details><summary><a href="#${esc(s.slug)}">${s.number}. ${esc(s.title)}</a></summary><ul>${items}</ul></details>`;
 }
 
-// тексты меняются редко: браузер держит копию и переспрашивает с ETag (ответ 304 без тела)
-export async function renderContent() {
-  const r = await fetch('/api/content');
-  if (!r.ok) throw new Error(r.status === 404 ? 'Тексты ответов ещё не импортированы — проверьте папку content' : `${r.status} ${r.statusText}`);
-  const content = await r.json();
+/**
+ * Тексты ответов: копия в браузере (IndexedDB) с версией. С сервера — только если версия изменилась
+ * (ETag → 304 без тела); сервер недоступен — из копии. Без копии и без сервера показать нечего.
+ */
+async function loadContent(storage) {
+  const cached = await storage.get('content');
+  try {
+    const r = await fetch('/api/content', { headers: cached ? { 'If-None-Match': `"${cached.version}"` } : {} });
+    if (r.status === 304 && cached) return cached;
+    if (r.ok) {
+      const fresh = await r.json();
+      await storage.set('content', fresh);
+      return fresh;
+    }
+    if (!cached) throw new Error(r.status === 404 ? 'Тексты ответов ещё не импортированы — проверьте папку content' : `${r.status} ${r.statusText}`);
+  } catch (err) {
+    if (!cached) throw new Error(err instanceof TypeError
+      ? 'Сервер недоступен, а копии текстов в браузере ещё нет — откройте страницу один раз при запущенном сервере'
+      : err.message);
+  }
+  return cached;
+}
+
+export async function renderContent(storage) {
+  const content = await loadContent(storage);
 
   document.getElementById('toc').outerHTML = content.sections.map(menuHtml).join('');
   document.querySelector('main').innerHTML = content.sections.map(sectionHtml).join('');

@@ -25,6 +25,7 @@ public sealed record JobApplicationDto(
 
 public sealed record SaveApplicationRequest(string Company, DateOnly AppliedOn, string? Url, string? Note);
 
-public sealed record ChangeStageRequest(Stage Stage);
+/// <summary>Day — когда этап сменили (офлайн-правка уходит на сервер позже); не указан — сегодня.</summary>
+public sealed record ChangeStageRequest(Stage Stage, DateOnly? Day = null);
 
 public sealed record AddEventRequest(DateOnly Date, string Text);

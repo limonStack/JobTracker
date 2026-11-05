@@ -66,11 +66,41 @@ public sealed class NotesApiTests : IDisposable
     }
 
     [Fact]
-    public async Task Ideas_UnknownId_Returns404_EmptyTitle_Returns400()
+    public async Task Ideas_StatusOfUnknown_Returns404_EmptyTitle_Returns400()
     {
         Assert.Equal(HttpStatusCode.NotFound,
-            (await _client.PutJsonAsync($"/api/ideas/{Guid.NewGuid()}", new UpdateIdeaRequest("x", null, null, null))).StatusCode);
+            (await _client.PutJsonAsync($"/api/ideas/{Guid.NewGuid()}/status", new ChangeIdeaStatusRequest(IdeaStatus.Done))).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await _client.PostJsonAsync("/api/ideas", new CreateIdeaRequest(" "))).StatusCode);
+    }
+
+    /// <summary>Офлайн-очередь: идея создаётся в браузере со своим id; повтор того же PUT не создаёт дубль.</summary>
+    [Fact]
+    public async Task Ideas_PutWithClientId_CreatesOnce_KeepsOfflineDates()
+    {
+        var id = Guid.CreateVersion7();
+        var request = new UpdateIdeaRequest("Outbox", "заметка", "JobTracker", "12.18", new DateOnly(2026, 11, 1));
+
+        await _client.PutJsonAsync($"/api/ideas/{id}", request);
+        var again = await (await _client.PutJsonAsync($"/api/ideas/{id}", request)).ReadAsync<IdeaDto>();
+        var done = await (await _client.PutJsonAsync($"/api/ideas/{id}/status",
+            new ChangeIdeaStatusRequest(IdeaStatus.Done, new DateOnly(2026, 11, 2)))).ReadAsync<IdeaDto>();
+
+        Assert.Equal((id, new DateOnly(2026, 11, 1)), (again.Id, again.CreatedOn));
+        Assert.Equal(new DateOnly(2026, 11, 2), done.DoneOn);
+        Assert.Single(await IdeasAsync());
+    }
+
+    [Fact]
+    public async Task Highlights_PutWithClientId_CreatesOnce()
+    {
+        var id = Guid.CreateVersion7();
+        var request = new SaveHighlightRequest("07-architecture", "Single Responsibility", "", "", 10, HighlightColor.Green);
+
+        await _client.PutJsonAsync($"/api/highlights/{id}", request);
+        await _client.PutJsonAsync($"/api/highlights/{id}", request with { Color = HighlightColor.Pink });
+
+        var list = await (await _client.GetAsync("/api/highlights")).ReadAsync<List<HighlightDto>>();
+        Assert.Equal([(id, HighlightColor.Pink)], list.Select(h => (h.Id, h.Color)));
     }
 
     [Fact]

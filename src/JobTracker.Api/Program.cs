@@ -59,6 +59,7 @@ app.MapVacancyCheckEndpoints();
 app.MapContentEndpoints();
 app.MapStudyEndpoints();
 app.MapNotesEndpoints();
+app.MapSyncEndpoints();
 
 await app.RunAsync();
 
