@@ -5,6 +5,10 @@
 /* текущий вопрос в меню — куда привела ссылка или «назад»/«вперёд» */
 #side li.current > a{color:var(--accent);font-weight:600}
 
+/* мысль дня под прогрессом: тихо, без анимации; внутри #progress — в режиме собеседования скрыта вместе с ним */
+.daily-note{margin:8px 0 0;padding-left:8px;border-left:2px solid var(--line);font-size:11.5px;font-style:italic;line-height:1.4;color:var(--muted)}
+.daily-note:empty{display:none}
+
 /* индикатор синхронизации в шапке меню: онлайн / офлайн / сервер отклонил изменения */
 /* название не переносится и не сжимается; если места мало — сжимается индикатор, с многоточием */
 .brand > span:first-child{flex:none;white-space:nowrap}

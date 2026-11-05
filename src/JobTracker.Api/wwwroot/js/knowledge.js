@@ -2,6 +2,8 @@
 // Логика перенесена из 300questions/ANSWERS.html как есть; вместо localStorage данные хранит сервер:
 // store (store.js) отдаёт состояние, загруженное из API, и отправляет изменения обратно.
 // Запускается после того, как render.js построил меню и тексты ответов из GET /api/content.
+import { startDailyNote } from './motivation.js';
+
 export function startKnowledge(store) {
   const side = document.getElementById('side');
   const input = document.getElementById('filter');
@@ -81,6 +83,7 @@ export function startKnowledge(store) {
   let doneAt = store.doneAt;                         // вопрос → дата отметки «изучено» (ГГГГ-ММ-ДД, местное время)
   const save = () => store.syncMarks(done, doneAt);
   const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  startDailyNote(document.getElementById('daily-note'), () => dayKey());   // мысль дня под прогрессом
 
   const items = [];
   groups.forEach(d => {
