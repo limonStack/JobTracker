@@ -40,7 +40,7 @@ Clean Architecture, зависимости внутрь: `Api → Infrastructure
 
 ### Проверка вакансий
 
-Таймер / «Проверить все» → `ChannelVacancyCheckQueue` → `VacancyCheckWorker` (singleton, scope через `IServiceScopeFactory`) → `VacancyCheckService` → `VacancyCheckerResolver` выбирает `IVacancyChecker` по `CanCheck(url)`. Проверяльщики наследуют Template Method `HtmlVacancyChecker` (загрузить → `AnalyzeResponse` → разобрать HTML). Новый сайт = новый класс + регистрация `AddHttpClient` в `Infrastructure/DependencyInjection.cs`. Сбой сети/неизвестная разметка — `VacancyCheckResult` «не удалось проверить», не исключение и не «открыта». Тесты проверяльщиков работают на сохранённых страницах `tests/JobTracker.UnitTests/VacancyChecking/Fixtures/`.
+Таймер / «Проверить все» → `ChannelVacancyCheckQueue` → `VacancyCheckWorker` (singleton, scope через `IServiceScopeFactory`) → `VacancyCheckService` → `VacancyCheckerResolver` выбирает `IVacancyChecker` по `CanCheck(url)`. Проверяльщики наследуют Template Method `HtmlVacancyChecker` (загрузить → `AnalyzeResponse` → разобрать HTML). Новый сайт = новый класс + строка `services.AddVacancyChecker<TChecker>()` в `Infrastructure/DependencyInjection.cs` (не голый `AddHttpClient`: помощник ещё регистрирует класс как `IVacancyChecker`, иначе резолвер его не увидит, и добавляет браузерные заголовки и Polly). Сбой сети/неизвестная разметка — `VacancyCheckResult` «не удалось проверить», не исключение и не «открыта». Тесты проверяльщиков работают на сохранённых страницах `tests/JobTracker.UnitTests/VacancyChecking/Fixtures/`.
 
 ### Контент (тексты ответов)
 
