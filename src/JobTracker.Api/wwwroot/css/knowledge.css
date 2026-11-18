@@ -356,7 +356,7 @@ a.job-company:hover{color:var(--accent);text-decoration:underline}
 .brand-tools{display:flex;gap:2px;flex:none}
 body.focus-mode .done-toggle,body.focus-mode .done-btn,body.focus-mode .done-badge,body.focus-mode .card-done,body.focus-mode .sec-progress,
 body.focus-mode .progress,body.focus-mode .todo-chip,body.focus-mode .chip-count,body.focus-mode .chip-bar,
-body.focus-mode #calendar,body.focus-mode #cal-toggle,body.focus-mode #jobs,body.focus-mode #jobs-toggle,body.focus-mode #ideas,body.focus-mode #ideas-toggle,body.focus-mode .done-end{display:none}
+body.focus-mode #calendar,body.focus-mode #cal-toggle,body.focus-mode #jobs,body.focus-mode #jobs-toggle,body.focus-mode #ideas,body.focus-mode #ideas-toggle,body.focus-mode #todos,body.focus-mode #todos-toggle,body.focus-mode .done-end{display:none}
 body.focus-mode #side li{display:block}
 body.focus-mode #side li[hidden]{display:none}
 body.focus-mode #side li.done > a{opacity:1}

@@ -1,11 +1,13 @@
 // Точка входа: работает и без сервера. Локальные данные (IndexedDB) → тексты ответов → синхронизация
-// с сервером, если он доступен → логика базы знаний и панель откликов.
+// с сервером, если он доступен → логика базы знаний, панели откликов и дел.
 import { openStorage, memoryStorage } from './db.js';
 import { createSync } from './sync.js';
 import { renderContent } from './render.js';
 import { loadStore } from './store.js';
 import { startKnowledge } from './knowledge.js';
 import { startJobs } from '../app.js';
+import { startTodos } from './todos.js';
+import { uuidv7 } from './sync.js';
 
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
@@ -48,6 +50,7 @@ try {
 
   startKnowledge(loadStore(sync));
   startJobs(sync);
+  startTodos(sync, uuidv7);
   sync.start();
   // браузер переходит по якорю (#q7.1) до того, как тексты построены, — прокручиваем сами
   if (location.hash) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView({ block: 'start' });
