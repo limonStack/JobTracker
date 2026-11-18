@@ -421,6 +421,34 @@ namespace JobTracker.Infrastructure.Persistence.Migrations
                     b.ToTable("UserSettings", (string)null);
                 });
 
+            modelBuilder.Entity("JobTracker.Domain.Todos.TodoItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("DoneOn")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("PlannedOn")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "PlannedOn");
+
+                    b.ToTable("Todos", (string)null);
+                });
+
             modelBuilder.Entity("JobTracker.Infrastructure.Persistence.ContentVersion", b =>
                 {
                     b.Property<int>("Id")

@@ -2,6 +2,7 @@ using JobTracker.Application.Applications;
 using JobTracker.Application.Import;
 using JobTracker.Application.Notes;
 using JobTracker.Application.Study;
+using JobTracker.Application.Todos;
 
 namespace JobTracker.Api.Endpoints;
 
@@ -48,8 +49,9 @@ internal static class ApplicationEndpoints
         app.MapPost("/api/import/site", (Dictionary<string, string?> storage, LegacySiteImportService service, CancellationToken ct) =>
             service.ImportAsync(storage, ct)).WithTags("Import");
 
-        // резервная копия всех данных пользователя одним файлом: отклики, учёба, идеи, выделения, настройки
-        app.MapGet("/api/export", async (JobApplicationService applications, StudyService study, NotesService notes, CancellationToken ct) =>
+        // резервная копия всех данных пользователя одним файлом: отклики, учёба, идеи, выделения, дела, настройки
+        app.MapGet("/api/export", async (JobApplicationService applications, StudyService study, NotesService notes,
+            TodoService todos, CancellationToken ct) =>
         {
             var backup = new
             {
@@ -58,6 +60,7 @@ internal static class ApplicationEndpoints
                 Study = await study.GetStateAsync(ct),
                 Ideas = await notes.ListIdeasAsync(ct),
                 Highlights = await notes.ListHighlightsAsync(ct),
+                Todos = await todos.ListAsync(ct),
             };
             return Results.File(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(backup, JsonDefaults.Options),
                 "application/json", $"jobtracker-{DateTime.Now:yyyy-MM-dd}.json");

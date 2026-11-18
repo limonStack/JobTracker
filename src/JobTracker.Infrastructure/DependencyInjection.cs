@@ -22,6 +22,7 @@ public static class DependencyInjection
         services.AddScoped<IContentRepository, ContentRepository>();
         services.AddScoped<IStudyRepository, StudyRepository>();
         services.AddScoped<INotesRepository, NotesRepository>();
+        services.AddScoped<ITodoRepository, TodoRepository>();
         services.AddSingleton<IContentSource, FileContentSource>();
 
         services.AddSingleton<IVacancyCheckQueue, ChannelVacancyCheckQueue>();
