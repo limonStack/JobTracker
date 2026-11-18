@@ -163,20 +163,16 @@ a.job-company:hover{color:var(--accent);text-decoration:underline}
 .job-empty{color:var(--muted);font-size:12.5px}
 .job-evadd{display:grid;grid-template-columns:140px 1fr auto;gap:6px}
 @media (max-width:700px){.job-row{grid-template-columns:72px minmax(0,1fr) 108px 12px}.job-last{display:none}.job-detail{padding-left:6px}.jobs-add{grid-template-columns:1fr}}
-/* ideas: идеи для проектов (панель — те же стили, что у .jobs) */
+/* ideas: заметки (панель — те же стили, что у .jobs) */
 .idea-add{display:grid;grid-template-columns:1fr auto;gap:6px;margin-bottom:12px}
 .idea{border-top:1px solid var(--line)}
-.idea-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto 14px;align-items:center;gap:10px;padding:7px 6px;border-radius:6px;cursor:pointer}
+.idea-row{display:grid;grid-template-columns:minmax(0,1fr) 14px;align-items:center;gap:10px;padding:7px 6px;border-radius:6px;cursor:pointer}
 .idea-row:hover{background:var(--table)}
 .idea-title{overflow:hidden;font-weight:600;text-overflow:ellipsis;white-space:nowrap}
 .idea-title a,.idea-text a{color:var(--accent)}
-.idea-tag{padding:1px 7px;border-radius:10px;background:var(--table);color:var(--muted);font-size:12px;white-space:nowrap}
-.idea-q{color:var(--accent);font-size:12px;white-space:nowrap;text-decoration:none}
-.idea-q:hover{text-decoration:underline}
 .idea-text{margin:0 6px 6px;color:var(--muted);font-size:12.5px;white-space:pre-wrap}
 .idea-detail{display:grid;gap:8px;padding:4px 6px 14px}
-.idea-fields{display:grid;grid-template-columns:1fr 140px;gap:8px}
-@media (max-width:700px){.idea-row{grid-template-columns:minmax(0,1fr) 12px}.idea-row .idea-tag,.idea-row .idea-q,.idea-row .idea-gap{display:none}.idea-detail{padding-left:6px}.idea-text{margin-left:6px}.idea-fields{grid-template-columns:1fr}}
+
 /* review: повторение тем прошлого дня */
 .cal-list.review{margin:4px 0 10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
 .cal-list.review .cal-list-head{display:flex;justify-content:space-between;gap:8px}

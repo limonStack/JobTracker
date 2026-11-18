@@ -815,10 +815,6 @@ export function startKnowledge(store) {
   ideas = store.ideas;                                // в прежнем формате { id, d, t, n, p, q, s, done }
   const saveIdeas = () => store.syncIdeas(ideas);    // на сервер уходит только изменённое
   const openIdeas = new Set();                        // раскрытые заметки
-  // номер вопроса «11.24» — ссылка на ответ, если такой вопрос есть
-  const qLink = q => !q ? '<span class="idea-gap"></span>'
-    : document.getElementById('q' + q) ? `<a class="idea-q" href="#q${escAttr(q)}" data-act="goq" title="Открыть вопрос ${escAttr(q)}">↗ ${esc(q)}</a>`
-    : `<span class="idea-tag">${esc(q)}</span>`;
   // ссылки в заметке кликабельны (открываются в новой вкладке, заметку не раскрывают)
   const linkify = s => esc(s).replace(/https?:\/\/[^\s<]+/g, u => `<a href="${u.replace(/"/g, '&quot;')}" target="_blank" rel="noopener" data-act="link">${u}</a>`);
   // свежие сверху; в один день — по времени записи (id — UUID v7, растёт со временем)
@@ -831,15 +827,11 @@ export function startKnowledge(store) {
       return `<div class="idea" data-idea="${x.id}">` +
         `<div class="idea-row" data-act="toggle">` +
           `<span class="idea-title" title="${escAttr(x.t)}">${linkify(x.t)}</span>` +
-          (x.p ? `<span class="idea-tag">${esc(x.p)}</span>` : '<span class="idea-gap"></span>') +
-          qLink(x.q) +
           `<span class="job-arrow">${opened ? '▾' : '▸'}</span>` +
         `</div>` +
         (opened ? `<div class="idea-detail">` +
           `<label class="job-field">Заметка<input data-act="title" value="${escAttr(x.t)}"></label>` +
           `<label class="job-field">Подробнее<textarea data-act="note" rows="4" placeholder="Подробности, ссылки, что почитать">${esc(x.n)}</textarea></label>` +
-          `<div class="idea-fields"><label class="job-field">Проект<input data-act="project" value="${escAttr(x.p)}" placeholder="pet-проект, работа, курс…"></label>` +
-          `<label class="job-field">Вопрос<input data-act="question" value="${escAttr(x.q)}" placeholder="11.24"></label></div>` +
           `<span class="job-empty">Записано ${fmtDate(x.d)}</span>` +
           `<button type="button" class="jobs-btn danger" data-act="del">Удалить заметку</button>` +
         `</div>` : x.n ? `<div class="idea-text">${linkify(x.n.length > 160 ? x.n.slice(0, 160) + '…' : x.n)}</div>` : '') +
@@ -851,7 +843,7 @@ export function startKnowledge(store) {
         `<button type="button" class="cal-close" data-act="close" title="Закрыть" aria-label="Закрыть">✕</button></div>` +
       `<form class="idea-add" data-act="add"><input name="t" placeholder="Новая заметка — Enter, чтобы записать" required autocomplete="off">` +
         `<button type="submit" class="jobs-btn primary">Записать</button></form>` +
-      `<div class="jobs-list">${rows || '<div class="job-empty">Заметок пока нет. Запишите, что сделать или почитать; клик по заметке — подробности, проект и номер вопроса.</div>'}</div>`;
+      `<div class="jobs-list">${rows || '<div class="job-empty">Заметок пока нет. Запишите, что сделать или почитать; клик по заметке — подробности.</div>'}</div>`;
   }
 
   function exportIdeas() {
@@ -882,7 +874,6 @@ export function startKnowledge(store) {
     switch (t.dataset.act) {
       case 'toggle': if (x) { if (openIdeas.has(x.id)) openIdeas.delete(x.id); else openIdeas.add(x.id); renderIdeas(); } break;
       case 'link': break;                             // ссылку открывает браузер, заметка не раскрывается
-      case 'goq': setIdeas(false); break;             // переход делает сам браузер, панель не должна закрывать ответ
       case 'md': exportIdeas(); break;
       case 'close': setIdeas(false); break;
       case 'del': if (confirm(`Удалить заметку «${x.t}»?`)) { ideas = ideas.filter(i => i !== x); saveIdeas(); renderIdeas(); } break;
@@ -894,8 +885,6 @@ export function startKnowledge(store) {
     const v = t.value.trim();
     if (t.dataset.act === 'title') { if (!v) return; x.t = v; }
     else if (t.dataset.act === 'note') x.n = t.value.replace(/\s+$/, '');
-    else if (t.dataset.act === 'project') x.p = v;
-    else if (t.dataset.act === 'question') x.q = v.replace(/^#?q?/i, '');
     else return;
     saveIdeas(); renderIdeas();
   });
