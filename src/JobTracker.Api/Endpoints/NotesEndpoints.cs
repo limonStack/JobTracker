@@ -29,7 +29,7 @@ internal static class NotesEndpoints
 
         ideas.MapGet("/export.md", async (NotesService service, CancellationToken ct) =>
             Results.File(Encoding.UTF8.GetBytes(await service.ExportIdeasMarkdownAsync(ct)),
-                "text/markdown; charset=utf-8", $"идеи-{DateTime.Now:yyyy-MM-dd}.md"));
+                "text/markdown; charset=utf-8", $"заметки-{DateTime.Now:yyyy-MM-dd}.md"));
 
         var highlights = app.MapGroup("/api/highlights").WithTags("Highlights");
 

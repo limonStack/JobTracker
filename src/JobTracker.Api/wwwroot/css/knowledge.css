@@ -166,18 +166,17 @@ a.job-company:hover{color:var(--accent);text-decoration:underline}
 /* ideas: идеи для проектов (панель — те же стили, что у .jobs) */
 .idea-add{display:grid;grid-template-columns:1fr auto;gap:6px;margin-bottom:12px}
 .idea{border-top:1px solid var(--line)}
-.idea-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto 14px;align-items:center;gap:10px;padding:7px 6px;border-radius:6px;cursor:pointer}
+.idea-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto 14px;align-items:center;gap:10px;padding:7px 6px;border-radius:6px;cursor:pointer}
 .idea-row:hover{background:var(--table)}
-.idea-st{padding:2px 6px;font:inherit;font-size:12px;border:1px solid var(--st);border-radius:12px;background:color-mix(in srgb,var(--st) 20%,var(--panel));color:var(--text);cursor:pointer}
 .idea-title{overflow:hidden;font-weight:600;text-overflow:ellipsis;white-space:nowrap}
-.idea.done .idea-title{opacity:.6;text-decoration:line-through}
+.idea-title a,.idea-text a{color:var(--accent)}
 .idea-tag{padding:1px 7px;border-radius:10px;background:var(--table);color:var(--muted);font-size:12px;white-space:nowrap}
 .idea-q{color:var(--accent);font-size:12px;white-space:nowrap;text-decoration:none}
 .idea-q:hover{text-decoration:underline}
-.idea-text{margin:0 6px 6px 34px;color:var(--muted);font-size:12.5px;white-space:pre-wrap}
-.idea-detail{display:grid;gap:8px;padding:4px 6px 14px 34px}
+.idea-text{margin:0 6px 6px;color:var(--muted);font-size:12.5px;white-space:pre-wrap}
+.idea-detail{display:grid;gap:8px;padding:4px 6px 14px}
 .idea-fields{display:grid;grid-template-columns:1fr 140px;gap:8px}
-@media (max-width:700px){.idea-row{grid-template-columns:auto minmax(0,1fr) 12px}.idea-row .idea-tag,.idea-row .idea-q,.idea-row .idea-gap{display:none}.idea-detail{padding-left:6px}.idea-text{margin-left:6px}.idea-fields{grid-template-columns:1fr}}
+@media (max-width:700px){.idea-row{grid-template-columns:minmax(0,1fr) 12px}.idea-row .idea-tag,.idea-row .idea-q,.idea-row .idea-gap{display:none}.idea-detail{padding-left:6px}.idea-text{margin-left:6px}.idea-fields{grid-template-columns:1fr}}
 /* review: повторение тем прошлого дня */
 .cal-list.review{margin:4px 0 10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
 .cal-list.review .cal-list-head{display:flex;justify-content:space-between;gap:8px}
@@ -356,7 +355,7 @@ a.job-company:hover{color:var(--accent);text-decoration:underline}
 .brand-tools{display:flex;gap:2px;flex:none}
 body.focus-mode .done-toggle,body.focus-mode .done-btn,body.focus-mode .done-badge,body.focus-mode .card-done,body.focus-mode .sec-progress,
 body.focus-mode .progress,body.focus-mode .todo-chip,body.focus-mode .chip-count,body.focus-mode .chip-bar,
-body.focus-mode #calendar,body.focus-mode #cal-toggle,body.focus-mode #jobs,body.focus-mode #jobs-toggle,body.focus-mode #ideas,body.focus-mode #ideas-toggle,body.focus-mode #todos,body.focus-mode #todos-toggle,body.focus-mode .done-end{display:none}
+body.focus-mode #calendar,body.focus-mode #cal-toggle,body.focus-mode #jobs,body.focus-mode #jobs-toggle,body.focus-mode #ideas,body.focus-mode #ideas-toggle,body.focus-mode .done-end{display:none}
 body.focus-mode #side li{display:block}
 body.focus-mode #side li[hidden]{display:none}
 body.focus-mode #side li.done > a{opacity:1}

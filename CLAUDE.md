@@ -25,7 +25,7 @@ CI (`.github/workflows/ci.yml`): gitleaks по всей истории, `dotnet 
 
 Clean Architecture, зависимости внутрь: `Api → Infrastructure → Application → Domain`.
 
-- **Domain** — богатая модель без внешних зависимостей. Модули: `Applications` (отклики; `JobApplication` — агрегат, этап меняется только через `MoveTo`, `VacancyUrl` — value object), `Knowledge` (общий контент: разделы, вопросы), `Study` (отметки «изучено», треки, настройки), `Notes` (идеи, выделения), `Todos` (дела на день; перенос несделанного — только в показе, `PlannedOn` не переписывается). Нарушение правил — `DomainException`, его `DomainExceptionHandler` превращает в ProblemDetails.
+- **Domain** — богатая модель без внешних зависимостей. Модули: `Applications` (отклики; `JobApplication` — агрегат, этап меняется только через `MoveTo`, `VacancyUrl` — value object), `Knowledge` (общий контент: разделы, вопросы), `Study` (отметки «изучено», треки, настройки), `Notes` (заметки — в коде и API `Idea` / `/api/ideas`, статус в интерфейсе не используется; выделения). Нарушение правил — `DomainException`, его `DomainExceptionHandler` превращает в ProblemDetails.
 - **Application** — сервисы сценариев (`JobApplicationService`, `StudyService`, `NotesService`, `ContentService`, `VacancyCheckService`, импорт из старого сайта) и порты в `Abstractions/`.
 - **Infrastructure** — EF Core/SQLite, разбор `content/answers.html` (AngleSharp), HTTP-проверяльщики вакансий, очередь на `Channel`.
 - **Api** — Minimal API (`Endpoints/*Endpoints.cs`, по файлу на модуль, подключаются в `Program.cs`), фоновый `VacancyCheckWorker`, фронтенд в `wwwroot`.
@@ -48,7 +48,7 @@ Clean Architecture, зависимости внутрь: `Api → Infrastructure
 
 ### Фронтенд (ванильный JS, ES-модули, без сборки)
 
-Офлайн-first PWA. `js/main.js` — точка входа; `js/db.js` — IndexedDB; `js/sync.js` — снимок `GET /api/sync` + очередь изменений; `js/store.js` — данные пользователя (изменения уходят в API разницей); `js/render.js` — меню и тексты из `/api/content`; `js/knowledge.js` — логика базы знаний; `app.js` — панель откликов; `js/todos.js` — дела на сегодня; `sw.js` — кэш оболочки «сначала сеть».
+Офлайн-first PWA. `js/main.js` — точка входа; `js/db.js` — IndexedDB; `js/sync.js` — снимок `GET /api/sync` + очередь изменений; `js/store.js` — данные пользователя (изменения уходят в API разницей); `js/render.js` — меню и тексты из `/api/content`; `js/knowledge.js` — логика базы знаний; `app.js` — панель откликов; `sw.js` — кэш оболочки «сначала сеть».
 
 Контракт синхронизации, который нельзя ломать: правка сразу применяется к локальному снимку и встаёт в очередь; запросы очереди **идемпотентны** — id новых записей генерирует браузер (UUID v7) и шлёт `PUT`-ом, дата действия передаётся явно. Значит, новые API-эндпоинты записи должны принимать id и дату от клиента и выдерживать повтор: образец — `PUT /{id}` (upsert), а не соседние `POST` (`/api/applications`, `/events`, `/ideas`, `/highlights` создают id на сервере, фронтенд их не использует). Новые пользовательские данные нужно добавить и в снимок `SyncEndpoints`.
 

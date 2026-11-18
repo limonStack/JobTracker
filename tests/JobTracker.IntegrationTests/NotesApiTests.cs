@@ -40,28 +40,28 @@ public sealed class NotesApiTests : IDisposable
         Assert.Empty(await IdeasAsync());
     }
 
+    /// <summary>Заметки — без статусов: свежие сверху, в один день — позже записанная выше.</summary>
     [Fact]
-    public async Task Ideas_DoingFirst_DoneLast()
+    public async Task Notes_NewestFirst_StatusIgnored()
     {
-        var done = await CreateIdeaAsync("применил");
-        var doing = await CreateIdeaAsync("пробую");
-        await CreateIdeaAsync("новая");
+        await _client.PutJsonAsync($"/api/ideas/{Guid.CreateVersion7()}", new UpdateIdeaRequest("старая", null, null, null, new DateOnly(2026, 11, 1)));
+        var done = await CreateIdeaAsync("сегодня, раньше");
+        await CreateIdeaAsync("сегодня, позже");
         await _client.PutJsonAsync($"/api/ideas/{done.Id}/status", new ChangeIdeaStatusRequest(IdeaStatus.Done));
-        await _client.PutJsonAsync($"/api/ideas/{doing.Id}/status", new ChangeIdeaStatusRequest(IdeaStatus.Doing));
 
-        Assert.Equal(["пробую", "новая", "применил"], (await IdeasAsync()).Select(x => x.Title));
+        Assert.Equal(["сегодня, позже", "сегодня, раньше", "старая"], (await IdeasAsync()).Select(x => x.Title));
     }
 
     [Fact]
-    public async Task Ideas_ExportMarkdown_GroupedByStatus()
+    public async Task Notes_ExportMarkdown_FlatList()
     {
         var idea = await CreateIdeaAsync("Outbox");
         await _client.PutJsonAsync($"/api/ideas/{idea.Id}", new UpdateIdeaRequest("Outbox", "строка 1\nстрока 2", "JobTracker", "12.18"));
 
         var md = await (await _client.GetAsync("/api/ideas/export.md")).Content.ReadAsStringAsync();
 
-        Assert.Contains("## 💡 идея", md, StringComparison.Ordinal);
-        Assert.Contains("- [ ] **Outbox** · проект: JobTracker · вопрос 12.18", md, StringComparison.Ordinal);
+        Assert.StartsWith("# Заметки — ", md, StringComparison.Ordinal);
+        Assert.Contains("- **Outbox** · проект: JobTracker · вопрос 12.18", md, StringComparison.Ordinal);
         Assert.Contains("  строка 2", md, StringComparison.Ordinal);
     }
 

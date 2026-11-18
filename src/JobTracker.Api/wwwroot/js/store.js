@@ -1,7 +1,7 @@
 // Данные пользователя для базы знаний. Читаются из локального снимка (sync.js), поэтому страница
 // работает без сервера; изменения применяются к снимку и уходят в очередь на сервер.
 // Старый код (knowledge.js) работает с данными в прежнем формате localStorage — здесь он переводится
-// в формат API. Списки (идеи, выделения, отметки) сравниваются с последним сохранённым состоянием,
+// в формат API. Списки (заметки, выделения, отметки) сравниваются с последним сохранённым состоянием,
 // и в очередь попадает только разница. Новые записи сразу получают настоящий id (UUID v7 из браузера).
 import { uuidv7 } from './sync.js';
 
@@ -40,7 +40,7 @@ export function loadStore(sync) {
     sync.state.study.reviews = Object.entries(review).flatMap(([day, codes]) => codes.map(code => ({ day, code })));
   };
 
-  // ---- идеи и выделения ----
+  // ---- заметки (в API — ideas) и выделения ----
   const ideas = snap.ideas.map(ideaFrom);
   let savedIdeas = new Map(ideas.map(x => [x.id, { key: ideaKey(x), s: x.s }]));
   const highlights = snap.highlights.map(hlFrom);
@@ -84,14 +84,14 @@ export function loadStore(sync) {
       for (const x of current) {
         const key = ideaKey(x), was = savedIdeas.get(x.id);
         next.set(x.id, { key, s: x.s });
-        // PUT создаёт идею с этим id или обновляет; день записи — как в браузере
+        // PUT создаёт заметку с этим id или обновляет; день записи — как в браузере
         if (!was || was.key !== key)
-          sync.enqueue('PUT', `/api/ideas/${x.id}`, { title: x.t, note: x.n, project: x.p, question: x.q, createdOn: x.d }, `идея «${x.t}»`);
+          sync.enqueue('PUT', `/api/ideas/${x.id}`, { title: x.t, note: x.n, project: x.p, question: x.q, createdOn: x.d }, `заметка «${x.t}»`);
         if ((was?.s ?? 'new') !== x.s)
-          sync.enqueue('PUT', `/api/ideas/${x.id}/status`, { status: x.s, day: x.done || today() }, `статус идеи «${x.t}»`);
+          sync.enqueue('PUT', `/api/ideas/${x.id}/status`, { status: x.s, day: x.done || today() }, `статус заметки «${x.t}»`);
       }
       for (const id of savedIdeas.keys())
-        if (!next.has(id)) sync.enqueue('DELETE', `/api/ideas/${id}`, undefined, 'удалить идею');
+        if (!next.has(id)) sync.enqueue('DELETE', `/api/ideas/${id}`, undefined, 'удалить заметку');
       savedIdeas = next;
     },
 
