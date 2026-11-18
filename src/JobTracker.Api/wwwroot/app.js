@@ -22,7 +22,7 @@ export function startJobs(sync) {
   // выгрузка всех данных старого сайта из его localStorage — только чтение
   const EXPORT_SNIPPET = "copy(JSON.stringify(Object.fromEntries(Object.keys(localStorage).filter(k => k.startsWith('net-interview-')).map(k => [k, localStorage.getItem(k)]))))";
   const IMPORT_PARTS = [['progress', 'изучено'], ['workouts', 'тренировки'], ['ai', 'ИИ'], ['reviews', 'повторение'],
-    ['jobs', 'отклики'], ['ideas', 'идеи'], ['highlights', 'выделения']];
+    ['jobs', 'отклики'], ['ideas', 'заметки'], ['highlights', 'выделения']];
   const importErrors = r => IMPORT_PARTS.flatMap(([k, l]) => (r[k]?.errors || []).map(e => `${l}: ${e}`));
   const importSummary = r => 'Перенесено — ' + IMPORT_PARTS.filter(([k]) => r[k])
     .map(([k, l]) => `${l}: ${r[k].imported}${r[k].skipped ? ` (уже были ${r[k].skipped})` : ''}`).join(', ') +
@@ -272,7 +272,7 @@ export function startJobs(sync) {
       `<div class="jobs-funnel">${funnel}</div>` +
       (importing ? `<form class="jobs-import" data-act="import">` +
         `<span>Откройте старый сайт, нажмите F12 → Console и выполните команду ниже — она только <b>читает</b> данные и копирует их в буфер обмена. ` +
-          `Сохраните копию в файл (резервная копия), затем вставьте сюда. Переносятся прогресс, календарь, повторение, отклики, идеи и выделения; повторный импорт не создаёт дублей.</span>` +
+          `Сохраните копию в файл (резервная копия), затем вставьте сюда. Переносятся прогресс, календарь, повторение, отклики, идеи (станут заметками) и выделения; повторный импорт не создаёт дублей.</span>` +
         `<code>${esc(EXPORT_SNIPPET)}</code>` +
         `<textarea name="json" rows="5" placeholder='{"net-interview-progress-v1":"…", …}' required></textarea>` +
         `<button type="submit" class="jobs-btn primary">Импортировать</button></form>` : '') +
@@ -390,7 +390,7 @@ export function startJobs(sync) {
           const r = await api('POST', '/api/import/site', storage);
           importing = false;
           message = { error: importErrors(r).length > 0, text: importSummary(r) };
-          // прогресс, календарь, идеи и выделения рисует база знаний — перечитываем страницу, сообщение показываем после
+          // прогресс, календарь, заметки и выделения рисует база знаний — перечитываем страницу, сообщение показываем после
           sessionStorage.setItem('import-message', JSON.stringify(message));
           location.reload();
         });

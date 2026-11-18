@@ -29,13 +29,10 @@ public sealed record SaveHighlightRequest(string Section, string Text, string? P
 /// <summary>Идеи для проектов и выделения в ответах. Null — запись не найдена (или чужая).</summary>
 public sealed class NotesService(INotesRepository repository, IUnitOfWork unitOfWork, IUserClock clock)
 {
-    private static readonly IdeaStatus[] StatusOrder = [IdeaStatus.Doing, IdeaStatus.New, IdeaStatus.Done];
-
-    /// <summary>Сначала «пробую», потом новые, применённые — в конце; внутри — свежие сверху.</summary>
+    /// <summary>Заметки (в интерфейсе «идеи» переименованы в «заметки», статусов там нет): свежие сверху.</summary>
     public async Task<IReadOnlyList<IdeaDto>> ListIdeasAsync(CancellationToken ct) =>
         [.. (await repository.ListIdeasAsync(ct))
-            .OrderBy(x => Array.IndexOf(StatusOrder, x.Status))
-            .ThenByDescending(x => x.CreatedOn)
+            .OrderByDescending(x => x.CreatedOn)
             .ThenByDescending(x => x.Id)        // Guid v7 растёт со временем: в один день — тоже свежие сверху
             .Select(IdeaDto.From)];
 
@@ -74,28 +71,17 @@ public sealed class NotesService(INotesRepository repository, IUnitOfWork unitOf
         return true;
     }
 
-    /// <summary>Все идеи одним файлом Markdown по статусам — читать глазами и резервная копия.</summary>
+    /// <summary>Все заметки одним файлом Markdown, свежие сверху — читать глазами и резервная копия.</summary>
     public async Task<string> ExportIdeasMarkdownAsync(CancellationToken ct)
     {
-        var ideas = await repository.ListIdeasAsync(ct);
-        var sb = new StringBuilder().Append("# Идеи для проектов — ").AppendLine(Fmt(await clock.TodayAsync(ct))).AppendLine();
-        foreach (var status in new[] { IdeaStatus.New, IdeaStatus.Doing, IdeaStatus.Done })
+        var sb = new StringBuilder().Append("# Заметки — ").AppendLine(Fmt(await clock.TodayAsync(ct))).AppendLine();
+        foreach (var x in await ListIdeasAsync(ct))
         {
-            var list = ideas.Where(x => x.Status == status).OrderBy(x => x.CreatedOn).ToList();
-            if (list.Count == 0)
-                continue;
-
-            sb.Append("## ").AppendLine(Label(status)).AppendLine();
-            foreach (var x in list)
-            {
-                var meta = new[] { x.Project.Length > 0 ? $"проект: {x.Project}" : null, x.Question.Length > 0 ? $"вопрос {x.Question}" : null, Fmt(x.CreatedOn) };
-                sb.Append("- [").Append(status == IdeaStatus.Done ? 'x' : ' ').Append("] **").Append(x.Title).Append("**")
-                  .AppendLine(string.Concat(meta.Where(m => m is not null).Select(m => " · " + m)));
-                foreach (var line in x.Note.Split('\n', StringSplitOptions.None).Where(_ => x.Note.Length > 0))
-                    sb.Append("  ").AppendLine(line.TrimEnd('\r'));
-            }
-
-            sb.AppendLine();
+            var meta = new[] { x.Project.Length > 0 ? $"проект: {x.Project}" : null, x.Question.Length > 0 ? $"вопрос {x.Question}" : null, Fmt(x.CreatedOn) };
+            sb.Append("- **").Append(x.Title).Append("**")
+              .AppendLine(string.Concat(meta.Where(m => m is not null).Select(m => " · " + m)));
+            foreach (var line in x.Note.Split('\n', StringSplitOptions.None).Where(_ => x.Note.Length > 0))
+                sb.Append("  ").AppendLine(line.TrimEnd('\r'));
         }
 
         return sb.ToString();
@@ -151,11 +137,4 @@ public sealed class NotesService(INotesRepository repository, IUnitOfWork unitOf
     }
 
     private static string Fmt(DateOnly day) => day.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture);
-
-    private static string Label(IdeaStatus status) => status switch
-    {
-        IdeaStatus.Doing => "🔧 пробую",
-        IdeaStatus.Done => "✅ применил",
-        _ => "💡 идея",
-    };
 }

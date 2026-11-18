@@ -3,7 +3,6 @@ using JobTracker.Application.Applications;
 using JobTracker.Application.Content;
 using JobTracker.Application.Notes;
 using JobTracker.Application.Study;
-using JobTracker.Application.Todos;
 using JobTracker.Application.Import;
 using JobTracker.Application.VacancyChecking;
 using JobTracker.Domain.Applications;
@@ -20,7 +19,6 @@ public static class DependencyInjection
         services.AddScoped<ContentService>();
         services.AddScoped<StudyService>();
         services.AddScoped<NotesService>();
-        services.AddScoped<TodoService>();
         services.AddScoped<IUserClock, UserClock>();
         services.AddScoped<LegacyImportService>();
         services.AddScoped<LegacySiteImportService>();

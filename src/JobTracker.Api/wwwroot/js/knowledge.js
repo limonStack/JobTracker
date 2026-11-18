@@ -1,4 +1,4 @@
-// База знаний: меню, поиск, карточка ответа, прогресс, календарь, режим собеседования, идеи и выделения.
+// База знаний: меню, поиск, карточка ответа, прогресс, календарь, режим собеседования, заметки и выделения.
 // Логика перенесена из 300questions/ANSWERS.html как есть; вместо localStorage данные хранит сервер:
 // store (store.js) отдаёт состояние, загруженное из API, и отправляет изменения обратно.
 // Запускается после того, как render.js построил меню и тексты ответов из GET /api/content.
@@ -807,83 +807,62 @@ export function startKnowledge(store) {
   jobsPanel.addEventListener('click', e => { if (e.target.closest('[data-act="close"]')) setJobs(false); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !jobsPanel.hidden && !e.target.closest('#jobs input, #jobs textarea, #jobs select')) setJobs(false); });
 
-  // ---------- Идеи для проектов: что хочу применить на практике ----------
-  // хранятся в браузере, как отметки и отклики; «⬇ Markdown» — выгрузка и резервная копия
+  // ---------- Заметки: что сделать, что почитать, ссылки ----------
+  // в коде и API по-прежнему «ideas» (таблица Ideas, путь /api/ideas); «⬇ Markdown» — выгрузка и резервная копия
   const ideasPanel = document.getElementById('ideas');
   const ideasBtn = document.getElementById('ideas-toggle');
-    const IDEA_ST = [
-    { id: 'new', label: '💡 идея', color: '#eab308' },
-    { id: 'doing', label: '🔧 пробую', color: '#4fa3e0' },
-    { id: 'done', label: '✅ применил', color: '#22c55e' },
-  ];
-  const ideaSt = id => IDEA_ST.find(s => s.id === id) || IDEA_ST[0];
   let ideas = [];
   ideas = store.ideas;                                // в прежнем формате { id, d, t, n, p, q, s, done }
   const saveIdeas = () => store.syncIdeas(ideas);    // на сервер уходит только изменённое
-  const openIdeas = new Set();                        // раскрытые идеи
-  let ideasFilter = 'all';
+  const openIdeas = new Set();                        // раскрытые заметки
   // номер вопроса «11.24» — ссылка на ответ, если такой вопрос есть
   const qLink = q => !q ? '<span class="idea-gap"></span>'
     : document.getElementById('q' + q) ? `<a class="idea-q" href="#q${escAttr(q)}" data-act="goq" title="Открыть вопрос ${escAttr(q)}">↗ ${esc(q)}</a>`
     : `<span class="idea-tag">${esc(q)}</span>`;
+  // ссылки в заметке кликабельны (открываются в новой вкладке, заметку не раскрывают)
+  const linkify = s => esc(s).replace(/https?:\/\/[^\s<]+/g, u => `<a href="${u.replace(/"/g, '&quot;')}" target="_blank" rel="noopener" data-act="link">${u}</a>`);
+  // свежие сверху; в один день — по времени записи (id — UUID v7, растёт со временем)
+  const byNewest = (a, b) => b.d.localeCompare(a.d) || b.id.localeCompare(a.id);
 
   function renderIdeas() {
     if (ideasPanel.hidden) return;
-    const count = f => ideas.filter(x => f === 'all' || x.s === f).length;
-    const filters = [['all', 'все'], ...IDEA_ST.map(s => [s.id, s.label])]
-      .map(([f, l]) => `<button type="button" class="jf${f === ideasFilter ? ' on' : ''}" data-act="filter" data-f="${f}"><b>${count(f)}</b>${l}</button>`).join('');
-    // сначала «пробую», потом новые идеи, применённые — в конце; внутри — свежие сверху
-    const order = { doing: 0, new: 1, done: 2 };
-    const list = ideas.filter(x => ideasFilter === 'all' || x.s === ideasFilter)
-      .sort((a, b) => order[a.s] - order[b.s] || b.d.localeCompare(a.d));
-    const rows = list.map(x => {
-      const st = ideaSt(x.s), opened = openIdeas.has(x.id);
-      const options = IDEA_ST.map(s => `<option value="${s.id}"${s.id === x.s ? ' selected' : ''}>${s.label}</option>`).join('');
-      return `<div class="idea${x.s === 'done' ? ' done' : ''}" data-idea="${x.id}">` +
+    const rows = [...ideas].sort(byNewest).map(x => {
+      const opened = openIdeas.has(x.id);
+      return `<div class="idea" data-idea="${x.id}">` +
         `<div class="idea-row" data-act="toggle">` +
-          `<select class="idea-st" data-act="status" style="--st:${st.color}" aria-label="Статус">${options}</select>` +
-          `<span class="idea-title" title="${escAttr(x.t)}">${esc(x.t)}</span>` +
+          `<span class="idea-title" title="${escAttr(x.t)}">${linkify(x.t)}</span>` +
           (x.p ? `<span class="idea-tag">${esc(x.p)}</span>` : '<span class="idea-gap"></span>') +
           qLink(x.q) +
           `<span class="job-arrow">${opened ? '▾' : '▸'}</span>` +
         `</div>` +
         (opened ? `<div class="idea-detail">` +
-          `<label class="job-field">Идея<input data-act="title" value="${escAttr(x.t)}"></label>` +
-          `<label class="job-field">Как применить<textarea data-act="note" rows="4" placeholder="Где применить, с чего начать, ссылки, что почитать">${esc(x.n)}</textarea></label>` +
-          `<div class="idea-fields"><label class="job-field">Проект<input data-act="project" value="${escAttr(x.p)}" placeholder="pet-проект, работа, новый сервис…"></label>` +
+          `<label class="job-field">Заметка<input data-act="title" value="${escAttr(x.t)}"></label>` +
+          `<label class="job-field">Подробнее<textarea data-act="note" rows="4" placeholder="Подробности, ссылки, что почитать">${esc(x.n)}</textarea></label>` +
+          `<div class="idea-fields"><label class="job-field">Проект<input data-act="project" value="${escAttr(x.p)}" placeholder="pet-проект, работа, курс…"></label>` +
           `<label class="job-field">Вопрос<input data-act="question" value="${escAttr(x.q)}" placeholder="11.24"></label></div>` +
-          `<span class="job-empty">Записано ${fmtDate(x.d)}${x.done ? ` · применено ${fmtDate(x.done)}` : ''}</span>` +
-          `<button type="button" class="jobs-btn danger" data-act="del">Удалить идею</button>` +
-        `</div>` : x.n ? `<div class="idea-text">${esc(x.n.length > 160 ? x.n.slice(0, 160) + '…' : x.n)}</div>` : '') +
+          `<span class="job-empty">Записано ${fmtDate(x.d)}</span>` +
+          `<button type="button" class="jobs-btn danger" data-act="del">Удалить заметку</button>` +
+        `</div>` : x.n ? `<div class="idea-text">${linkify(x.n.length > 160 ? x.n.slice(0, 160) + '…' : x.n)}</div>` : '') +
       `</div>`;
     }).join('');
     ideasPanel.innerHTML =
-      `<div class="jobs-head"><span class="jobs-title">💡 Идеи для проектов</span>` +
-        `<button type="button" class="jobs-btn" data-act="md" title="Скачать все идеи файлом Markdown — заодно резервная копия">⬇ Markdown</button>` +
+      `<div class="jobs-head"><span class="jobs-title">📝 Заметки</span>` +
+        `<button type="button" class="jobs-btn" data-act="md" title="Скачать все заметки файлом Markdown — заодно резервная копия">⬇ Markdown</button>` +
         `<button type="button" class="cal-close" data-act="close" title="Закрыть" aria-label="Закрыть">✕</button></div>` +
-      `<form class="idea-add" data-act="add"><input name="t" placeholder="Новая идея: что хочу попробовать на практике — Enter, чтобы записать" required autocomplete="off">` +
+      `<form class="idea-add" data-act="add"><input name="t" placeholder="Новая заметка — Enter, чтобы записать" required autocomplete="off">` +
         `<button type="submit" class="jobs-btn primary">Записать</button></form>` +
-      `<div class="jobs-funnel">${filters}</div>` +
-      `<div class="jobs-list">${rows || `<div class="job-empty">${ideasFilter === 'all'
-        ? 'Идей пока нет. Прочитали ответ и захотелось попробовать в проекте — запишите сюда; клик по идее — подробности, проект и номер вопроса.'
-        : 'В этом статусе идей нет'}</div>`}</div>`;
+      `<div class="jobs-list">${rows || '<div class="job-empty">Заметок пока нет. Запишите, что сделать или почитать; клик по заметке — подробности, проект и номер вопроса.</div>'}</div>`;
   }
 
   function exportIdeas() {
-    const lines = [`# Идеи для проектов — ${fmtDate(dayKey())}`, ''];
-    for (const st of IDEA_ST) {
-      const list = ideas.filter(x => x.s === st.id).sort((a, b) => a.d.localeCompare(b.d));
-      if (!list.length) continue;
-      lines.push(`## ${st.label}`, '');
-      for (const x of list) {
-        lines.push(`- [${x.s === 'done' ? 'x' : ' '}] **${x.t}**` + [x.p && `проект: ${x.p}`, x.q && `вопрос ${x.q}`, fmtDate(x.d)].filter(Boolean).map(v => ` · ${v}`).join(''));
-        if (x.n) lines.push(...x.n.split('\n').map(l => '  ' + l));
-      }
-      lines.push('');
+    const lines = [`# Заметки — ${fmtDate(dayKey())}`, ''];
+    for (const x of [...ideas].sort(byNewest)) {
+      lines.push(`- **${x.t}**` + [x.p && `проект: ${x.p}`, x.q && `вопрос ${x.q}`, fmtDate(x.d)].filter(Boolean).map(v => ` · ${v}`).join(''));
+      if (x.n) lines.push(...x.n.split('\n').map(l => '  ' + l));
     }
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/markdown;charset=utf-8' }));
-    a.download = `идеи-${dayKey()}.md`;
+    a.href = URL.createObjectURL(new Blob([lines.join('\n') + '\n'], { type: 'text/markdown;charset=utf-8' }));
+    a.download = `заметки-${dayKey()}.md`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
@@ -902,19 +881,18 @@ export function startKnowledge(store) {
     const x = ideas.find(i => i.id === t.closest('[data-idea]')?.dataset.idea);
     switch (t.dataset.act) {
       case 'toggle': if (x) { if (openIdeas.has(x.id)) openIdeas.delete(x.id); else openIdeas.add(x.id); renderIdeas(); } break;
-      case 'filter': ideasFilter = ideasFilter === t.dataset.f ? 'all' : t.dataset.f; renderIdeas(); break;
+      case 'link': break;                             // ссылку открывает браузер, заметка не раскрывается
       case 'goq': setIdeas(false); break;             // переход делает сам браузер, панель не должна закрывать ответ
       case 'md': exportIdeas(); break;
       case 'close': setIdeas(false); break;
-      case 'del': if (confirm(`Удалить идею «${x.t}»?`)) { ideas = ideas.filter(i => i !== x); saveIdeas(); renderIdeas(); } break;
+      case 'del': if (confirm(`Удалить заметку «${x.t}»?`)) { ideas = ideas.filter(i => i !== x); saveIdeas(); renderIdeas(); } break;
     }
   });
   ideasPanel.addEventListener('change', e => {
     const t = e.target, x = ideas.find(i => i.id === t.closest('[data-idea]')?.dataset.idea);
     if (!x) return;
     const v = t.value.trim();
-    if (t.dataset.act === 'status') { x.s = t.value; x.done = t.value === 'done' ? dayKey() : ''; }
-    else if (t.dataset.act === 'title') { if (!v) return; x.t = v; }
+    if (t.dataset.act === 'title') { if (!v) return; x.t = v; }
     else if (t.dataset.act === 'note') x.n = t.value.replace(/\s+$/, '');
     else if (t.dataset.act === 'project') x.p = v;
     else if (t.dataset.act === 'question') x.q = v.replace(/^#?q?/i, '');
