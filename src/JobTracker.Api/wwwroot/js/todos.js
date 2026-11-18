@@ -1,4 +1,4 @@
-// Дела на сегодня: панель со списком (кнопка 📝 в шапке меню) и счётчик «Дела: 2 / 5» под прогрессом.
+// Дела на сегодня: панель со списком (кнопка 📝 в шапке меню).
 // Данные — в локальном снимке (sync.js): правка сразу в снимок, на сервер — через очередь, работает и офлайн.
 // Невыполненное дело не теряется: пока его не отметили, оно показывается и в следующие дни с пометкой,
 // с какого дня тянется. День записи при этом не меняется — перенос только в показе (todayList).
@@ -30,21 +30,11 @@ export function todayList(todos, today) {
 export function startTodos(sync, newId) {
   const panel = document.getElementById('todos');
   const btn = document.getElementById('todos-toggle');
-  const counter = document.getElementById('todo-count');
   // снимок, сохранённый до появления дел, — без списка
   const todos = () => (sync.state.todos ||= []);
   const find = id => todos().find(t => t.id === id);
 
-  function renderCount() {
-    const list = todayList(todos(), dayKey());
-    const done = list.filter(t => t.doneOn).length;
-    counter.hidden = list.length === 0;
-    counter.innerHTML = `Дела <b>${done}</b> / ${list.length}${list.length && done === list.length ? ' ✓' : ''}`;
-    counter.classList.toggle('met', list.length > 0 && done === list.length);
-  }
-
   function render() {
-    renderCount();
     if (panel.hidden) return;
     const today = dayKey();
     const list = todayList(todos(), today);
@@ -81,7 +71,6 @@ export function startTodos(sync, newId) {
   }
 
   btn.addEventListener('click', () => setOpen(panel.hidden));
-  counter.addEventListener('click', () => setOpen(true));
   // открыли отклики или идеи — дела закрываются
   for (const id of ['jobs-toggle', 'ideas-toggle'])
     document.getElementById(id).addEventListener('click', () => { if (!panel.hidden) setOpen(false); });
@@ -129,7 +118,7 @@ export function startTodos(sync, newId) {
   });
 
   // свежий снимок с сервера; новый день (вкладка открыта с вечера) — список пересчитывается
-  sync.onReplaced(() => { if (!panel.contains(document.activeElement)) render(); else renderCount(); });
+  sync.onReplaced(() => { if (!panel.contains(document.activeElement)) render(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && !panel.contains(document.activeElement)) render(); });
   render();
 }
