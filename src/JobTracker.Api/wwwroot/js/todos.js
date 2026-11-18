@@ -1,4 +1,4 @@
-// Дела на сегодня: панель со списком (кнопка ✅ в шапке меню) и счётчик «Дела: 2 / 5» под прогрессом.
+// Дела на сегодня: панель со списком (кнопка 📝 в шапке меню) и счётчик «Дела: 2 / 5» под прогрессом.
 // Данные — в локальном снимке (sync.js): правка сразу в снимок, на сервер — через очередь, работает и офлайн.
 // Невыполненное дело не теряется: пока его не отметили, оно показывается и в следующие дни с пометкой,
 // с какого дня тянется. День записи при этом не меняется — перенос только в показе (todayList).
@@ -57,7 +57,7 @@ export function startTodos(sync, newId) {
       `</li>`).join('');
     const focused = document.activeElement?.closest('#todos') ? document.activeElement.name : null;
     panel.innerHTML =
-      `<div class="jobs-head"><span class="jobs-title">✅ Дела на сегодня</span>` +
+      `<div class="jobs-head"><span class="jobs-title">📝 Дела на сегодня</span>` +
         `<span class="job-empty">${+today.slice(8)} ${MONTHS[+today.slice(5, 7) - 1]}</span>` +
         `<button type="button" class="cal-close" data-act="close" title="Закрыть" aria-label="Закрыть">✕</button></div>` +
       `<form class="idea-add" data-act="add"><input name="t" placeholder="Новое дело — Enter, чтобы добавить" required autocomplete="off" maxlength="300">` +
