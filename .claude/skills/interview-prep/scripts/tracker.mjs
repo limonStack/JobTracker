@@ -1,8 +1,8 @@
 // Отклик в трекере JobTracker для вакансии, под которую готовимся.
 //   node tracker.mjs --company "Acme" --url "https://…" --note "…" --event "Подготовлен раздел 25"
 //   [--base http://localhost:5196]
-// Ищет отклик по ссылке, затем по названию компании. Нет — создаёт (PUT /api/applications/{id}),
-// есть — только добавляет событие. Запросы идемпотентны: id генерирует клиент, как во фронтенде.
+// Ищет отклик по ссылке, затем по названию компании. Нет — создаёт на этапе «Откликнулся» (PUT /api/applications/{id}),
+// есть — дописывает ссылку, если её не было, и добавляет событие (--event необязателен). Запросы идемпотентны: id генерирует клиент, как во фронтенде.
 import { randomBytes } from 'node:crypto';
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((acc, a, i, all) => {
@@ -57,6 +57,11 @@ if (!app) {
   console.log(`Создан отклик «${app.company}» (${app.id}), этап ${app.stage}, дата ${app.appliedOn}.`);
 } else {
   console.log(`Отклик уже есть: «${app.company}» (${app.id}), этап ${app.stage}, с ${app.appliedOn}. Новый не создаю.`);
+  // найден по названию компании, а ссылки на вакансию в нём нет — дописываем, остальное не трогаем
+  if (args.url && !app.url) {
+    app = await call('PUT', `/api/applications/${app.id}`, { company: app.company, appliedOn: app.appliedOn, url: args.url, note: app.note ?? '' });
+    console.log(`Добавлена ссылка на вакансию: ${args.url}`);
+  }
 }
 
 if (args.event) {
