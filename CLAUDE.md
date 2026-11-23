@@ -44,7 +44,7 @@ Clean Architecture, зависимости внутрь: `Api → Infrastructure
 
 ### Контент (тексты ответов)
 
-Хуки Claude Code — в `.claude/settings.json`, скрипты в `.claude/hooks/` (тесты — `tests/js/hooks.test.mjs`): `vacancy-link.mjs` (UserPromptSubmit) подсказывает `/interview-prep`, если в сообщении ссылка на вакансию; `dev-app.mjs` перед Debug-сборкой (`dotnet build/test/ef/run` без Release) останавливает приложение этого репозитория из `bin/Debug` (PreToolUse), а в конце ответа запускает его снова (Stop), если останавливал сам.
+Хуки Claude Code — в `.claude/settings.json`, скрипты в `.claude/hooks/` (тесты — `tests/js/hooks.test.mjs`): `vacancy-link.mjs` (UserPromptSubmit) подсказывает `/interview-prep`, если в сообщении ссылка на вакансию; `dev-app.mjs` перед Debug-сборкой (`dotnet build/test/ef/run` без Release) останавливает приложение этого репозитория из `bin/Debug` (PreToolUse), а в конце ответа запускает его снова (Stop), если останавливал сам; `readme-check.mjs` (PostToolUse) после `git commit` с новой возможностью (модуль API или домена, сайт вакансий, фоновая задача, модуль фронтенда, пакеты, CI, 12+ файлов в `src/`) без правки README просит проверить README (`--ref <sha>` — проверить коммит вручную).
 
 Подготовка к вакансии — skill `.claude/skills/interview-prep` (`/interview-prep`); его скрипты `check-content.mjs` (ссылки, нумерация, метки) и `list-questions.mjs` (оглавление обоих файлов) полезны при любой правке контента.
 

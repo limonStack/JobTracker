@@ -54,3 +54,36 @@ test('Release, --no-build, свой экземпляр на другом пор�
     'dotnet run --no-build --no-launch-profile --urls http://localhost:5299', 'echo "dotnet build"', 'npm test', 'git status', 'dotnet tool restore'])
     assert.equal(needsStop(cmd), false, cmd);
 });
+
+// .claude/hooks/readme-check.mjs: какой коммит стоит отразить в README
+import { readmeReasons, readmeMessage } from '../../.claude/hooks/readme-check.mjs';
+
+const A = path => ({ status: 'A', path }), M = path => ({ status: 'M', path });
+
+test('README: новые модуль API, сайт вакансий, фоновая задача, модуль фронтенда, модуль домена', () => {
+  const reasons = readmeReasons([
+    A('src/JobTracker.Api/Endpoints/PrepEndpoints.cs'),
+    A('src/JobTracker.Infrastructure/VacancyChecking/DjinniChecker.cs'),
+    A('src/JobTracker.Api/BackgroundJobs/PrepWorker.cs'),
+    A('src/JobTracker.Api/wwwroot/js/prep.js'),
+    A('src/JobTracker.Domain/Prep/PrepJob.cs'),
+  ], { existedBefore: dir => !dir.endsWith('/Prep') });
+  assert.equal(reasons.length, 5);
+  assert.match(reasons.join('\n'), /PrepEndpoints\.cs[\s\S]*DjinniChecker\.cs[\s\S]*PrepWorker\.cs[\s\S]*prep\.js[\s\S]*домена: Prep/);
+});
+
+test('README: пакеты, CI и большой коммит — тоже повод', () => {
+  assert.deepEqual(readmeReasons([M('src/JobTracker.Api/JobTracker.Api.csproj')], { packagesChanged: true }), ['изменились NuGet-пакеты (стек)']);
+  assert.deepEqual(readmeReasons([M('.github/workflows/ci.yml')]), ['изменился CI']);
+  const many = Array.from({ length: 12 }, (_, i) => M(`src/JobTracker.Application/X${i}.cs`));
+  assert.match(readmeReasons(many)[0], /12 файлов/);
+});
+
+test('README: мелкие правки, миграции, тесты, файл в существующем модуле и коммит с README — молчим', () => {
+  assert.deepEqual(readmeReasons([M('src/JobTracker.Api/wwwroot/js/knowledge.js'), A('tests/js/x.test.mjs')]), []);
+  assert.deepEqual(readmeReasons([A('src/JobTracker.Domain/Knowledge/SectionKind.cs')]), []);
+  assert.deepEqual(readmeReasons(Array.from({ length: 20 }, (_, i) => A(`src/JobTracker.Infrastructure/Persistence/Migrations/M${i}.cs`))), []);
+  assert.deepEqual(readmeReasons([A('src/JobTracker.Api/Endpoints/PrepEndpoints.cs'), M('README.md')]), []);
+  assert.deepEqual(readmeReasons([A('src/JobTracker.Infrastructure/VacancyChecking/HtmlVacancyChecker.cs')]), []);
+  assert.equal(readmeMessage('abc', 'x', []), null);
+});
