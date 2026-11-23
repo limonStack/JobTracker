@@ -692,9 +692,7 @@ export function startKnowledge(store) {
   }
 
   function go(it) {
-    const target = document.getElementById(it.id);
-    if (location.hash === '#' + it.id) target?.scrollIntoView({ block: 'start' });   // тот же адрес — прокрутить вручную
-    else location.hash = it.id;
+    navigate(it.id);
     document.body.classList.remove('open');
     cardSuppressed = true;
     hideCard();
@@ -916,9 +914,7 @@ export function startKnowledge(store) {
       e.preventDefault();
       d.open = !d.open;
       if (!d.open) return;
-      const id = link.getAttribute('href').slice(1);
-      if (location.hash === '#' + id) document.getElementById(id)?.scrollIntoView({ block: 'start' });
-      else location.hash = id;
+      navigate(link.getAttribute('href').slice(1));
     });
   }
 
@@ -1129,6 +1125,26 @@ export function startKnowledge(store) {
     if (!d.open) d.open = true;                      // аккордеон сам свернёт остальные разделы
     (it ? it.li : d.querySelector('summary')).scrollIntoView({ block: 'nearest' });
   }
+  // Переход по якорю без новой записи в истории. Вкладку с одной записью скрипт может закрыть (single-tab.js),
+  // а с историей — нет: после каждого запуска из IDE старые вкладки оставались бы висеть с заглушкой.
+  // Цена — «назад» не возвращает к предыдущему вопросу.
+  function navigate(id) {
+    if (decodeURIComponent(location.hash.slice(1)) !== id) history.replaceState(history.state, '', '#' + id);
+    revealAnswer(id);
+    document.getElementById(id)?.scrollIntoView({ block: 'start' });
+    syncMenu(id);
+  }
+  // все ссылки на якоря страницы (оглавление, «#» у заголовков, ссылки в ответах) — через navigate;
+  // свои обработчики (go, клик по разделу) уже отменили переход, их не трогаем; Ctrl/Shift+клик — как обычно
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href^="#"]');
+    if (!a || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+    const id = decodeURIComponent(a.getAttribute('href').slice(1));
+    if (!id || !document.getElementById(id)) return;
+    e.preventDefault();
+    navigate(id);
+  });
+  // адрес с якорем, исправленный вручную в строке браузера
   addEventListener('hashchange', () => {
     const id = decodeURIComponent(location.hash.slice(1)), el = document.getElementById(id);
     if (el?.closest('.flt-out')) { revealAnswer(id); el.scrollIntoView({ block: 'start' }); }
