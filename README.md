@@ -11,11 +11,11 @@
 
 Работает офлайн (PWA): данные копируются в браузер, правки уходят на сервер, когда он доступен.
 
-![База знаний: ответ, меню разделов и прогресс изучения](docs/knowledge.png)
+![База знаний: ответ, меню разделов и прогресс изучения](docs/screenshots/knowledge.png)
 
 | Поиск — даже в неверной раскладке | Календарь занятий | Трекер откликов |
 |---|---|---|
-| [![Поиск](docs/search.png)](docs/search.png) | [![Календарь](docs/calendar.png)](docs/calendar.png) | [![Отклики](docs/tracker.png)](docs/tracker.png) |
+| [![Поиск](docs/screenshots/search.png)](docs/screenshots/search.png) | [![Календарь](docs/screenshots/calendar.png)](docs/screenshots/calendar.png) | [![Отклики](docs/screenshots/tracker.png)](docs/screenshots/tracker.png) |
 
 <sub>На скриншотах — демо-данные: компании выдуманные.</sub>
 
