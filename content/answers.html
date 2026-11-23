@@ -8278,5 +8278,1009 @@
 <li>Задайте свои вопросы: стек, размер команды, процесс code review, как устроен деплой, что ожидается от Middle в первые 3 месяца.</li>
 </ul>
 <p>Удачи на собеседовании! 🚀</p>
+</section><section><h1 id="23-frontend">23. Фронтенд: JavaScript, TypeScript, Angular</h1>
+<blockquote>
+<p><strong>Для кого раздел.</strong> Fullstack-вакансии (.NET + Angular) и backend-позиции, где «желательно знать фронтенд». Здесь — топ вопросов по JavaScript, TypeScript, браузеру, Angular, RxJS и NgRx.</p>
+<p><strong>Версии.</strong> Ответы по Angular — на ноябрь 2026: актуальна <strong>Angular 22</strong> (22.0 вышла 3 июня 2026, последняя минорная — 22.3). С v22 мажорные версии выходят <strong>раз в год, в июне</strong> (v23 — июнь 2027), минорные — примерно раз в два месяца. Angular 22 требует TypeScript 6. Что изменилось по версиям — <a href="#q23.42">23.42</a>.</p>
+<p><strong>Как готовиться.</strong> 🔥 — до автоматизма: event loop, замыкания, <code>this</code>, change detection, сигналы, операторы <code>*Map</code> в RxJS, отписка. На интервью часто просят объяснить код с подвохом — подвохи собраны в конце групп.</p>
+</blockquote>
+<h2>JavaScript</h2>
+<h3 id="q23.1"><a class="anchor" href="#q23.1">#</a>23.1 Типы данных в JavaScript, == vs ===, typeof 🔥</h3>
+<p><strong>8 типов:</strong> 7 примитивов — <code>string</code>, <code>number</code>, <code>bigint</code>, <code>boolean</code>, <code>undefined</code>, <code>null</code>, <code>symbol</code> — и <code>object</code> (сюда входят массивы, функции, Date, Map и т. д.). Примитивы неизменяемы и передаются по значению; объекты — по ссылке (копируется ссылка, как у ссылочных типов в C#).</p>
+<ul>
+<li><code>===</code> — строгое сравнение: без приведения типов. <code>==</code> — с приведением: <code>0 == ''</code> → <code>true</code>, <code>null == undefined</code> → <code>true</code>, <code>'1' == 1</code> → <code>true</code>. Правило: всегда <code>===</code>; единственное распространённое исключение — <code>x == null</code> как проверка «null или undefined».</li>
+<li><code>typeof null === 'object'</code> — историческая ошибка языка. <code>typeof function(){} === 'function'</code>, <code>typeof []</code> → <code>'object'</code>; массив проверяют через <code>Array.isArray</code>.</li>
+<li><code>NaN !== NaN</code>; проверка — <code>Number.isNaN(x)</code>. <code>Object.is(NaN, NaN)</code> → <code>true</code>, <code>Object.is(0, -0)</code> → <code>false</code>.</li>
+<li><strong>Falsy-значения:</strong> <code>false</code>, <code>0</code>, <code>-0</code>, <code>0n</code>, <code>''</code>, <code>null</code>, <code>undefined</code>, <code>NaN</code>. Всё остальное truthy, в том числе <code>[]</code>, <code>{}</code> и <code>'0'</code>.</li>
+<li><code>??</code> подставляет значение только для <code>null</code>/<code>undefined</code>, а <code>||</code> — для любого falsy: <code>0 || 10</code> → 10, <code>0 ?? 10</code> → 0. <code>?.</code> — optional chaining, как в C#.</li>
+<li><code>number</code> — 64-битный double: <code>0.1 + 0.2 !== 0.3</code>, целые точны до <code>Number.MAX_SAFE_INTEGER</code> (2<sup>53</sup>−1). Большие id и деньги в копейках за этой границей — <code>bigint</code> или строка; поэтому <code>long</code>-идентификаторы из .NET-API часто отдают строкой.</li>
+</ul>
+<hr />
+<h3 id="q23.2"><a class="anchor" href="#q23.2">#</a>23.2 var, let, const; hoisting и временная мёртвая зона (TDZ) 🔥</h3>
+<table>
+<thead><tr><th></th><th><code>var</code></th><th><code>let</code></th><th><code>const</code></th></tr></thead>
+<tbody>
+<tr><td>Область видимости</td><td>Функция</td><td>Блок <code>{}</code></td><td>Блок <code>{}</code></td></tr>
+<tr><td>Hoisting</td><td>Поднимается и инициализируется <code>undefined</code></td><td>Поднимается, но до объявления — TDZ (<code>ReferenceError</code>)</td><td>Как <code>let</code></td></tr>
+<tr><td>Повторное объявление</td><td>Можно</td><td>Нельзя</td><td>Нельзя</td></tr>
+<tr><td>Переприсваивание</td><td>Можно</td><td>Можно</td><td>Нельзя</td></tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Hoisting</strong> — объявления «поднимаются» в начало области видимости при создании контекста выполнения. Function declaration поднимается целиком (можно вызвать до объявления); function expression и стрелочная функция — нет.</li>
+<li><code>const</code> запрещает переприсвоить <strong>переменную</strong>, но не менять объект: <code>const a = []; a.push(1)</code> работает. Заморозка — <code>Object.freeze</code> (поверхностная).</li>
+<li>Правило: по умолчанию <code>const</code>, <code>let</code> — если переменная меняется, <code>var</code> — не использовать.</li>
+</ul>
+<hr />
+<h3 id="q23.3"><a class="anchor" href="#q23.3">#</a>23.3 Замыкания и область видимости 🔥</h3>
+<p><strong>Замыкание</strong> — функция вместе с лексическим окружением, в котором она создана: функция помнит переменные внешней области, даже когда внешняя функция уже завершилась. Идея та же, что в C# (<a href="#q1.18">1.18</a>), только в JS это основа языка.</p>
+<pre><code class="language-js">function createCounter() {
+  let count = 0;                 // недоступна снаружи — «приватное» состояние
+  return {
+    increment: () =&gt; ++count,
+    get: () =&gt; count,
+  };
+}
+const c = createCounter();
+c.increment(); c.increment();
+c.get(); // 2
+</code></pre>
+<p><strong>Где применяются:</strong> инкапсуляция (модуль-паттерн, приватные данные), фабрики функций, каррирование, мемоизация, обработчики событий и колбэки, <code>debounce</code>/<code>throttle</code> (<a href="#q23.10">23.10</a>). <strong>Риск:</strong> замыкание удерживает внешние переменные в памяти — забытый обработчик события с замыканием на большой объект становится утечкой.</p>
+<hr />
+<h3 id="q23.4"><a class="anchor" href="#q23.4">#</a>23.4 this, call/apply/bind, стрелочные функции 🔥</h3>
+<p><code>this</code> в обычной функции определяется <strong>способом вызова</strong>, а не местом объявления:</p>
+<ul>
+<li><code>obj.method()</code> → <code>this === obj</code>.</li>
+<li>Просто <code>fn()</code> → <code>undefined</code> в strict mode (в модулях и классах strict всегда), иначе глобальный объект.</li>
+<li><code>new Fn()</code> → новый объект.</li>
+<li><code>fn.call(ctx, a, b)</code>, <code>fn.apply(ctx, [a, b])</code> — вызвать с явным <code>this</code>; <code>fn.bind(ctx)</code> — вернуть новую функцию с навсегда привязанным <code>this</code>.</li>
+</ul>
+<p><strong>Стрелочная функция</strong> своего <code>this</code> не имеет — берёт его из окружающей области (лексически), так же как <code>arguments</code>. Её нельзя вызвать через <code>new</code>, а <code>bind</code>/<code>call</code> не меняют её <code>this</code>.</p>
+<pre><code class="language-js">class Timer {
+  seconds = 0;
+  start() {
+    setInterval(function () { this.seconds++; }, 1000); // ❌ this === undefined
+    setInterval(() =&gt; { this.seconds++; }, 1000);       // ✅ this — экземпляр Timer
+  }
+}
+</code></pre>
+<p>Поэтому в Angular колбэки в <code>subscribe</code> и обработчики пишут стрелками. Метод объекта, наоборот, лучше обычной функцией: стрелка в литерале объекта не увидит сам объект.</p>
+<hr />
+<h3 id="q23.5"><a class="anchor" href="#q23.5">#</a>23.5 Прототипы и классы в JavaScript ⭐</h3>
+<ul>
+<li>У каждого объекта есть скрытая ссылка на <strong>прототип</strong> (<code>Object.getPrototypeOf(obj)</code>). Если свойства нет в объекте, оно ищется по <strong>цепочке прототипов</strong> до <code>null</code>.</li>
+<li><code>class</code> — синтаксический сахар над прототипами: методы класса лежат в <code>Class.prototype</code> и общие для всех экземпляров; <code>extends</code> строит цепочку прототипов; <code>super</code> вызывает метод родителя.</li>
+<li>Поля класса (<code>count = 0</code>) создаются у каждого экземпляра. Приватные поля — <code>#secret</code> (настоящая приватность в рантайме, в отличие от <code>private</code> в TypeScript, который проверяется только при компиляции).</li>
+<li><code>instanceof</code> проверяет, есть ли <code>Class.prototype</code> в цепочке прототипов объекта.</li>
+</ul>
+<p><strong>Отличие от C#:</strong> наследование «объект от объекта», а не «класс от класса»; прототип можно поменять во время выполнения. На практике в Angular-коде пишут классы и почти не трогают прототипы напрямую, но на собеседовании спрашивают, как работает поиск свойства.</p>
+<hr />
+<h3 id="q23.6"><a class="anchor" href="#q23.6">#</a>23.6 Event loop: call stack, микрозадачи и макрозадачи 🔥</h3>
+<p>JavaScript в браузере выполняет код в <strong>одном потоке</strong>. Асинхронность обеспечивают браузер (Web APIs: таймеры, сеть, события) и <strong>цикл событий</strong>:</p>
+<ol>
+<li>Выполняется синхронный код — пока <strong>call stack</strong> не опустеет.</li>
+<li>Выполняются <strong>все микрозадачи</strong>: колбэки <code>Promise.then/catch/finally</code>, продолжения после <code>await</code>, <code>queueMicrotask</code>, <code>MutationObserver</code>. Микрозадачи, добавленные по ходу, выполняются в этом же проходе.</li>
+<li>При необходимости браузер <strong>отрисовывает</strong> кадр (перед этим — <code>requestAnimationFrame</code>).</li>
+<li>Берётся <strong>одна макрозадача</strong>: <code>setTimeout</code>, <code>setInterval</code>, события DOM, сообщения, ввод-вывод — и цикл повторяется.</li>
+</ol>
+<p><strong>Следствия:</strong> долгий синхронный код (тяжёлый цикл, парсинг огромного JSON) замораживает интерфейс — его выносят в Web Worker или дробят. <code>setTimeout(fn, 0)</code> не выполняется «сразу» — только после текущего кода и всех микрозадач. Бесконечная цепочка микрозадач заблокирует отрисовку. Задача на порядок вывода — <a href="#q23.13">23.13</a>.</p>
+<p><strong>Сравнение с .NET:</strong> в ASP.NET Core <code>await</code> освобождает поток пула (<a href="#q4.3">4.3</a>), а в браузере поток всего один, и <code>await</code> просто ставит продолжение в очередь микрозадач.</p>
+<hr />
+<h3 id="q23.7"><a class="anchor" href="#q23.7">#</a>23.7 Promise и async/await: all, allSettled, race, any; обработка ошибок 🔥</h3>
+<p><strong>Promise</strong> — объект с результатом асинхронной операции: <em>pending</em> → <em>fulfilled</em> или <em>rejected</em>. Это аналог <code>Task</code> в .NET, но запускается сразу при создании (eager), и его нельзя отменить — для отмены есть <code>AbortController</code> (аналог <code>CancellationToken</code>).</p>
+<table>
+<thead><tr><th>Метод</th><th>Когда выполняется</th><th>Когда отклоняется</th></tr></thead>
+<tbody>
+<tr><td><code>Promise.all</code></td><td>Все выполнены — массив результатов</td><td>При первой ошибке (остальные продолжают работать, их результаты теряются)</td></tr>
+<tr><td><code>Promise.allSettled</code></td><td>Все завершились — массив <code>{status, value | reason}</code></td><td>Никогда</td></tr>
+<tr><td><code>Promise.race</code></td><td>Первый завершившийся — с его результатом</td><td>…или с его ошибкой</td></tr>
+<tr><td><code>Promise.any</code></td><td>Первый успешный</td><td>Если упали все — <code>AggregateError</code></td></tr>
+</tbody>
+</table>
+<pre><code class="language-js">async function loadDashboard(signal) {
+  try {
+    // параллельно, а не последовательно (два await подряд выполнились бы друг за другом)
+    const [user, orders] = await Promise.all([
+      fetch('/api/me', { signal }).then(r =&gt; r.json()),
+      fetch('/api/orders', { signal }).then(r =&gt; r.json()),
+    ]);
+    return { user, orders };
+  } catch (e) {
+    if (e.name === 'AbortError') return null; // отменили — не ошибка
+    throw e;
+  }
+}
+</code></pre>
+<ul>
+<li><code>async</code>-функция всегда возвращает Promise; <code>throw</code> внутри неё = rejected-промис.</li>
+<li><code>fetch</code> <strong>не</strong> отклоняет промис при HTTP 4xx/5xx — проверяйте <code>response.ok</code>.</li>
+<li>Необработанное отклонение вызывает событие <code>unhandledrejection</code> — это аналог «потерянного» исключения в <code>async void</code> (<a href="#q4.17">4.17</a>).</li>
+<li>Ограничение по времени: <code>AbortSignal.timeout(5000)</code>; несколько сигналов сразу — <code>AbortSignal.any([...])</code>.</li>
+</ul>
+<hr />
+<h3 id="q23.8"><a class="anchor" href="#q23.8">#</a>23.8 Копирование объектов: spread, деструктуризация, structuredClone; иммутабельность ⭐</h3>
+<ul>
+<li><strong>Spread</strong> <code>{...obj}</code>, <code>[...arr]</code>, <code>Object.assign</code> — <strong>поверхностная</strong> копия: вложенные объекты остаются общими.</li>
+<li><strong>Глубокая копия</strong> — <code>structuredClone(obj)</code>: поддерживает Date, Map, Set, циклические ссылки; не копирует функции, классы теряют прототип. Приём <code>JSON.parse(JSON.stringify(x))</code> теряет Date (станет строкой), <code>undefined</code>, Map и падает на циклах.</li>
+<li><strong>Деструктуризация:</strong> <code>const { id, name: title = 'Без названия', ...rest } = order;</code> и <code>const [first, , third] = arr;</code>.</li>
+<li><strong>Иммутабельные обновления</strong> — основа OnPush, сигналов и NgRx: вместо мутации создаём новый объект, чтобы изменилась ссылка.
+<pre><code class="language-js">// ❌ мутация — OnPush-компонент и computed() не увидят изменения
+state.items.push(item);
+// ✅ новая ссылка
+state = { ...state, items: [...state.items, item] };
+</code></pre>
+</li>
+<li>Неизменяемые методы массивов (ES2023): <code>toSorted</code>, <code>toReversed</code>, <code>toSpliced</code>, <code>with(index, value)</code> — возвращают новый массив, в отличие от <code>sort</code>/<code>reverse</code>/<code>splice</code>, которые меняют исходный.</li>
+</ul>
+<hr />
+<h3 id="q23.9"><a class="anchor" href="#q23.9">#</a>23.9 События DOM: всплытие, перехват, делегирование ⭐</h3>
+<ul>
+<li>Событие проходит три фазы: <strong>capturing</strong> (от <code>window</code> вниз к цели) → <strong>target</strong> → <strong>bubbling</strong> (от цели вверх). По умолчанию обработчики срабатывают при всплытии; <code>addEventListener(type, fn, { capture: true })</code> — при перехвате.</li>
+<li><code>event.target</code> — где событие возникло; <code>event.currentTarget</code> — элемент, на котором висит обработчик.</li>
+<li><code>stopPropagation()</code> — остановить распространение; <code>preventDefault()</code> — отменить действие браузера (отправку формы, переход по ссылке).</li>
+<li><strong>Делегирование</strong> — один обработчик на родителе вместо сотни на детях; работает и для элементов, добавленных позже:
+<pre><code class="language-js">list.addEventListener('click', e =&gt; {
+  const row = e.target.closest('[data-id]');
+  if (row) open(row.dataset.id);
+});
+</code></pre>
+</li>
+<li>Опции: <code>{ once: true }</code>, <code>{ passive: true }</code> (для scroll/touch: обещаем не вызывать <code>preventDefault</code>, браузер не ждёт обработчик), <code>{ signal }</code> — снять обработчик через <code>AbortController</code>.</li>
+</ul>
+<hr />
+<h3 id="q23.10"><a class="anchor" href="#q23.10">#</a>23.10 Debounce и throttle 🔥</h3>
+<ul>
+<li><strong>Debounce</strong> — выполнить функцию, когда вызовы <strong>прекратились</strong> на N мс. Пример: поиск при вводе — запрос уходит, когда пользователь перестал печатать.</li>
+<li><strong>Throttle</strong> — выполнять <strong>не чаще</strong> раза в N мс. Пример: обработчик scroll/resize, отправка координат водителя.</li>
+</ul>
+<pre><code class="language-js">function debounce(fn, ms) {
+  let timer;
+  return (...args) =&gt; {
+    clearTimeout(timer);                      // каждый новый вызов сбрасывает таймер
+    timer = setTimeout(() =&gt; fn(...args), ms);
+  };
+}
+
+function throttle(fn, ms) {
+  let last = 0;
+  return (...args) =&gt; {
+    const now = Date.now();
+    if (now - last &gt;= ms) { last = now; fn(...args); }
+  };
+}
+</code></pre>
+<p>Обе функции держат состояние (<code>timer</code>, <code>last</code>) в замыкании (<a href="#q23.3">23.3</a>). В Angular вместо ручной реализации — операторы RxJS <code>debounceTime</code> / <code>throttleTime</code>, а в Signal Forms — <code>debounce(field, ms)</code>.</p>
+<hr />
+<h3 id="q23.11"><a class="anchor" href="#q23.11">#</a>23.11 Хранилища браузера: cookies, localStorage, sessionStorage, IndexedDB ⭐</h3>
+<table>
+<thead><tr><th></th><th>Объём</th><th>Срок жизни</th><th>Уходит на сервер</th><th>Доступ</th></tr></thead>
+<tbody>
+<tr><td>Cookies</td><td>~4 КБ на cookie</td><td>До <code>Expires</code>/<code>Max-Age</code> или конца сессии</td><td>Да, с каждым запросом</td><td>JS (если не <code>HttpOnly</code>) и сервер</td></tr>
+<tr><td>localStorage</td><td>~5–10 МБ</td><td>Бессрочно</td><td>Нет</td><td>Синхронный API, только строки</td></tr>
+<tr><td>sessionStorage</td><td>~5 МБ</td><td>До закрытия вкладки</td><td>Нет</td><td>Как localStorage, отдельно для каждой вкладки</td></tr>
+<tr><td>IndexedDB</td><td>Сотни МБ и больше (квота от свободного места)</td><td>Бессрочно</td><td>Нет</td><td>Асинхронная, объекты, индексы, транзакции</td></tr>
+</tbody>
+</table>
+<ul>
+<li>Всё, кроме <code>HttpOnly</code>-cookie, читается любым скриптом на странице → при XSS утечёт. Токены — <a href="#q15.4">15.4</a> и <a href="#q23.24">23.24</a>.</li>
+<li>Флаги cookie: <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax|Strict|None</code>.</li>
+<li>Офлайн-приложение (PWA): оболочку кэширует Service Worker (Cache API), данные — IndexedDB.</li>
+</ul>
+<hr />
+<h3 id="q23.12"><a class="anchor" href="#q23.12">#</a>23.12 ES-модули, бандлинг и tree shaking ⭐</h3>
+<ul>
+<li><strong>ES-модули</strong>: <code>import</code>/<code>export</code>, статическая структура (импорты известны до выполнения), у каждого модуля своя область видимости, модуль выполняется один раз. Динамический импорт <code>import('./x.js')</code> возвращает Promise — на нём построена ленивая загрузка (<code>loadComponent</code> в роутере Angular).</li>
+<li><strong>CommonJS</strong> (<code>require</code>/<code>module.exports</code>) — старый формат Node.js, динамический, плохо поддаётся tree shaking.</li>
+<li><strong>Бандлер</strong> (esbuild, Vite, Rollup/Rolldown, webpack) собирает модули в чанки, минифицирует и делит код: стартовый чанк и ленивые.</li>
+<li><strong>Tree shaking</strong> — удаление неиспользуемых экспортов. Работает благодаря статическим импортам ES-модулей и отсутствию побочных эффектов (<code>"sideEffects": false</code> в package.json). Поэтому <code>providedIn: 'root'</code> / <code>@Service()</code> в Angular «вытряхиваемые»: не использованный нигде сервис не попадёт в бандл.</li>
+<li>Angular CLI с v17 собирает на esbuild + Vite; в 22.x чанки оптимизирует Rolldown, а в 22.3 появился компилятор на Rust для ускорения сборки.</li>
+</ul>
+<hr />
+<h3 id="q23.13"><a class="anchor" href="#q23.13">#</a>23.13 Подвох: порядок вывода setTimeout, Promise и async 🔥</h3>
+<pre><code class="language-js">console.log('1');
+setTimeout(() =&gt; console.log('2'), 0);
+Promise.resolve().then(() =&gt; console.log('3'));
+(async () =&gt; {
+  console.log('4');
+  await null;
+  console.log('5');
+})();
+queueMicrotask(() =&gt; console.log('6'));
+console.log('7');
+</code></pre>
+<p><strong>Ответ: 1, 4, 7, 3, 5, 6, 2.</strong></p>
+<ul>
+<li>Синхронно: <code>1</code>; тело async-функции до первого <code>await</code> выполняется синхронно → <code>4</code>; затем <code>7</code>.</li>
+<li>Микрозадачи в порядке постановки: <code>then</code> → <code>3</code>, продолжение после <code>await</code> → <code>5</code>, <code>queueMicrotask</code> → <code>6</code>.</li>
+<li>Макрозадача <code>setTimeout</code> — последней: <code>2</code>.</li>
+</ul>
+<p>Как объяснять: «сначала весь синхронный код, потом вся очередь микрозадач, потом одна макрозадача» (<a href="#q23.6">23.6</a>).</p>
+<hr />
+<h3 id="q23.14"><a class="anchor" href="#q23.14">#</a>23.14 Подвох: var в цикле с setTimeout и потеря this 🔥</h3>
+<pre><code class="language-js">for (var i = 0; i &lt; 3; i++) setTimeout(() =&gt; console.log(i)); // 3, 3, 3
+for (let j = 0; j &lt; 3; j++) setTimeout(() =&gt; console.log(j)); // 0, 1, 2
+</code></pre>
+<p><code>var</code> — одна переменная на всю функцию; к моменту выполнения таймеров цикл закончился и <code>i === 3</code>. <code>let</code> создаёт новую привязку на каждой итерации. Тот же подвох, что с замыканием в цикле в C# (<a href="#q1.34">1.34</a>).</p>
+<pre><code class="language-js">class Api {
+  url = '/api';
+  load() { return this.url; }
+}
+const api = new Api();
+const load = api.load;
+load();                          // ❌ TypeError: this is undefined
+['a'].map(api.load);             // ❌ то же — метод передан без объекта
+['a'].map(() =&gt; api.load());     // ✅
+const bound = api.load.bind(api); // ✅
+</code></pre>
+<p>Метод, «оторванный» от объекта, теряет <code>this</code> (<a href="#q23.4">23.4</a>).</p>
+<hr />
+<h2>TypeScript</h2>
+<h3 id="q23.15"><a class="anchor" href="#q23.15">#</a>23.15 Зачем TypeScript; type vs interface 🔥</h3>
+<p><strong>TypeScript</strong> — надмножество JavaScript со статической типизацией. Типы проверяются при компиляции и <strong>стираются</strong>: в рантайме это обычный JS, поэтому данные из API надо валидировать (Zod, Valibot) — TypeScript их не проверит. Типизация <strong>структурная</strong> (важна форма объекта, а не имя типа), в отличие от номинальной в C#.</p>
+<table>
+<thead><tr><th></th><th><code>interface</code></th><th><code>type</code></th></tr></thead>
+<tbody>
+<tr><td>Объекты</td><td>Да</td><td>Да</td></tr>
+<tr><td>Union, tuple, примитивы, mapped/conditional types</td><td>Нет</td><td>Да: <code>type Status = 'new' | 'done'</code></td></tr>
+<tr><td>Расширение</td><td><code>extends</code></td><td>Пересечение <code>&amp;</code></td></tr>
+<tr><td>Слияние объявлений (declaration merging)</td><td>Да — два <code>interface User</code> объединятся</td><td>Нет — ошибка дубликата</td></tr>
+<tr><td><code>implements</code> в классе</td><td>Да</td><td>Да, если это объектный тип</td></tr>
+</tbody>
+</table>
+<p><strong>Практика:</strong> <code>interface</code> — для формы объектов и контрактов (DTO, публичные API библиотек), <code>type</code> — для union, утилит и сложных типов. Главное — единообразие в проекте.</p>
+<hr />
+<h3 id="q23.16"><a class="anchor" href="#q23.16">#</a>23.16 any, unknown, never; strict-режим ⭐</h3>
+<ul>
+<li><code>any</code> — отключает проверку типов; «заражает» всё, к чему прикасается. Избегать.</li>
+<li><code>unknown</code> — «что угодно, но сначала проверь»: использовать значение можно только после сужения типа (<code>typeof</code>, <code>instanceof</code>, type guard). Правильный тип для <code>catch (e)</code>, данных из <code>JSON.parse</code> и ответа внешнего API.</li>
+<li><code>never</code> — значение, которого не бывает: функция, которая всегда бросает исключение, или ветка, недостижимая после исчерпывающего <code>switch</code> (<a href="#q23.19">23.19</a>).</li>
+<li><code>void</code> — функция ничего не возвращает.</li>
+<li><strong><code>strict: true</code></strong> включает <code>strictNullChecks</code> (<code>null</code> и <code>undefined</code> не присваиваются к другим типам, как nullable reference types в C#), <code>noImplicitAny</code>, <code>strictPropertyInitialization</code> и другие проверки. В новых проектах включён по умолчанию; в Angular 22 по умолчанию включены и <code>strictTemplates</code> — проверка типов в шаблонах.</li>
+<li>Оператор <code>!</code> (<code>user!.name</code>) — «доверься мне, тут не null»; злоупотребление им возвращает ошибки, от которых защищал strict.</li>
+</ul>
+<hr />
+<h3 id="q23.17"><a class="anchor" href="#q23.17">#</a>23.17 Generics и ограничения: extends, keyof 🔥</h3>
+<pre><code class="language-ts">// T ограничен объектами с id — аналог where T : IEntity в C#
+function byId&lt;T extends { id: string }&gt;(items: T[], id: string): T | undefined {
+  return items.find(x =&gt; x.id === id);
+}
+
+// K — только существующие ключи T; тип результата вычисляется: T[K]
+function pluck&lt;T, K extends keyof T&gt;(items: T[], key: K): T[K][] {
+  return items.map(x =&gt; x[key]);
+}
+pluck(drivers, 'rating');   // number[]
+pluck(drivers, 'ratting');  // ❌ ошибка компиляции
+
+// значение по умолчанию для параметра типа
+interface Page&lt;T = unknown&gt; { items: T[]; total: number }
+</code></pre>
+<ul>
+<li><code>keyof T</code> — union ключей; <code>T[K]</code> — тип свойства (indexed access).</li>
+<li><strong>Conditional types</strong>: <code>T extends string ? 'text' : 'other'</code>; <code>infer</code> достаёт тип изнутри: <code>type Unwrap&lt;T&gt; = T extends Promise&lt;infer U&gt; ? U : T</code>.</li>
+<li><strong>Mapped types</strong>: <code>{ [K in keyof T]?: T[K] }</code> — так устроен <code>Partial</code> (<a href="#q23.18">23.18</a>).</li>
+<li>Отличие от C#: generics стираются, в рантайме <code>T</code> не существует — нельзя написать <code>new T()</code> или <code>typeof T</code>.</li>
+</ul>
+<hr />
+<h3 id="q23.18"><a class="anchor" href="#q23.18">#</a>23.18 Utility types: Partial, Required, Pick, Omit, Record, ReturnType ⭐</h3>
+<table>
+<thead><tr><th>Тип</th><th>Что делает</th><th>Пример применения</th></tr></thead>
+<tbody>
+<tr><td><code>Partial&lt;T&gt;</code></td><td>Все поля необязательные</td><td>PATCH-запрос, частичное обновление состояния</td></tr>
+<tr><td><code>Required&lt;T&gt;</code></td><td>Все поля обязательные</td><td>Конфигурация после применения значений по умолчанию</td></tr>
+<tr><td><code>Readonly&lt;T&gt;</code></td><td>Все поля только для чтения</td><td>Состояние в store</td></tr>
+<tr><td><code>Pick&lt;T, 'a' | 'b'&gt;</code></td><td>Только указанные поля</td><td>Карточка в списке: <code>Pick&lt;Driver, 'id' | 'name'&gt;</code></td></tr>
+<tr><td><code>Omit&lt;T, 'id'&gt;</code></td><td>Всё, кроме указанных</td><td>Форма создания без серверных полей</td></tr>
+<tr><td><code>Record&lt;K, V&gt;</code></td><td>Объект с ключами K и значениями V</td><td><code>Record&lt;Status, string&gt;</code> — подписи для каждого статуса (компилятор потребует все)</td></tr>
+<tr><td><code>ReturnType&lt;F&gt;</code>, <code>Parameters&lt;F&gt;</code>, <code>Awaited&lt;T&gt;</code></td><td>Типы результата, параметров функции, значения промиса</td><td>Тип состояния из функции-редьюсера</td></tr>
+<tr><td><code>NonNullable&lt;T&gt;</code>, <code>Exclude</code>, <code>Extract</code></td><td>Убрать null/undefined; фильтрация union</td><td><code>Exclude&lt;Status, 'archived'&gt;</code></td></tr>
+</tbody>
+</table>
+<hr />
+<h3 id="q23.19"><a class="anchor" href="#q23.19">#</a>23.19 Union, discriminated union и сужение типов (type guards) 🔥</h3>
+<pre><code class="language-ts">type LoadState&lt;T&gt; =
+  | { status: 'loading' }
+  | { status: 'success'; data: T }
+  | { status: 'error'; error: string };
+
+function render(s: LoadState&lt;Order[]&gt;) {
+  switch (s.status) {               // status — дискриминант
+    case 'loading': return 'Загрузка…';
+    case 'success': return `${s.data.length} заказов`; // здесь TS знает, что data есть
+    case 'error':   return s.error;
+    default: {
+      const never: never = s;       // забыли новый вариант — ошибка компиляции
+      return never;
+    }
+  }
+}
+</code></pre>
+<p><strong>Сужение типа</strong> (narrowing): <code>typeof x === 'string'</code>, <code>x instanceof Date</code>, <code>'data' in s</code>, проверка дискриминанта, проверка на <code>null</code>. <strong>Пользовательский type guard:</strong> <code>function isDriver(x: unknown): x is Driver { ... }</code>. <strong>Assertion function:</strong> <code>function assert(x: unknown): asserts x is string</code>.</p>
+<p>Discriminated union невозможно привести в недопустимое состояние («success без data») — это аналог закрытой иерархии record-ов и pattern matching в C# (<a href="#q1.25">1.25</a>). В шаблонах Angular 22 для исчерпывающей проверки есть <code>@default never;</code> в <code>@switch</code>.</p>
+<hr />
+<h3 id="q23.20"><a class="anchor" href="#q23.20">#</a>23.20 enum vs union литералов; as const и satisfies ⭐</h3>
+<ul>
+<li><code>enum</code> в TypeScript генерирует объект в рантайме; числовые enum допускают любое число (<code>const s: Status = 42</code> компилируется). <code>const enum</code> встраивается, но плохо работает с изолированной компиляцией (esbuild, <code>isolatedModules</code>), а режим <code>erasableSyntaxOnly</code> запрещает enum вовсе: такой код нельзя выполнить простым стиранием типов.</li>
+<li><strong>Union литералов</strong> — <code>type Status = 'new' | 'active' | 'blocked'</code> — ничего не генерирует, совпадает с тем, что приходит в JSON, хорошо работает с сужением типов. Сейчас это предпочтительный вариант.</li>
+<li>Если нужен и список значений в рантайме:
+<pre><code class="language-ts">export const STATUSES = ['new', 'active', 'blocked'] as const; // readonly-кортеж литералов
+export type Status = typeof STATUSES[number];                   // 'new' | 'active' | 'blocked'
+</code></pre>
+</li>
+<li><code>satisfies</code> — проверить, что значение подходит под тип, не теряя точный выведенный тип: <code>const labels = { new: 'Новый', active: 'Активен', blocked: 'Заблокирован' } satisfies Record&lt;Status, string&gt;;</code></li>
+</ul>
+<hr />
+<h2>Браузер, производительность, безопасность</h2>
+<h3 id="q23.21"><a class="anchor" href="#q23.21">#</a>23.21 Как браузер рисует страницу: critical rendering path, reflow и repaint ⭐</h3>
+<ol>
+<li>HTML → <strong>DOM</strong>; CSS → <strong>CSSOM</strong>. CSS блокирует отрисовку; обычный <code>&lt;script&gt;</code> блокирует разбор HTML (поэтому <code>defer</code>, <code>async</code> или <code>type="module"</code>, который откладывается по умолчанию).</li>
+<li>DOM + CSSOM → <strong>render tree</strong> (только видимые элементы).</li>
+<li><strong>Layout</strong> (reflow) — расчёт размеров и позиций.</li>
+<li><strong>Paint</strong> — отрисовка пикселей по слоям.</li>
+<li><strong>Composite</strong> — сборка слоёв на GPU.</li>
+</ol>
+<ul>
+<li><strong>Reflow</strong> — пересчёт геометрии (изменили ширину, шрифт, добавили элемент); дорогой и может затронуть всю страницу. <strong>Repaint</strong> — перерисовка без смены геометрии (цвет, тень).</li>
+<li><code>transform</code> и <code>opacity</code> меняются только на этапе composite — анимировать надо их, а не <code>top</code>/<code>left</code>/<code>width</code>.</li>
+<li><strong>Layout thrashing</strong> — чередование записи и чтения геометрии (<code>offsetHeight</code>) в цикле заставляет делать reflow на каждой итерации. Лечится группировкой: сначала все чтения, потом все записи.</li>
+<li>Длинные списки — виртуальная прокрутка (CDK <code>cdk-virtual-scroll-viewport</code>): в DOM только видимые строки.</li>
+</ul>
+<hr />
+<h3 id="q23.22"><a class="anchor" href="#q23.22">#</a>23.22 Производительность фронтенда: Core Web Vitals, бандл, ленивая загрузка 🔥</h3>
+<p><strong>Core Web Vitals</strong> — метрики Google, по которым оценивают пользовательский опыт:</p>
+<ul>
+<li><strong>LCP</strong> (Largest Contentful Paint) — когда отрисован главный контент; хорошо — до 2,5 с.</li>
+<li><strong>INP</strong> (Interaction to Next Paint) — задержка отклика на действия пользователя; хорошо — до 200 мс. С 2024 года заменил FID.</li>
+<li><strong>CLS</strong> (Cumulative Layout Shift) — «прыжки» вёрстки; хорошо — до 0,1. Лечится заданными размерами картинок и зарезервированным местом.</li>
+</ul>
+<p><strong>Что делать:</strong></p>
+<ul>
+<li>Меньше JavaScript на старте: ленивые маршруты (<code>loadComponent</code>/<code>loadChildren</code>), <code>@defer</code> (<a href="#q23.39">23.39</a>), анализ бандла (<code>ng build --stats-json</code> + esbuild analyzer / source-map-explorer), бюджеты размера в <code>angular.json</code>.</li>
+<li>Картинки: современные форматы (WebP/AVIF), <code>loading="lazy"</code>, <code>NgOptimizedImage</code> (директива <code>ngSrc</code>: приоритет LCP-картинки, srcset, предупреждения).</li>
+<li>Сеть: HTTP-кеширование и CDN, сжатие (brotli), <code>preconnect</code>/<code>preload</code>, меньше последовательных запросов (водопадов).</li>
+<li>Рендеринг: OnPush и сигналы (меньше проверок), <code>track</code> в <code>@for</code>, виртуальная прокрутка, тяжёлые вычисления — в Web Worker.</li>
+<li>SSR/SSG — быстрый первый показ (<a href="#q23.23">23.23</a>).</li>
+<li>Измерение: Lighthouse, вкладка Performance в DevTools, Angular DevTools (профайлер change detection), RUM в продакшене (реальные пользователи, а не только лабораторные замеры).</li>
+</ul>
+<hr />
+<h3 id="q23.23"><a class="anchor" href="#q23.23">#</a>23.23 CSR, SSR, SSG и гидратация ⭐</h3>
+<table>
+<thead><tr><th></th><th>Как работает</th><th>Плюсы</th><th>Минусы</th></tr></thead>
+<tbody>
+<tr><td><strong>CSR</strong> (client-side rendering, классическая SPA)</td><td>Сервер отдаёт пустой HTML и JS, страницу строит браузер</td><td>Простой хостинг (статика), богатая интерактивность</td><td>Долгий первый показ, хуже SEO</td></tr>
+<tr><td><strong>SSR</strong> (server-side rendering)</td><td>HTML рендерится на сервере на каждый запрос</td><td>Быстрый LCP, SEO, превью ссылок в соцсетях</td><td>Нужен Node.js-сервер, код должен работать без <code>window</code>/<code>document</code></td></tr>
+<tr><td><strong>SSG</strong> (prerendering)</td><td>HTML генерируется при сборке</td><td>Максимально быстро, раздаётся с CDN</td><td>Только для страниц, которые редко меняются</td></tr>
+</tbody>
+</table>
+<p><strong>Гидратация</strong> — браузер не перерисовывает серверный HTML заново, а «оживляет» его: привязывает обработчики событий и состояние. В Angular — <code>provideClientHydration()</code>; <strong>incremental hydration</strong> гидратирует блоки <code>@defer</code> по триггерам (по видимости, по взаимодействию) и с Angular 22 включена по умолчанию; <strong>event replay</strong> запоминает клики, сделанные до гидратации, и воспроизводит их после. Подробнее — <a href="#q23.40">23.40</a>.</p>
+<p>Для внутреннего кабинета (админка, кабинет партнёра) за авторизацией SSR обычно не нужен — достаточно CSR.</p>
+<hr />
+<h3 id="q23.24"><a class="anchor" href="#q23.24">#</a>23.24 Безопасность фронтенда: XSS, CSRF, CSP; где хранить токен 🔥</h3>
+<ul>
+<li><strong>XSS</strong> — внедрение чужого скрипта на страницу. Angular по умолчанию экранирует интерполяцию <code>{{ }}</code> и санирует <code>[innerHTML]</code>, <code>[href]</code>, <code>[style]</code>. Опасно: <code>bypassSecurityTrustHtml</code> с пользовательскими данными, прямая работа с <code>nativeElement.innerHTML</code>, <code>eval</code>. Дополнительно — <strong>Trusted Types</strong>.</li>
+<li><strong>CSP</strong> (Content-Security-Policy) — заголовок, ограничивающий источники скриптов и стилей: <code>script-src 'self'</code> не даст выполнить инлайн-скрипт злоумышленника. Angular поддерживает nonce (<code>ngCspNonce</code>, <code>CSP_NONCE</code>) и при сборке может сгенерировать CSP с хешами инлайн-скриптов (<code>autoCsp</code>).</li>
+<li><strong>CSRF</strong> — чужой сайт отправляет запрос от имени пользователя, и браузер сам прикладывает cookie. Защита: <code>SameSite</code>-cookie, anti-forgery токен; <code>HttpClient</code> умеет читать cookie <code>XSRF-TOKEN</code> и отправлять заголовок <code>X-XSRF-TOKEN</code>. Если аутентификация через заголовок <code>Authorization: Bearer</code>, CSRF не страшен — браузер не подставляет его сам.</li>
+<li><strong>Токен:</strong> в <code>localStorage</code> он доступен любому скрипту при XSS; в памяти — пропадает при перезагрузке; в <code>HttpOnly; Secure; SameSite</code>-cookie недоступен JS, но нужна защита от CSRF. Сейчас рекомендуют <strong>BFF</strong> (Backend for Frontend): токены хранит сервер, браузер получает только сессионную cookie. Подробно — <a href="#q15.4">15.4</a>, <a href="#q11.20">11.20</a>, <a href="#q11.22">11.22</a>.</li>
+<li><strong>CORS</strong> — защищает не сервер, а пользователя: браузер не отдаст скрипту ответ чужого домена без разрешения сервера (<a href="#q11.19">11.19</a>).</li>
+<li>Фронтенду нельзя доверять: проверка прав в интерфейсе (скрыть кнопку, guard в роутере) — это удобство, а настоящая проверка — на сервере.</li>
+</ul>
+<hr />
+
+<h2>Angular: основы</h2>
+<h3 id="q23.25"><a class="anchor" href="#q23.25">#</a>23.25 Архитектура Angular-приложения: компоненты, standalone, NgModule 🔥</h3>
+<p><strong>Angular</strong> — фреймворк «всё включено» на TypeScript: компоненты, DI, роутер, формы, HttpClient, тестирование и CLI в одной поставке. В отличие от React (библиотека отображения), архитектура задана фреймворком — удобно для больших команд.</p>
+<ul>
+<li><strong>Компонент</strong> = класс + шаблон + стили + селектор. Основная единица интерфейса.</li>
+<li><strong>Standalone-компоненты</strong> (по умолчанию с v19) сами объявляют зависимости в <code>imports: [...]</code>. <strong>NgModule</strong> — старый способ группировки; в новом коде не нужен, но встречается в легаси-проектах (<code>declarations</code>, <code>imports</code>, <code>exports</code>, <code>providers</code>). Миграция: <code>ng generate @angular/core:standalone</code>.</li>
+<li><strong>Сервисы</strong> — бизнес-логика, работа с API и общее состояние; внедряются через DI (<a href="#q23.28">23.28</a>).</li>
+<li><strong>Директивы и пайпы</strong> — переиспользуемое поведение и преобразования в шаблоне (<a href="#q23.30">23.30</a>).</li>
+<li><strong>Bootstrap:</strong> <code>bootstrapApplication(AppComponent, appConfig)</code>, где в <code>appConfig.providers</code> — <code>provideRouter(routes)</code>, <code>provideHttpClient(withInterceptors([...]))</code> и т. п.</li>
+</ul>
+<pre><code class="language-ts">@Component({
+  selector: 'app-driver-card',
+  imports: [DatePipe, RouterLink],
+  template: `
+    &lt;h3&gt;{{ driver().name }}&lt;/h3&gt;
+    &lt;a [routerLink]="['/drivers', driver().id]"&gt;Подробнее&lt;/a&gt;
+  `,
+})
+export class DriverCardComponent {
+  driver = input.required&lt;Driver&gt;();
+}
+</code></pre>
+<p><strong>Структура проекта:</strong> по фичам (<code>features/drivers</code>, <code>features/payouts</code>), а не по типам файлов; разделение на «умные» компоненты-контейнеры (знают про сервисы и store) и «глупые» презентационные (только входы и выходы).</p>
+<hr />
+<h3 id="q23.26"><a class="anchor" href="#q23.26">#</a>23.26 Жизненный цикл компонента ⭐</h3>
+<table>
+<thead><tr><th>Хук</th><th>Когда</th><th>Для чего</th></tr></thead>
+<tbody>
+<tr><td><code>constructor</code></td><td>Создание класса</td><td>Только внедрение зависимостей (<code>inject()</code>); входы ещё не установлены</td></tr>
+<tr><td><code>ngOnChanges</code></td><td>Перед <code>ngOnInit</code> и при каждом изменении входов-декораторов <code>@Input</code></td><td>Реакция на смену входа; с сигнальными <code>input()</code> заменяется на <code>computed</code>/<code>effect</code></td></tr>
+<tr><td><code>ngOnInit</code></td><td>Один раз после первой установки входов</td><td>Начальная загрузка данных</td></tr>
+<tr><td><code>ngDoCheck</code></td><td>При каждой проверке change detection</td><td>Своя логика обнаружения изменений; используется редко</td></tr>
+<tr><td><code>ngAfterContentInit</code> / <code>Checked</code></td><td>После проекции контента (<code>ng-content</code>)</td><td>Работа с <code>contentChild</code></td></tr>
+<tr><td><code>ngAfterViewInit</code> / <code>Checked</code></td><td>После создания своего представления и дочерних</td><td>Работа с <code>viewChild</code>, DOM, сторонними библиотеками (карты, графики)</td></tr>
+<tr><td><code>ngOnDestroy</code></td><td>Перед уничтожением</td><td>Отписки, таймеры; современная альтернатива — <code>DestroyRef.onDestroy()</code> и <code>takeUntilDestroyed()</code></td></tr>
+</tbody>
+</table>
+<p><strong>Новые API:</strong> <code>afterNextRender()</code> и <code>afterEveryRender()</code> (бывший <code>afterRender</code>) — выполнить код после отрисовки, только в браузере (безопасно для SSR); <code>effect()</code> заменяет многие сценарии <code>ngOnChanges</code>/<code>ngDoCheck</code>.</p>
+<hr />
+<h3 id="q23.27"><a class="anchor" href="#q23.27">#</a>23.27 Обмен данными между компонентами: input(), output(), model(), сервисы 🔥</h3>
+<ul>
+<li><strong>Родитель → ребёнок:</strong> сигнальные входы <code>input()</code>, <code>input.required()</code>, с преобразованием — <code>input(false, { transform: booleanAttribute })</code>. Старый вариант — декоратор <code>@Input()</code>.</li>
+<li><strong>Ребёнок → родитель:</strong> <code>output()</code> и <code>.emit()</code> (раньше <code>@Output() x = new EventEmitter()</code>).</li>
+<li><strong>Двусторонняя привязка:</strong> <code>model()</code> — сигнал, который ребёнок может менять: <code>[(value)]="query"</code>.</li>
+<li><strong>Между несвязанными компонентами:</strong> общий сервис с сигналами или <code>BehaviorSubject</code>, store (<a href="#q23.49">23.49</a>), параметры маршрута.</li>
+<li><strong>Доступ к ребёнку:</strong> <code>viewChild()</code> / ссылка в шаблоне <code>#ref</code> (<a href="#q23.31">23.31</a>).</li>
+</ul>
+<pre><code class="language-ts">@Component({
+  selector: 'app-rating',
+  template: `@for (s of stars; track s) {
+    &lt;button (click)="value.set(s); changed.emit(s)"&gt;{{ s &lt;= value() ? '★' : '☆' }}&lt;/button&gt;
+  }`,
+})
+export class RatingComponent {
+  value = model(0);                 // [(value)]
+  readonly = input(false, { transform: booleanAttribute });
+  changed = output&lt;number&gt;();
+  stars = [1, 2, 3, 4, 5];
+}
+// родитель: &lt;app-rating [(value)]="rating" (changed)="save($event)" /&gt;
+</code></pre>
+<hr />
+<h3 id="q23.28"><a class="anchor" href="#q23.28">#</a>23.28 DI в Angular: провайдеры, иерархия инжекторов, inject(), @Service 🔥</h3>
+<ul>
+<li><strong>Регистрация:</strong> <code>@Injectable({ providedIn: 'root' })</code> — синглтон на приложение, вытряхивается из бандла, если не используется. С Angular 22 — короче: <strong><code>@Service()</code></strong>; <code>@Service({ autoProvided: false })</code> — без регистрации в root. Сервис с <code>@Service</code> получает зависимости только через <code>inject()</code>.</li>
+<li><strong>Внедрение:</strong> функция <code>inject(Token)</code> в поле, конструкторе или фабрике (в «контексте внедрения»). Конструкторное внедрение тоже работает, но новый код пишут через <code>inject()</code>.</li>
+<li><strong>Иерархия инжекторов:</strong> <em>Environment</em> (root, плюс инжекторы ленивых маршрутов через <code>providers</code> маршрута) → <em>Element</em>-инжекторы компонентов и директив (<code>providers</code>, <code>viewProviders</code> в <code>@Component</code>). Поиск идёт от компонента вверх. Сервис в <code>providers</code> компонента — <strong>новый экземпляр на каждый экземпляр компонента</strong> (состояние формы, мастера, редактора).</li>
+<li><strong>Виды провайдеров:</strong> <code>useClass</code>, <code>useValue</code>, <code>useFactory</code>, <code>useExisting</code>; <code>multi: true</code> — несколько значений под одним токеном (так подключаются интерсепторы и валидаторы).</li>
+<li><strong><code>InjectionToken</code></strong> — для не-классов: конфигурации, базового URL API, функций.</li>
+<li><strong>Модификаторы:</strong> <code>inject(X, { optional: true, self: true, skipSelf: true, host: true })</code>.</li>
+<li><strong><code>injectAsync()</code></strong> (v22) — лениво загрузить тяжёлый сервис через динамический импорт; опция <code>prefetch</code> начинает загрузку заранее.</li>
+</ul>
+<p><strong>Сравнение с .NET:</strong> <code>providedIn: 'root'</code> ≈ Singleton; провайдер компонента ≈ Scoped на время жизни компонента; Transient по умолчанию нет (используют <code>useFactory</code> или создают объект вручную).</p>
+<hr />
+<h3 id="q23.29"><a class="anchor" href="#q23.29">#</a>23.29 Шаблоны: привязки, новый control flow (@if, @for, @switch), track 🔥</h3>
+<ul>
+<li><strong>Привязки:</strong> интерполяция <code>{{ x }}</code>, свойство <code>[disabled]="busy()"</code>, событие <code>(click)="save()"</code>, двусторонняя <code>[(ngModel)]</code> / <code>[(value)]</code>, атрибут <code>[attr.aria-label]</code>, класс <code>[class.active]</code>, стиль <code>[style.width.px]</code>.</li>
+<li><strong>Встроенный control flow</strong> (стабилен с v18) заменил <code>*ngIf</code>, <code>*ngFor</code>, <code>ngSwitch</code>: не нужен импорт, лучше выводит типы, быстрее.</li>
+</ul>
+<pre><code class="language-html">@if (drivers.isLoading()) {
+  &lt;app-spinner /&gt;
+} @else if (drivers.error()) {
+  &lt;p&gt;Не удалось загрузить&lt;/p&gt;
+} @else {
+  @for (d of drivers.value(); track d.id; let i = $index) {
+    &lt;app-driver-card [driver]="d" /&gt;
+  } @empty {
+    &lt;p&gt;Водителей нет&lt;/p&gt;
+  }
+}
+
+@switch (order().status) {
+  @case ('active') { &lt;span&gt;В пути&lt;/span&gt; }
+  @case ('done') { &lt;span&gt;Завершён&lt;/span&gt; }
+  @default never;   &lt;!-- v22: компилятор проверит, что разобраны все варианты --&gt;
+}
+
+@let total = order().price * order().count;   &lt;!-- локальная переменная шаблона --&gt;
+</code></pre>
+<ul>
+<li><strong><code>track</code> обязателен</strong> в <code>@for</code>: по нему Angular понимает, какой элемент DOM переиспользовать. <code>track d.id</code> — правильно; <code>track $index</code> — пересоздание и потеря состояния при вставке в начало списка. Аналог старого <code>trackBy</code>.</li>
+<li>Неявные переменные <code>@for</code>: <code>$index</code>, <code>$first</code>, <code>$last</code>, <code>$even</code>, <code>$odd</code>, <code>$count</code>.</li>
+<li><strong>v22:</strong> по умолчанию <code>strictTemplates</code>; в шаблоне можно использовать <code>private</code>-члены компонента (22.2), <code>++</code>/<code>--</code> в обработчиках событий (22.3); <code>a?.b</code> при <code>a === null</code> возвращает <code>undefined</code>, как в TypeScript (раньше было <code>null</code>).</li>
+<li>Не вызывать в шаблоне тяжёлые методы — без сигналов они выполняются при каждой проверке. Решения: <code>computed()</code> или pure pipe.</li>
+</ul>
+<hr />
+<h3 id="q23.30"><a class="anchor" href="#q23.30">#</a>23.30 Директивы и пайпы: структурные и атрибутные, pure и impure, async pipe ⭐</h3>
+<ul>
+<li><strong>Компонент</strong> — директива с шаблоном.</li>
+<li><strong>Атрибутная директива</strong> меняет поведение или вид элемента: <code>[appAutofocus]</code>, <code>[appHasRole]="'admin'"</code>. В <code>host: { '(click)': 'onClick()', '[class.active]': 'active()' }</code> — привязки к элементу-хозяину (вместо <code>@HostListener</code>/<code>@HostBinding</code>).</li>
+<li><strong>Структурная директива</strong> (<code>*appIfRole</code>) меняет DOM через <code>TemplateRef</code> и <code>ViewContainerRef</code>. После появления <code>@if</code>/<code>@for</code> своя нужна редко.</li>
+<li><strong>Host directives</strong> — композиция: <code>hostDirectives: [CdkDrag]</code> добавляет поведение компоненту без наследования.</li>
+<li><strong>Пайп</strong> — преобразование значения в шаблоне: <code>{{ price | currency:'UAH' }}</code>, <code>date</code>, <code>json</code>, свои (<code>@Pipe({ name: 'phone' })</code>).
+<ul>
+<li><strong>Pure</strong> (по умолчанию) — пересчитывается только при смене входа <strong>по ссылке</strong>; результат фактически кешируется. Поэтому мутация массива не обновит pure-пайп фильтрации.</li>
+<li><strong>Impure</strong> (<code>pure: false</code>) — при каждой проверке change detection; дорогой.</li>
+</ul>
+</li>
+<li><strong><code>async</code> pipe</strong> подписывается на Observable/Promise, сам отписывается при уничтожении и помечает OnPush-компонент для проверки. В новом коде его часто заменяет <code>toSignal()</code>.</li>
+</ul>
+<hr />
+<h3 id="q23.31"><a class="anchor" href="#q23.31">#</a>23.31 Content projection, viewChild, contentChild ⭐</h3>
+<ul>
+<li><strong>Content projection</strong> — компонент принимает разметку снаружи, как слоты: <code>&lt;ng-content /&gt;</code>, несколько слотов — <code>&lt;ng-content select="[card-title]" /&gt;</code>. Так строят переиспользуемые карточки, модальные окна, layout-ы.</li>
+<li><strong><code>ng-template</code></strong> — шаблон, который не отрисовывается, пока его явно не вставят (<code>ngTemplateOutlet</code> с контекстом) — для настраиваемых строк таблицы и пустых состояний.</li>
+<li><strong><code>viewChild()</code> / <code>viewChildren()</code></strong> — элементы и компоненты из <strong>собственного шаблона</strong>. <strong><code>contentChild()</code> / <code>contentChildren()</code></strong> — из <strong>спроецированного</strong> контента. Сигнальные версии возвращают сигнал — значение доступно после инициализации представления, а <code>viewChild.required()</code> гарантирует наличие.</li>
+<li><code>ng-container</code> — группирующий элемент, которого нет в DOM.</li>
+</ul>
+<pre><code class="language-ts">@Component({
+  selector: 'app-map',
+  template: `&lt;div #map class="map"&gt;&lt;/div&gt;`,
+})
+export class MapComponent {
+  private mapEl = viewChild.required&lt;ElementRef&lt;HTMLDivElement&gt;&gt;('map');
+  constructor() {
+    afterNextRender(() =&gt; initMap(this.mapEl().nativeElement)); // только в браузере, после отрисовки
+  }
+}
+</code></pre>
+<hr />
+<h3 id="q23.32"><a class="anchor" href="#q23.32">#</a>23.32 Роутинг: ленивая загрузка, функциональные guards, resolvers, привязка параметров к input 🔥</h3>
+<pre><code class="language-ts">export const routes: Routes = [
+  { path: '', redirectTo: 'drivers', pathMatch: 'full' },
+  {
+    path: 'drivers',
+    canActivate: [authGuard],
+    loadChildren: () =&gt; import('./drivers/drivers.routes'),   // ленивый чанк
+  },
+  {
+    path: 'drivers/:id',
+    loadComponent: () =&gt; import('./driver-page.component'),
+    resolve: { driver: driverResolver },
+  },
+  { path: '**', component: NotFoundComponent },
+];
+
+export const authGuard: CanActivateFn = () =&gt; {
+  const auth = inject(AuthService);
+  return auth.isLoggedIn() || inject(Router).createUrlTree(['/login']); // UrlTree = редирект
+};
+</code></pre>
+<ul>
+<li><strong>Guards</strong> — функции: <code>canActivate</code>, <code>canActivateChild</code>, <code>canDeactivate</code> (несохранённые изменения), <code>canMatch</code> (выбрать маршрут, например по роли; в v22 получил обязательный третий параметр <code>currentSnapshot</code>). Классы-guards устарели. Вместо редиректа можно вернуть или выбросить <code>RedirectCommand</code>.</li>
+<li><strong>Resolver</strong> загружает данные до перехода. Минус — пустой экран во время загрузки; часто удобнее грузить в компоненте и показать скелетон. В 22.2 появились <strong>router resources</strong> (developer preview): ресурсы в описании маршрута, загружаются параллельно.</li>
+<li><strong><code>withComponentInputBinding()</code></strong> — параметры маршрута, query и data приходят прямо в <code>input()</code> компонента: <code>id = input.required&lt;string&gt;()</code>.</li>
+<li>Предзагрузка ленивых модулей — <code>withPreloading(PreloadAllModules)</code>; анимация переходов — <code>withViewTransitions()</code> (стабильна в 22.3).</li>
+<li>Состояние активной ссылки — <code>routerLinkActive</code>; в v22 есть сигнальная функция <code>isActive()</code>.</li>
+<li>Ошибки рендеринга маршрута — <code>withErrorBoundaries()</code> (22.3, developer preview).</li>
+</ul>
+<hr />
+<h3 id="q23.33"><a class="anchor" href="#q23.33">#</a>23.33 HttpClient и функциональные интерсепторы 🔥</h3>
+<ul>
+<li>Подключение: <code>provideHttpClient(withInterceptors([authInterceptor, errorInterceptor]))</code>. В Angular 22 по умолчанию используется <strong>Fetch API</strong> (<code>withFetch()</code> устарел; старый XHR — <code>withXhr()</code>).</li>
+<li>Методы возвращают <strong>холодный Observable</strong>: запрос уходит только при подписке, и каждая подписка — новый запрос (<a href="#q23.43">23.43</a>). Observable завершается после ответа — отписываться от HTTP не обязательно, но отписка отменяет запрос.</li>
+<li>Типизация <code>http.get&lt;Driver[]&gt;(url)</code> — только подсказка компилятору, данные не проверяются.</li>
+<li>Сигнальная альтернатива — <code>httpResource()</code> (<a href="#q23.37">23.37</a>).</li>
+</ul>
+<pre><code class="language-ts">export const authInterceptor: HttpInterceptorFn = (req, next) =&gt; {
+  const token = inject(AuthService).token();
+  return next(token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req);
+};
+
+export const errorInterceptor: HttpInterceptorFn = (req, next) =&gt;
+  next(req).pipe(
+    catchError((e: HttpErrorResponse) =&gt; {
+      if (e.status === 401) inject(Router).navigate(['/login']);
+      // ProblemDetails из ASP.NET Core: e.error.title, e.error.errors
+      return throwError(() =&gt; e);
+    }),
+  );
+</code></pre>
+<p><strong>Типичные задачи интерсепторов:</strong> токен, обновление токена по 401 (с очередью параллельных запросов), глобальный индикатор загрузки, логирование, повтор при сбое сети, заголовок корреляции (<code>X-Request-Id</code>) для сквозной трассировки (<a href="#q12.21">12.21</a>). Запрос неизменяемый — меняют через <code>req.clone()</code>. Метаданные для интерсептора — <code>HttpContext</code>.</p>
+<hr />
+<h3 id="q23.34"><a class="anchor" href="#q23.34">#</a>23.34 Формы: template-driven, reactive, typed; Signal Forms 🔥</h3>
+<table>
+<thead><tr><th></th><th>Template-driven</th><th>Reactive</th><th>Signal Forms</th></tr></thead>
+<tbody>
+<tr><td>Где модель</td><td>В шаблоне (<code>ngModel</code>)</td><td>В классе: <code>FormGroup</code>, <code>FormControl</code>, <code>FormArray</code></td><td>Сигнал с данными + схема</td></tr>
+<tr><td>Реактивность</td><td>Неявная</td><td>Observable <code>valueChanges</code>, <code>statusChanges</code></td><td>Сигналы</td></tr>
+<tr><td>Типизация</td><td>Слабая</td><td>Typed forms (с v14)</td><td>Полная, выводится из модели</td></tr>
+<tr><td>Когда</td><td>Простые формы</td><td>Сложные и динамические формы, стандарт в существующих проектах</td><td>Новый код на Angular 22 — API стабилен</td></tr>
+</tbody>
+</table>
+<pre><code class="language-ts">// Reactive forms
+private fb = inject(NonNullableFormBuilder);
+form = this.fb.group({
+  name: ['', [Validators.required, Validators.maxLength(100)]],
+  phone: ['', Validators.pattern(/^\+380\d{9}$/)],
+});
+save() { if (this.form.valid) this.api.save(this.form.getRawValue()); }
+</code></pre>
+<pre><code class="language-ts">// Signal Forms (@angular/forms/signals), стабильны с Angular 22
+import { form, Field, required, maxLength, pattern } from '@angular/forms/signals';
+
+@Component({
+  imports: [Field],
+  template: `
+    &lt;input [field]="driverForm.name" /&gt;
+    @if (driverForm.name().invalid() &amp;&amp; driverForm.name().touched()) { &lt;small&gt;Укажите имя&lt;/small&gt; }
+    &lt;input [field]="driverForm.phone" /&gt;
+  `,
+})
+export class DriverFormComponent {
+  model = signal({ name: '', phone: '' });
+  driverForm = form(this.model, f =&gt; {
+    required(f.name);
+    maxLength(f.name, 100);
+    pattern(f.phone, /^\+380\d{9}$/);
+  });
+}
+</code></pre>
+<p>Названия директивы и функций Signal Forms менялись между версиями — перед интервью сверьтесь с angular.dev, но идею объясняйте так: данные формы — сигнал, правила описаны в схеме, у каждого поля есть сигналы состояния (<code>value</code>, <code>valid</code>, <code>errors</code>, <code>touched</code>, <code>dirty</code>, <code>disabled</code>). В v22 появились асинхронная валидация с <code>debounce</code>, условные правила через <code>{ when }</code> и совместимость с <code>ControlValueAccessor</code>.</p>
+<ul>
+<li><strong>Свой контрол формы:</strong> в reactive/template-driven — <code>ControlValueAccessor</code>; в Signal Forms — интерфейс <code>FormValueControl</code> с <code>model()</code> <code>value</code>.</li>
+<li><strong>Валидация на сервере обязательна</strong> — клиентская только для удобства; ошибки <code>ValidationProblemDetails</code> из ASP.NET Core показывают у полей.</li>
+</ul>
+<hr />
+<h2>Angular: реактивность и производительность</h2>
+<h3 id="q23.35"><a class="anchor" href="#q23.35">#</a>23.35 Change detection: Zone.js, zoneless, OnPush 🔥</h3>
+<p><strong>Change detection</strong> — проверка, изменились ли данные в привязках шаблона, и обновление DOM.</p>
+<ul>
+<li><strong>Zone.js</strong> (классический подход) патчит асинхронные API браузера (события, таймеры, XHR, Promise) и после любого из них запускает проверку <strong>всего дерева</strong> компонентов сверху вниз. Просто, но много лишних проверок, плюс вес бандла.</li>
+<li><strong>Стратегия <code>OnPush</code></strong> — компонент проверяется, только если: изменилась <strong>ссылка</strong> на input; в нём или в его детях произошло событие из шаблона; обновился сигнал, прочитанный в шаблоне; <code>async</code> pipe получил значение; вызван <code>markForCheck()</code>. <strong>С Angular 22 OnPush — стратегия по умолчанию.</strong> Старая стратегия <code>Default</code> переименована в <code>ChangeDetectionStrategy.Eager</code> (а <code>Default</code> объявлен устаревшим); <code>ng update</code> проставляет <code>Eager</code> существующим компонентам без явной стратегии.</li>
+<li><strong>Zoneless</strong> — без Zone.js. Стабилен с v20.2, по умолчанию в новых приложениях с v21. Проверку планируют сигналы, события шаблона, <code>async</code> pipe и <code>markForCheck()</code>. Код, который меняет обычное поле в <code>setTimeout</code> или в <code>subscribe</code>, в zoneless-приложении экран не обновит — значение должно быть сигналом.</li>
+<li>Ручное управление: <code>ChangeDetectorRef.markForCheck()</code> (пометить путь до корня), <code>detectChanges()</code> (проверить синхронно сейчас), <code>detach()</code>.</li>
+<li><strong>Сигналы</strong> дают точечную реактивность: Angular знает, какое представление читает сигнал, и проверяет только его (<a href="#q23.36">23.36</a>).</li>
+</ul>
+<p>Как отвечать на «как ускорить Angular-приложение»: OnPush/сигналы и неизменяемые данные, zoneless, <code>track</code> в <code>@for</code>, без тяжёлых вычислений в шаблоне (<code>computed</code>, pure pipe), ленивая загрузка и <code>@defer</code>, виртуальная прокрутка; измерить — профайлером Angular DevTools.</p>
+<hr />
+<h3 id="q23.36"><a class="anchor" href="#q23.36">#</a>23.36 Signals: signal, computed, effect, linkedSignal 🔥</h3>
+<p><strong>Сигнал</strong> — обёртка над значением, которая уведомляет потребителей об изменении. Чтение — вызов функции <code>count()</code>; при чтении в реактивном контексте (шаблон, <code>computed</code>, <code>effect</code>) зависимость отслеживается автоматически.</p>
+<pre><code class="language-ts">const drivers = signal&lt;Driver[]&gt;([]);
+const filter = signal('');
+
+const visible = computed(() =&gt;                     // ленивый, кешируется, пересчитывается
+  drivers().filter(d =&gt; d.name.includes(filter())));  // только когда изменились зависимости
+
+drivers.set([...]);                                // заменить
+drivers.update(list =&gt; [...list, newDriver]);      // на основе старого (новая ссылка!)
+
+effect(() =&gt; localStorage.setItem('filter', filter())); // побочный эффект при изменении
+
+// linkedSignal — производное, но записываемое: сбрасывается при смене источника
+const selected = linkedSignal(() =&gt; visible()[0]);
+selected.set(other);                               // пользователь выбрал другого
+</code></pre>
+<ul>
+<li><strong><code>computed</code></strong> — чистое производное значение, только для чтения; пересчитывается лениво при чтении.</li>
+<li><strong><code>effect</code></strong> — для побочных эффектов во «внешний мир» (логирование, localStorage, ручная работа с DOM, синхронизация со сторонней библиотекой). <strong>Не</strong> для вычисления состояния из другого состояния — для этого <code>computed</code>/<code>linkedSignal</code> (подвох — <a href="#q23.54">23.54</a>). Создаётся в контексте внедрения, уничтожается вместе с компонентом.</li>
+<li><strong><code>linkedSignal</code></strong> — значение по умолчанию зависит от другого сигнала, но его можно перезаписать. В 22.1 появился свой сеттер, который пишет обратно в источник.</li>
+<li><strong><code>untracked(() =&gt; x())</code></strong> — прочитать без подписки на изменения.</li>
+<li>Сравнение по умолчанию — <code>Object.is</code>, поэтому мутация объекта внутри сигнала изменений не вызывает; своё сравнение — опция <code>equal</code>.</li>
+<li>Сигналы синхронны и всегда имеют текущее значение — в отличие от Observable (<a href="#q23.38">23.38</a>).</li>
+</ul>
+<hr />
+<h3 id="q23.37"><a class="anchor" href="#q23.37">#</a>23.37 Resource API: resource, rxResource, httpResource ⭐</h3>
+<p><strong>Resource</strong> — асинхронные данные в виде сигналов. Стабилен с Angular 22. Когда меняются параметры, ресурс сам перезапрашивает данные и отменяет предыдущий запрос.</p>
+<pre><code class="language-ts">driverId = input.required&lt;string&gt;();
+
+// HTTP-запрос как сигнал: перезапросится при смене driverId
+driver = httpResource&lt;Driver&gt;(() =&gt; `/api/drivers/${this.driverId()}`);
+
+// произвольная асинхронная загрузка
+trips = resource({
+  params: () =&gt; ({ id: this.driverId(), page: this.page() }),
+  loader: ({ params, abortSignal }) =&gt;
+    fetch(`/api/drivers/${params.id}/trips?page=${params.page}`, { signal: abortSignal }).then(r =&gt; r.json()),
+});
+
+// загрузчик на RxJS
+stats = rxResource({ params: () =&gt; this.driverId(), stream: ({ params }) =&gt; this.api.stats(params) });
+</code></pre>
+<p>В шаблоне: <code>driver.value()</code>, <code>driver.isLoading()</code>, <code>driver.error()</code>, <code>driver.status()</code> (<code>'idle' | 'loading' | 'reloading' | 'resolved' | 'error' | 'local'</code>), <code>driver.hasValue()</code>; перезагрузка — <code>driver.reload()</code>; локальная правка — <code>driver.set()</code>/<code>update()</code>. Если параметры вернули <code>undefined</code>, ресурс в состоянии <code>idle</code> и не загружает данные.</p>
+<p><strong>Ограничение:</strong> ресурсы — для <strong>чтения</strong>. Мутации (POST/PUT) делают обычным вызовом <code>HttpClient</code>, а затем обновляют ресурс (<code>reload()</code> или <code>set()</code>).</p>
+<hr />
+<h3 id="q23.38"><a class="anchor" href="#q23.38">#</a>23.38 Signals vs RxJS: когда что; toSignal и toObservable ⭐</h3>
+<table>
+<thead><tr><th></th><th>Signals</th><th>RxJS Observable</th></tr></thead>
+<tbody>
+<tr><td>Модель</td><td>Значение во времени (state)</td><td>Поток событий во времени</td></tr>
+<tr><td>Текущее значение</td><td>Всегда есть, синхронно</td><td>Нет (кроме BehaviorSubject)</td></tr>
+<tr><td>Подписка</td><td>Автоматическая, отписываться не нужно</td><td>Явная, нужно отписываться</td></tr>
+<tr><td>Время и асинхронность</td><td>Слабо (resource, <code>debounced()</code> — экспериментально)</td><td>Сильно: debounce, retry, отмена, гонки, комбинирование</td></tr>
+<tr><td>Где</td><td>Состояние компонентов и сервисов, шаблоны</td><td>Сложные асинхронные потоки, WebSocket, события</td></tr>
+</tbody>
+</table>
+<pre><code class="language-ts">// Observable → Signal (подписка живёт до уничтожения компонента)
+drivers = toSignal(this.api.getDrivers(), { initialValue: [] });
+
+// Signal → Observable → операторы RxJS → Signal
+query = signal('');
+results = toSignal(
+  toObservable(this.query).pipe(
+    debounceTime(300),
+    distinctUntilChanged(),
+    switchMap(q =&gt; this.api.search(q)),
+  ),
+  { initialValue: [] },
+);
+</code></pre>
+<p><strong>Практическое правило:</strong> состояние — в сигналах, «события и время» — в RxJS, на стыке — <code>toSignal</code>/<code>toObservable</code> из <code>@angular/core/rxjs-interop</code>. Angular движется к сигналам, но RxJS никуда не уходит: HttpClient, роутер и формы по-прежнему отдают Observable.</p>
+<hr />
+<h3 id="q23.39"><a class="anchor" href="#q23.39">#</a>23.39 @defer, ленивая загрузка и оптимизация Angular-приложения 🔥</h3>
+<p><strong><code>@defer</code></strong> выносит часть шаблона в отдельный ленивый чанк и загружает его по триггеру:</p>
+<pre><code class="language-html">@defer (on viewport; prefetch on idle) {
+  &lt;app-trips-chart [data]="trips()" /&gt;
+} @placeholder (minimum 300ms) {
+  &lt;div class="chart-skeleton"&gt;&lt;/div&gt;
+} @loading (after 100ms; minimum 500ms) {
+  &lt;app-spinner /&gt;
+} @error {
+  &lt;p&gt;Не удалось загрузить график&lt;/p&gt;
+}
+</code></pre>
+<ul>
+<li>Триггеры: <code>on idle</code> (по умолчанию; в v22 — с таймаутом <code>idle(500ms)</code>), <code>on viewport</code>, <code>on interaction</code>, <code>on hover</code>, <code>on timer(2s)</code>, <code>on immediate</code>, <code>when condition()</code>. <code>prefetch</code> — заранее скачать код, но ещё не отрисовывать.</li>
+<li>Ленивыми станут только standalone-компоненты, директивы и пайпы, которые <strong>не используются</strong> вне блока <code>@defer</code>.</li>
+<li>С SSR: <code>hydrate on ...</code> — incremental hydration (<a href="#q23.40">23.40</a>).</li>
+</ul>
+<p><strong>Чек-лист оптимизации:</strong> ленивые маршруты + <code>@defer</code> для тяжёлых виджетов (графики, карты, редакторы); OnPush/сигналы/zoneless (<a href="#q23.35">23.35</a>); <code>track</code>; <code>computed</code> и pure pipes вместо методов в шаблоне; виртуальная прокрутка; <code>NgOptimizedImage</code>; бюджеты бандла и анализ размера; отписки (утечки замедляют приложение со временем); избегать <code>effect</code>-каскадов.</p>
+<hr />
+<h3 id="q23.40"><a class="anchor" href="#q23.40">#</a>23.40 SSR и гидратация в Angular 🎓</h3>
+<ul>
+<li>Подключение: <code>ng new --ssr</code> или <code>ng add @angular/ssr</code>. Серверная часть — Node.js (Express); для каждого маршрута можно выбрать режим через server routes: <code>RenderMode.Server</code>, <code>RenderMode.Prerender</code> (SSG) или <code>RenderMode.Client</code>.</li>
+<li><strong>Гидратация</strong> — <code>provideClientHydration()</code>: клиент переиспользует серверный DOM вместо перерисовки. <code>withEventReplay()</code> — клики до гидратации не теряются.</li>
+<li><strong>Incremental hydration</strong> — блоки <code>@defer (hydrate on viewport)</code> приходят с сервера готовым HTML, а их JS загружается и гидратируется только по триггеру. <strong>С Angular 22 включена по умолчанию</strong> (отключение — <code>withNoIncrementalHydration()</code>).</li>
+<li><strong>Transfer state:</strong> ответы <code>HttpClient</code>, полученные на сервере, передаются клиенту в HTML, чтобы не делать тот же запрос повторно.</li>
+<li><strong>Подводные камни:</strong> на сервере нет <code>window</code>, <code>document</code>, <code>localStorage</code> — работать с ними в <code>afterNextRender</code> или по проверке <code>isPlatformBrowser</code>; разметка на сервере и клиенте должна совпадать (иначе ошибка гидратации); таймеры и бесконечные Observable не дают серверу закончить рендер.</li>
+</ul>
+<hr />
+<h3 id="q23.41"><a class="anchor" href="#q23.41">#</a>23.41 Тестирование Angular: TestBed, Vitest вместо Karma, harnesses ⭐</h3>
+<ul>
+<li><strong>Раннер:</strong> с Angular 21 в новых проектах по умолчанию <strong>Vitest</strong> (быстрее, режим watch, совместим с Jest API). Karma устарела; в v22 есть миграция <code>migrate-karma-to-vitest</code>, а в 22.3 опция выбора раннера объявлена устаревшей. Для <code>fakeAsync</code> под Vitest нужен патч Zone.js либо фейковые таймеры <code>vi.useFakeTimers()</code>.</li>
+<li><strong>Unit-тест сервиса</strong> — часто без TestBed: <code>TestBed.runInInjectionContext</code> или обычный <code>new</code> с фейками.</li>
+<li><strong>Тест компонента:</strong> <code>TestBed.configureTestingModule({ imports: [Cmp], providers: [...] })</code>, <code>fixture = TestBed.createComponent(Cmp)</code>, <code>fixture.componentRef.setInput('driver', d)</code>, <code>await fixture.whenStable()</code>, проверка DOM. В 22.2 добавлен <code>TestBed.createDirective()</code>.</li>
+<li><strong>HTTP:</strong> <code>provideHttpClient()</code> + <code>provideHttpClientTesting()</code>, <code>HttpTestingController.expectOne(url).flush(data)</code>.</li>
+<li><strong>Component harnesses</strong> (CDK) — тестировать Material-компоненты через API, а не через CSS-селекторы.</li>
+<li><strong>Роутинг:</strong> <code>RouterTestingHarness</code>.</li>
+<li><strong>E2E:</strong> Playwright или Cypress. Что тестировать — тот же подход, что на бэкенде (<a href="#q13.5">13.5</a>): поведение, а не детали реализации.</li>
+</ul>
+<hr />
+<h3 id="q23.42"><a class="anchor" href="#q23.42">#</a>23.42 Что нового в Angular 19–22 🔥</h3>
+<table>
+<thead><tr><th>Версия</th><th>Главное</th></tr></thead>
+<tbody>
+<tr><td><strong>17</strong> (ноябрь 2023)</td><td>Новый control flow (<code>@if</code>, <code>@for</code>), <code>@defer</code>, сборка на esbuild + Vite, новый сайт angular.dev, standalone по умолчанию в <code>ng new</code></td></tr>
+<tr><td><strong>18</strong> (май 2024)</td><td>Экспериментальный zoneless, стабильные control flow и <code>@defer</code>, event replay</td></tr>
+<tr><td><strong>19</strong> (ноябрь 2024)</td><td><code>standalone: true</code> по умолчанию, стабильные <code>input()</code>, <code>output()</code>, <code>model()</code>, <code>viewChild()</code>; экспериментальные <code>linkedSignal</code> и <code>resource</code>; incremental hydration (preview); <code>@let</code>; автоматическая CSP с хешами</td></tr>
+<tr><td><strong>20</strong> (май 2025)</td><td>Стабильные <code>effect</code>, <code>linkedSignal</code>, <code>toSignal</code>; <code>httpResource</code>; zoneless — developer preview, стабилен с 20.2; incremental hydration стабильна; новый стиль именования файлов без суффиксов (<code>user.ts</code> вместо <code>user.component.ts</code>); <code>*ngIf</code>/<code>*ngFor</code> объявлены устаревшими</td></tr>
+<tr><td><strong>21</strong> (ноябрь 2025)</td><td><strong>Zoneless по умолчанию</strong> в новых приложениях; экспериментальные <strong>Signal Forms</strong>; <strong>Vitest</strong> по умолчанию вместо Karma; Angular Aria (preview) — доступные «headless»-компоненты; MCP-сервер Angular CLI для ИИ-агентов; HttpClient подключён по умолчанию</td></tr>
+<tr><td><strong>22</strong> (3 июня 2026, сейчас 22.3)</td><td><strong>OnPush по умолчанию</strong> (<code>Default</code> → <code>Eager</code>); <strong>Signal Forms и Resource API стабильны</strong>; декоратор <strong><code>@Service()</code></strong> и <code>injectAsync()</code>; HttpClient на <strong>Fetch</strong> по умолчанию; incremental hydration по умолчанию; <code>strictTemplates</code> по умолчанию; <code>@default never</code>; Angular Aria стабильна; TypeScript 6. В минорных: Rolldown по умолчанию (22.1), <code>@boundary</code> для ошибок в шаблоне и router resources — preview (22.2), компилятор на Rust, <code>withErrorBoundaries()</code>, новый сборщик библиотек вместо ng-packagr (22.3)</td></tr>
+</tbody>
+</table>
+<p><strong>Политика релизов:</strong> до v22 мажорные версии выходили каждые 6 месяцев; с 22.1 — <strong>раз в год в июне</strong> (v23 — июнь 2027), поддержка мажорной версии — 2 года.</p>
+<p><strong>Как отвечать «что вам нравится в новых версиях»:</strong> «Angular перешёл на сигналы: zoneless и OnPush по умолчанию убрали лишние проверки, <code>input()</code>/<code>computed</code> заменили <code>ngOnChanges</code>, Resource API и Signal Forms закрыли асинхронные данные и формы. Код стал проще, а приложение быстрее. RxJS остаётся для сложных асинхронных потоков».</p>
+<p><strong>Обновление:</strong> <code>ng update @angular/core @angular/cli</code> по одной мажорной версии за раз, с автоматическими миграциями; план — на <a href="https://angular.dev/update-guide">angular.dev/update-guide</a>.</p>
+<hr />
+
+<h2>RxJS</h2>
+<h3 id="q23.43"><a class="anchor" href="#q23.43">#</a>23.43 Observable vs Promise; холодные и горячие Observable 🔥</h3>
+<table>
+<thead><tr><th></th><th>Promise</th><th>Observable</th></tr></thead>
+<tbody>
+<tr><td>Значений</td><td>Одно</td><td>Ноль, одно или много (поток)</td></tr>
+<tr><td>Запуск</td><td>Сразу при создании (eager)</td><td>Лениво — при подписке</td></tr>
+<tr><td>Отмена</td><td>Нет (только <code>AbortController</code>)</td><td>Отписка отменяет работу (HTTP-запрос будет прерван)</td></tr>
+<tr><td>Операторы</td><td><code>then</code>, <code>catch</code></td><td>Сотни: <code>map</code>, <code>filter</code>, <code>switchMap</code>, <code>retry</code>, <code>debounceTime</code>…</td></tr>
+<tr><td>Выполнение</td><td>Всегда асинхронно</td><td>Может быть синхронным (<code>of(1, 2, 3)</code>)</td></tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Холодный</strong> Observable создаёт источник заново для каждого подписчика: <code>http.get</code> — две подписки дадут <strong>два HTTP-запроса</strong>.</li>
+<li><strong>Горячий</strong> — источник общий и работает независимо от подписчиков: события DOM, <code>Subject</code>, WebSocket. Подписавшийся позже пропускает прошлые значения.</li>
+<li>Сделать холодный горячим (поделить один запрос между подписчиками): <code>share()</code> или <code>shareReplay({ bufferSize: 1, refCount: true })</code>. Без <code>refCount: true</code> <code>shareReplay</code> держит подписку на источник вечно — возможная утечка.</li>
+<li>Подписчик получает три вида уведомлений: <code>next</code>, <code>error</code>, <code>complete</code>; после <code>error</code> или <code>complete</code> поток закончен.</li>
+<li>Обратно в промис: <code>firstValueFrom(obs$)</code>, <code>lastValueFrom(obs$)</code> (<code>toPromise()</code> устарел).</li>
+</ul>
+<hr />
+<h3 id="q23.44"><a class="anchor" href="#q23.44">#</a>23.44 Subject, BehaviorSubject, ReplaySubject, AsyncSubject 🔥</h3>
+<p><strong>Subject</strong> — одновременно Observable и Observer: в него можно «толкать» значения через <code>next()</code>, и он раздаёт их всем подписчикам (горячий, multicast).</p>
+<table>
+<thead><tr><th>Тип</th><th>Что получает новый подписчик</th><th>Применение</th></tr></thead>
+<tbody>
+<tr><td><code>Subject</code></td><td>Только будущие значения</td><td>События: «сохранено», «обновить список»</td></tr>
+<tr><td><code>BehaviorSubject(initial)</code></td><td>Текущее (последнее) значение сразу, затем будущие; есть <code>.value</code></td><td>Состояние в сервисе (до сигналов — основной способ)</td></tr>
+<tr><td><code>ReplaySubject(n)</code></td><td>Последние n значений</td><td>Кеш последних событий, поздние подписчики</td></tr>
+<tr><td><code>AsyncSubject</code></td><td>Только последнее значение и только после <code>complete</code></td><td>Редко; похоже на промис</td></tr>
+</tbody>
+</table>
+<pre><code class="language-ts">@Service()
+export class CartService {
+  private items$ = new BehaviorSubject&lt;Item[]&gt;([]);
+  readonly items = this.items$.asObservable();     // наружу — только чтение
+  add(item: Item) { this.items$.next([...this.items$.value, item]); }
+}
+</code></pre>
+<p>Наружу отдают <code>asObservable()</code>, чтобы никто, кроме сервиса, не мог вызвать <code>next()</code>. Для нового кода то же состояние проще хранить в <code>signal</code> и отдавать <code>asReadonly()</code>.</p>
+<hr />
+<h3 id="q23.45"><a class="anchor" href="#q23.45">#</a>23.45 switchMap, mergeMap, concatMap, exhaustMap 🔥</h3>
+<p>Все четыре превращают каждое значение во внутренний Observable (например, HTTP-запрос) и «разворачивают» его. Разница — что делать, если новое значение пришло, пока предыдущий внутренний поток ещё работает:</p>
+<table>
+<thead><tr><th>Оператор</th><th>Поведение</th><th>Пример</th></tr></thead>
+<tbody>
+<tr><td><code>switchMap</code></td><td><strong>Отменяет</strong> предыдущий, переключается на новый</td><td>Поиск при вводе, смена фильтра, загрузка по параметру маршрута — нужен только последний ответ</td></tr>
+<tr><td><code>mergeMap</code></td><td>Все <strong>параллельно</strong>, результаты в порядке завершения</td><td>Независимые операции: загрузить детали для каждого id; ограничить параллельность — второй аргумент <code>concurrent</code></td></tr>
+<tr><td><code>concatMap</code></td><td><strong>По очереди</strong>, следующий ждёт завершения предыдущего</td><td>Порядок важен: последовательное сохранение изменений, очередь синхронизации</td></tr>
+<tr><td><code>exhaustMap</code></td><td><strong>Игнорирует</strong> новые, пока работает текущий</td><td>Кнопка «Оплатить» / «Войти»: двойной клик не отправит второй запрос</td></tr>
+</tbody>
+</table>
+<pre><code class="language-ts">results$ = this.query$.pipe(
+  debounceTime(300),
+  distinctUntilChanged(),
+  filter(q =&gt; q.length &gt;= 2),
+  switchMap(q =&gt; this.api.search(q).pipe(
+    catchError(() =&gt; of([])),          // ошибка внутри — не убивает внешний поток
+  )),
+);
+</code></pre>
+<p><strong>Ошибка выбора:</strong> <code>mergeMap</code> для поиска даёт гонку: ответ на старый запрос «abc» может прийти позже ответа на «abcd» и перезаписать его. <code>switchMap</code> для сохранения формы может отменить уже отправленный POST (сервер его обработает, а клиент не узнает результат). <code>catchError</code> ставят <strong>внутри</strong> <code>switchMap</code>: снаружи первая же ошибка завершит весь поток, и поиск перестанет работать.</p>
+<hr />
+<h3 id="q23.46"><a class="anchor" href="#q23.46">#</a>23.46 Комбинирование потоков: combineLatest, forkJoin, withLatestFrom, zip, merge ⭐</h3>
+<table>
+<thead><tr><th>Оператор</th><th>Когда выдаёт значение</th><th>Пример</th></tr></thead>
+<tbody>
+<tr><td><code>forkJoin</code></td><td>Один раз, когда <strong>все завершились</strong> — последние значения. Аналог <code>Promise.all</code> / <code>Task.WhenAll</code></td><td>Параллельно загрузить справочники перед показом формы</td></tr>
+<tr><td><code>combineLatest</code></td><td>При изменении <strong>любого</strong>, после того как каждый выдал хотя бы одно значение</td><td>Список = данные + фильтр + сортировка</td></tr>
+<tr><td><code>withLatestFrom</code></td><td>Только когда выдаёт <strong>основной</strong> поток; второй лишь «подмешивается»</td><td>По клику «Сохранить» взять текущее состояние формы</td></tr>
+<tr><td><code>zip</code></td><td>Попарно: n-е значение с n-м</td><td>Редко: сопоставить запросы и ответы</td></tr>
+<tr><td><code>merge</code></td><td>Любое значение из любого потока, как пришло</td><td>Объединить несколько источников событий «обновить»</td></tr>
+<tr><td><code>concat</code></td><td>Сначала весь первый поток, потом второй</td><td>Значение из кеша, затем свежее с сервера</td></tr>
+</tbody>
+</table>
+<p><strong>Подвохи:</strong> <code>forkJoin</code> не выдаст ничего, если хоть один поток не завершается (например, <code>valueChanges</code> или <code>Subject</code>); при ошибке одного потока падает весь <code>forkJoin</code>. <code>combineLatest</code> молчит, пока каждый поток не выдал первое значение, — помогает <code>startWith</code>.</p>
+<hr />
+<h3 id="q23.47"><a class="anchor" href="#q23.47">#</a>23.47 Отписка и утечки памяти: async pipe, takeUntilDestroyed, DestroyRef 🔥</h3>
+<p>Подписка на бесконечный поток (<code>interval</code>, <code>valueChanges</code>, события, <code>Subject</code> сервиса-синглтона, WebSocket) живёт дольше компонента: колбэк продолжает работать и удерживает компонент в памяти, а при каждом открытии страницы добавляется новая подписка.</p>
+<p><strong>Способы, от предпочтительного:</strong></p>
+<ol>
+<li><strong>Не подписываться вручную:</strong> <code>toSignal()</code> или <code>async</code> pipe — отписка автоматическая.</li>
+<li><strong><code>takeUntilDestroyed()</code></strong> из <code>@angular/core/rxjs-interop</code>:
+<pre><code class="language-ts">constructor() {
+  this.positions$.pipe(takeUntilDestroyed()).subscribe(p =&gt; this.marker.move(p));
+}
+// вне конструктора — передать DestroyRef:
+private destroyRef = inject(DestroyRef);
+ngOnInit() { obs$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(...); }
+</code></pre>
+</li>
+<li>Старый способ: <code>private destroy$ = new Subject&lt;void&gt;()</code> + <code>takeUntil(this.destroy$)</code> + <code>next()</code>/<code>complete()</code> в <code>ngOnDestroy</code>. Оператор <code>takeUntil</code> должен стоять <strong>последним</strong> в <code>pipe</code>, иначе операторы после него (например, <code>switchMap</code>) продолжат жить.</li>
+<li>Явно: сохранить <code>Subscription</code> и вызвать <code>unsubscribe()</code>.</li>
+</ol>
+<p><strong>Когда отписка не обязательна:</strong> потоки, которые завершаются сами (HTTP-запрос, <code>take(1)</code>, <code>first()</code>), — но отписка всё равно отменит ещё не завершённый запрос при уходе со страницы. Как искать утечки: снимок кучи в DevTools (Memory), повторное открытие и закрытие страницы, рост числа экземпляров компонента.</p>
+<hr />
+<h3 id="q23.48"><a class="anchor" href="#q23.48">#</a>23.48 Обработка ошибок в RxJS: catchError, retry, finalize ⭐</h3>
+<pre><code class="language-ts">this.api.getDriver(id).pipe(
+  retry({ count: 3, delay: (err, attempt) =&gt;          // повтор с экспоненциальной задержкой
+    err.status &gt;= 500 ? timer(2 ** attempt * 500) : throwError(() =&gt; err) }),
+  catchError(err =&gt; {
+    this.toast.error('Не удалось загрузить водителя');
+    return of(null);                                  // заменить ошибку значением…
+    // или return EMPTY;                              // …тихо завершить
+    // или return throwError(() =&gt; err);              // …пробросить дальше
+  }),
+  finalize(() =&gt; this.loading.set(false)),            // и при успехе, и при ошибке, и при отписке
+);
+</code></pre>
+<ul>
+<li>После ошибки Observable <strong>завершён</strong> — <code>catchError</code> подменяет его новым потоком.</li>
+<li>В долгоживущем потоке (поиск, автосохранение) ошибку ловят <strong>внутри</strong> <code>switchMap</code>/<code>concatMap</code>, иначе первая же ошибка остановит поток навсегда (<a href="#q23.45">23.45</a>).</li>
+<li>Повторять стоит только безопасные запросы (GET) и ошибки 5xx или сетевые; POST — только если сервер идемпотентен (ключ идемпотентности, <a href="#q12.19">12.19</a>).</li>
+<li>Глобальная обработка — интерсептор (<a href="#q23.33">23.33</a>) и <code>ErrorHandler</code>.</li>
+</ul>
+<hr />
+<h2>NgRx и управление состоянием</h2>
+<h3 id="q23.49"><a class="anchor" href="#q23.49">#</a>23.49 Когда нужен state management; NgRx Store: actions, reducers, selectors, effects 🔥</h3>
+<p><strong>NgRx Store</strong> — реализация паттерна Redux на RxJS: единое неизменяемое хранилище состояния, которое меняется только через действия.</p>
+<ol>
+<li>Компонент отправляет <strong>action</strong> — описание события: <code>store.dispatch(DriversPageActions.opened())</code>.</li>
+<li><strong>Reducer</strong> — чистая функция <code>(state, action) =&gt; newState</code>; возвращает новый объект, без побочных эффектов и запросов.</li>
+<li><strong>Effect</strong> реагирует на actions побочными эффектами (HTTP, навигация) и отправляет новые actions: <code>loadDriversSuccess</code> / <code>loadDriversFailure</code>.</li>
+<li><strong>Selector</strong> — мемоизированная выборка из состояния: <code>store.select(selectActiveDrivers)</code> или сигналом <code>store.selectSignal(...)</code>.</li>
+</ol>
+<pre><code class="language-ts">export const DriversApiActions = createActionGroup({
+  source: 'Drivers API',
+  events: { 'Load Success': props&lt;{ drivers: Driver[] }&gt;(), 'Load Failure': props&lt;{ error: string }&gt;() },
+});
+
+export const driversReducer = createReducer(
+  initialState,
+  on(DriversPageActions.opened, s =&gt; ({ ...s, loading: true })),
+  on(DriversApiActions.loadSuccess, (s, { drivers }) =&gt; ({ ...s, loading: false, drivers })),
+);
+
+export const loadDrivers = createEffect(
+  (actions$ = inject(Actions), api = inject(DriversApi)) =&gt;
+    actions$.pipe(
+      ofType(DriversPageActions.opened),
+      switchMap(() =&gt; api.getAll().pipe(
+        map(drivers =&gt; DriversApiActions.loadSuccess({ drivers })),
+        catchError(e =&gt; of(DriversApiActions.loadFailure({ error: e.message }))),
+      )),
+    ),
+  { functional: true },
+);
+</code></pre>
+<p><strong>Плюсы:</strong> предсказуемость (однонаправленный поток данных), Redux DevTools с «путешествием во времени», единые правила в большой команде, удобно тестировать чистые функции. <strong>Минусы:</strong> много шаблонного кода, порог входа, избыточен для простых экранов.</p>
+<p><strong>Когда нужен:</strong> состояние используется многими несвязанными экранами, сложные потоки обновлений (WebSocket + действия пользователя + кеш), большая команда. <strong>Когда не нужен:</strong> состояние живёт внутри одной страницы — хватит сервиса с сигналами или NgRx Signal Store (<a href="#q23.50">23.50</a>). Дополнения: <code>@ngrx/entity</code> (нормализованные коллекции: <code>ids</code> + <code>entities</code>), <code>@ngrx/router-store</code>.</p>
+<hr />
+<h3 id="q23.50"><a class="anchor" href="#q23.50">#</a>23.50 NgRx Signal Store, Store или сервис с сигналами ⭐</h3>
+<p><strong>NgRx Signal Store</strong> (<code>@ngrx/signals</code>) — лёгкое хранилище на сигналах без actions и reducers; собирается из функций-«фич».</p>
+<pre><code class="language-ts">export const DriversStore = signalStore(
+  { providedIn: 'root' },
+  withState({ drivers: [] as Driver[], filter: '', loading: false }),
+  withComputed(({ drivers, filter }) =&gt; ({
+    visible: computed(() =&gt; drivers().filter(d =&gt; d.name.includes(filter()))),
+  })),
+  withMethods((store, api = inject(DriversApi)) =&gt; ({
+    setFilter: (filter: string) =&gt; patchState(store, { filter }),
+    load: rxMethod&lt;void&gt;(pipe(
+      tap(() =&gt; patchState(store, { loading: true })),
+      switchMap(() =&gt; api.getAll()),
+      tap(drivers =&gt; patchState(store, { drivers, loading: false })),
+    )),
+  })),
+  withHooks({ onInit: store =&gt; store.load() }),
+);
+</code></pre>
+<table>
+<thead><tr><th>Вариант</th><th>Когда</th></tr></thead>
+<tbody>
+<tr><td>Сервис с <code>signal</code> / <code>computed</code></td><td>Небольшое состояние фичи, мало правил</td></tr>
+<tr><td>NgRx Signal Store</td><td>Состояние фичи с логикой, нужны единый стиль и переиспользуемые части (<code>withEntities</code>, свои <code>signalStoreFeature</code>); можно предоставить на уровне компонента</td></tr>
+<tr><td>NgRx Store (Redux)</td><td>Большое общее состояние, важны журнал событий и DevTools, в проекте уже принят этот подход</td></tr>
+</tbody>
+</table>
+<p>В вакансиях, где указан NgRx, на интервью могут спросить, как вы выбираете между этими вариантами. Хороший ответ — не «всегда NgRx», а критерии выбора из таблицы.</p>
+<hr />
+<h2>Подвохи Angular</h2>
+<h3 id="q23.51"><a class="anchor" href="#q23.51">#</a>23.51 Подвох: OnPush и мутация объекта 🔥</h3>
+<pre><code class="language-ts">// родитель
+drivers: Driver[] = [];
+add(d: Driver) { this.drivers.push(d); }          // список у OnPush-ребёнка не обновится
+
+// ребёнок: changeDetection OnPush (с Angular 22 — по умолчанию)
+@Input() drivers: Driver[] = [];
+</code></pre>
+<p>OnPush-компонент проверяется при смене <strong>ссылки</strong> на input; <code>push</code> меняет содержимое, а ссылка та же. То же с сигналом: <code>signal.update(list =&gt; { list.push(d); return list; })</code> вернёт ту же ссылку, и <code>Object.is</code> не увидит изменения.</p>
+<p><strong>Исправление:</strong> неизменяемое обновление — <code>this.drivers = [...this.drivers, d]</code> или <code>drivers.update(list =&gt; [...list, d])</code>. Не исправление, а костыль: <code>markForCheck()</code> или возврат к стратегии <code>Eager</code>.</p>
+<p>После перехода на Angular 22 этот подвох стал актуален для всех компонентов, где стратегию не указали явно: <code>ng update</code> проставляет им <code>Eager</code>, но новые компоненты уже будут OnPush.</p>
+<hr />
+<h3 id="q23.52"><a class="anchor" href="#q23.52">#</a>23.52 Подвох: вложенные subscribe и гонка запросов 🔥</h3>
+<pre><code class="language-ts">// ❌ «subscribe в subscribe»
+this.route.paramMap.subscribe(params =&gt; {
+  this.api.getDriver(params.get('id')!).subscribe(driver =&gt; {
+    this.driver = driver;
+    this.api.getTrips(driver.id).subscribe(trips =&gt; this.trips = trips);
+  });
+});
+</code></pre>
+<p><strong>Проблемы:</strong> (1) гонка — при быстрой смене id старый ответ может прийти позже и показать не того водителя; (2) внутренние подписки никто не отменяет — утечки; (3) ошибки обрабатываются в каждом месте отдельно; (4) callback hell.</p>
+<pre><code class="language-ts">// ✅ один поток, отмена устаревших запросов, автоматическая отписка
+id = input.required&lt;string&gt;();                                  // параметр маршрута через input binding
+driver = httpResource&lt;Driver&gt;(() =&gt; `/api/drivers/${this.id()}`);
+trips = httpResource&lt;Trip[]&gt;(() =&gt; this.driver.hasValue()
+  ? `/api/drivers/${this.driver.value().id}/trips` : undefined); // undefined — ждать
+
+// или на RxJS:
+vm = toSignal(this.route.paramMap.pipe(
+  map(p =&gt; p.get('id')!),
+  switchMap(id =&gt; this.api.getDriver(id)),
+  switchMap(driver =&gt; this.api.getTrips(driver.id).pipe(map(trips =&gt; ({ driver, trips })))),
+));
+</code></pre>
+<hr />
+<h3 id="q23.53"><a class="anchor" href="#q23.53">#</a>23.53 Подвох: ExpressionChangedAfterItHasBeenCheckedError ⭐</h3>
+<p>В режиме разработки Angular после проверки изменений делает <strong>вторую, контрольную проверку</strong>. Если значение привязки изменилось между ними, это означает нарушение однонаправленного потока данных: данные изменились во время отрисовки, и на экране может оказаться устаревшее значение.</p>
+<p><strong>Типичные причины:</strong> изменение состояния родителя в <code>ngAfterViewInit</code> ребёнка; геттер или метод в шаблоне, который при каждом вызове возвращает новое значение (<code>new Date()</code>, <code>Math.random()</code>, новый массив); сервис, который меняет общее состояние прямо во время проверки.</p>
+<p><strong>Правильные исправления:</strong> перенести изменение туда, где ему место (раньше — в <code>ngOnInit</code>, или в обработчик события); вычислять через <code>computed</code>; использовать сигналы — Angular сам перепланирует проверку. <strong>Костыли:</strong> <code>setTimeout</code> или <code>detectChanges()</code> — скрывают проблему, а не решают её.</p>
+<p>В продакшен-сборке контрольной проверки нет — ошибка не появится, но интерфейс может показывать устаревшие данные.</p>
+<hr />
+<h3 id="q23.54"><a class="anchor" href="#q23.54">#</a>23.54 Подвох: effect(), который пишет в сигнал ⭐</h3>
+<pre><code class="language-ts">// ❌ состояние, вычисленное через effect
+items = signal&lt;Item[]&gt;([]);
+total = signal(0);
+constructor() {
+  effect(() =&gt; this.total.set(this.items().reduce((s, i) =&gt; s + i.price, 0)));
+}
+</code></pre>
+<p><strong>Проблемы:</strong> лишний цикл обновления (сначала отрисуется старое <code>total</code>, затем новое); можно получить бесконечный цикл, если эффект читает и пишет один и тот же сигнал; логику сложнее понять и протестировать.</p>
+<pre><code class="language-ts">// ✅ производное значение — computed
+total = computed(() =&gt; this.items().reduce((s, i) =&gt; s + i.price, 0));
+
+// ✅ производное, но редактируемое пользователем — linkedSignal
+selectedId = linkedSignal(() =&gt; this.items()[0]?.id);
+</code></pre>
+<p><strong>Правило:</strong> <code>effect</code> — только для побочных эффектов во внешний мир (localStorage, логирование, сторонний виджет, ручная работа с DOM). Сигналы внутри эффекта, которые не должны быть зависимостями, читают через <code>untracked()</code>. С v19 запись в сигнал внутри <code>effect</code> разрешена без флага <code>allowSignalWrites</code>, но это не значит, что так стоит делать.</p>
 </section></main>
 </body></html>
