@@ -33,10 +33,10 @@ test('подсказка называет готовый раздел компа
 });
 
 test('раздела нет — подсказка без него', () => {
-  const text = hint('https://jobs.dou.ua/companies/acme/vacancies/1/', files);
+  const text = hint('https://jobs.dou.ua/companies/fabrikam/vacancies/1/', files);
   assert.match(text, /interview-prep/);
   assert.doesNotMatch(text, /уже есть/);
-  assert.equal(findSection('acme', files), null);
+  assert.equal(findSection('fabrikam', files), null);
 });
 
 // .claude/hooks/dev-app.mjs: какие команды мешают запущенному приложению (пишут в bin/Debug или занимают его порт)
