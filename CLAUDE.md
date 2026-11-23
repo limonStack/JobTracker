@@ -44,6 +44,8 @@ Clean Architecture, зависимости внутрь: `Api → Infrastructure
 
 ### Контент (тексты ответов)
 
+Хуки Claude Code — в `.claude/settings.json`, скрипты в `.claude/hooks/` (тесты — `tests/js/hooks.test.mjs`): `vacancy-link.mjs` (UserPromptSubmit) подсказывает `/interview-prep`, если в сообщении ссылка на вакансию.
+
 Подготовка к вакансии — skill `.claude/skills/interview-prep` (`/interview-prep`); его скрипты `check-content.mjs` (ссылки, нумерация, метки) и `list-questions.mjs` (оглавление обоих файлов) полезны при любой правке контента.
 
 `content/answers.html` разбирается `AnswersHtmlParser` и импортируется в базу при старте, только если изменился хеш файлов (`ContentService.ImportIfChangedAsync`) и включён `Content:ImportOnStartup`. Файлы читаются из копии рядом с приложением (`bin/.../content`, копируется сборкой), поэтому правка `content/` вступает в силу только после пересборки. Личные разделы — `content/private/` (вне git; без папки приложение работает). Раздел под вакансию компании — `<section data-kind="company">` (`SectionKind.Company`): в меню он в отдельном блоке «🏢 Компании» и не входит в общий прогресс; такие разделы только в личном файле. `GET /api/content` отдаётся с ETag.
