@@ -44,6 +44,8 @@ Clean Architecture, зависимости внутрь: `Api → Infrastructure
 
 ### Контент (тексты ответов)
 
+Подготовка к вакансии — skill `.claude/skills/interview-prep` (`/interview-prep`); его скрипты `check-content.mjs` (ссылки, нумерация, метки) и `list-questions.mjs` (оглавление обоих файлов) полезны при любой правке контента.
+
 `content/answers.html` разбирается `AnswersHtmlParser` и импортируется в базу при старте, только если изменился хеш файлов (`ContentService.ImportIfChangedAsync`) и включён `Content:ImportOnStartup`. Файлы читаются из копии рядом с приложением (`bin/.../content`, копируется сборкой), поэтому правка `content/` вступает в силу только после пересборки. Личные разделы — `content/private/` (вне git; без папки приложение работает). `GET /api/content` отдаётся с ETag.
 
 ### Фронтенд (ванильный JS, ES-модули, без сборки)
