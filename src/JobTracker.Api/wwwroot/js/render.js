@@ -12,13 +12,14 @@ function sectionHtml(s) {
     for (const q of g.questions)
       parts.push(`<h3 id="q${q.code}"><a class="anchor" href="#q${q.code}">#</a>${withMark(`${q.code} ${esc(q.title)}`, q.importance)}</h3>`, q.bodyHtml);
   }
-  return `<section>${parts.filter(Boolean).join('\n')}\n</section>`;
+  return `<section${s.kind === 'company' ? ' data-kind="company"' : ''}>${parts.filter(Boolean).join('\n')}\n</section>`;
 }
 
 function menuHtml(s) {
   const items = s.groups.flatMap(g => g.questions)
     .map(q => `<li><a href="#q${q.code}">${withMark(`${q.code} ${esc(q.title)}`, q.importance)}</a></li>`).join('');
-  return `<details><summary><a href="#${esc(s.slug)}">${s.number}. ${esc(s.title)}</a></summary><ul>${items}</ul></details>`;
+  const kind = s.kind === 'company' ? ' data-kind="company"' : '';
+  return `<details${kind}><summary><a href="#${esc(s.slug)}">${s.number}. ${esc(s.title)}</a></summary><ul>${items}</ul></details>`;
 }
 
 /**
@@ -47,7 +48,12 @@ async function loadContent(storage) {
 export async function renderContent(storage) {
   const content = await loadContent(storage);
 
-  document.getElementById('toc').outerHTML = content.sections.map(menuHtml).join('');
+  // разделы под вакансии компаний (skill interview-prep) — отдельным блоком под общей базой
+  const general = content.sections.filter(s => s.kind !== 'company');
+  const companies = content.sections.filter(s => s.kind === 'company');
+  // у каждого списка свой контейнер: поиск переставляет разделы по релевантности внутри него
+  document.getElementById('toc').outerHTML = `<div class="toc-general">${general.map(menuHtml).join('')}</div>`
+    + (companies.length ? `<div class="toc-companies"><div class="toc-title">🏢 Компании</div>${companies.map(menuHtml).join('')}</div>` : '');
   document.querySelector('main').innerHTML = content.sections.map(sectionHtml).join('');
   return content;
 }

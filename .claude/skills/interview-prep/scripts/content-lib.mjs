@@ -1,5 +1,6 @@
 // Общий разбор файлов контента для скриптов skill-а (без зависимостей).
 // Формат — как в AnswersHtmlParser: main > section; h1 «N. Название»; h2 — группа; h3 id="qN.M" — вопрос.
+// <section data-kind="company"> — раздел под вакансию компании: в приложении он в отдельном блоке меню.
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,14 +18,15 @@ const stripTags = s => s.replace(/<[^>]+>/g, '')
 
 export const MARKS = ['🔥', '⭐', '🎓'];
 
-/** Разделы файла: { number, id, title, kind, file, html, questions: [{ code, number, title, mark }] }. */
+/** Разделы файла: { number, id, title, kind, company, file, html, questions: [{ code, number, title, mark }] }. */
 export function parseFile({ path, kind }) {
   if (!existsSync(path)) return null;
   const text = readFileSync(path, 'utf8');
   const sections = [];
-  const sectionRe = /<section>([\s\S]*?)<\/section>/g;
+  const sectionRe = /<section(\s[^>]*)?>([\s\S]*?)<\/section>/g;
   for (const m of text.matchAll(sectionRe)) {
-    const html = m[1];
+    const html = m[2];
+    const dataKind = (m[1] ?? '').match(/data-kind="([^"]*)"/)?.[1] ?? null;
     const h1 = html.match(/<h1(?:\s+id="([^"]*)")?[^>]*>([\s\S]*?)<\/h1>/);
     if (!h1) { sections.push({ error: 'раздел без h1', file: path, kind }); continue; }
     const heading = stripTags(h1[2]);
@@ -45,6 +47,8 @@ export function parseFile({ path, kind }) {
       heading,
       id: h1[1] ?? null,
       kind,
+      dataKind,
+      company: dataKind === 'company',
       file: path,
       html,
       questions,

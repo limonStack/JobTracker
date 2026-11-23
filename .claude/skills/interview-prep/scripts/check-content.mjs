@@ -12,6 +12,8 @@ for (const s of all) {
   const where = `раздел «${s.heading}» (${s.kind})`;
   if (s.number == null) { errors.push(`${where}: заголовок не по формату «N. Название»`); continue; }
   if (!s.id) warnings.push(`${where}: у h1 нет id — на раздел нельзя сослаться`);
+  if (s.dataKind != null && s.dataKind !== 'company') errors.push(`${where}: неизвестный data-kind «${s.dataKind}» — импорт упадёт (допустимо: company)`);
+  if (s.company && s.kind !== 'личный') errors.push(`${where}: раздел компании в публичном файле — всё о компании только в личный`);
 
   s.questions.forEach((q, i) => {
     const [sec, num] = q.code.split('.').map(Number);

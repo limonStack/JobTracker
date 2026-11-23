@@ -94,6 +94,8 @@ export function startKnowledge(store) {
     secProgress.className = 'sec-progress';
     summary.appendChild(secProgress);
     d.secProgress = secProgress;
+    d.home = d.parentElement;                         // общий список или блок «Компании» — сюда возвращает reorder
+    const company = d.dataset.kind === 'company';
     d.querySelectorAll('li').forEach(li => {
       const a = li.querySelector('a');
       const raw = a.textContent.trim();
@@ -129,7 +131,7 @@ export function startKnowledge(store) {
         bar.appendChild(endBtn);
         h3.parentElement.insertBefore(bar, end);
       }
-      items.push({ li, a, d, toggle, h3Badge, endBtn, ul: li.parentElement, order: items.length, mark, title, section, secNum,
+      items.push({ li, a, d, toggle, h3Badge, endBtn, ul: li.parentElement, order: items.length, mark, title, section, secNum, company,
                    id: a.getAttribute('href').slice(1), code, key: m ? +m[1] * 1000 + +m[2] : -1,
                    nTitle: norm(title), words: norm(title).split(' '), html: a.innerHTML,
                    body: null, score: 0, rank: 0 });
@@ -148,8 +150,10 @@ export function startKnowledge(store) {
     else if (cardItem && cardItem.code === code) showCard(cardItem);
   }
 
+  // общий прогресс и счётчики фильтров — только по общей базе; разделы компаний считаются у себя в меню
+  const baseItems = items.filter(it => !it.company);
   function renderProgress() {
-    const total = items.length, n = items.filter(it => done.has(it.code)).length;
+    const total = baseItems.length, n = baseItems.filter(it => done.has(it.code)).length;
     const pct = total ? Math.round(n * 100 / total) : 0;
     document.getElementById('progress-text').innerHTML =
       `<span>Изучено <b>${n}</b> из ${total}</span><b>${pct}%</b>`;
@@ -165,7 +169,7 @@ export function startKnowledge(store) {
     // счётчики и полоски на кнопках важности: «0 из 161»
     todoChip.querySelector('.chip-count').textContent = total - n;   // сколько осталось
     for (const chip of chips) {
-      const list = items.filter(it => it.mark === chip.dataset.mark);
+      const list = baseItems.filter(it => it.mark === chip.dataset.mark);
       const k = list.filter(it => done.has(it.code)).length;
       chip.querySelector('.chip-count').textContent = `${k}/${list.length}`;
       chip.querySelector('.chip-fill').style.width = (list.length ? k * 100 / list.length : 0) + '%';
@@ -574,7 +578,6 @@ export function startKnowledge(store) {
     return out + esc(text.slice(pos));
   }
 
-  const nav = groups[0].parentElement;
   function reorder(byRank) {
     const lists = new Map();
     for (const it of items) (lists.get(it.ul) || lists.set(it.ul, []).get(it.ul)).push(it);
@@ -585,7 +588,7 @@ export function startKnowledge(store) {
     const best = d => Math.max(0, ...items.filter(it => it.d === d).map(it => it.rank));
     groups.map((d, i) => ({ d, i, best: byRank ? best(d) : 0 }))
       .sort((x, y) => y.best - x.best || x.i - y.i)
-      .forEach(({ d }) => nav.appendChild(d));
+      .forEach(({ d }) => d.home.appendChild(d));
   }
 
   // ---------- Применение поиска ----------

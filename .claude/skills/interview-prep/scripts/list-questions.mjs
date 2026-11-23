@@ -13,7 +13,7 @@ const sections = loadAll().flatMap(f => f.parsed.sections).filter(s => s.number 
 
 for (const s of sections) {
   if (only.size && !only.has(s.number)) continue;
-  console.log(`## ${s.number}. ${s.title}  [${s.kind}, #${s.id}, вопросов: ${s.questions.length}]`);
+  console.log(`## ${s.number}. ${s.title}  [${s.kind}${s.company ? ', компания' : ''}, #${s.id}, вопросов: ${s.questions.length}]`);
   if (sectionsOnly) continue;
   for (const q of s.questions) console.log(`${q.code} ${q.title} ${q.mark ?? '(без метки)'}`);
 }

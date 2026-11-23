@@ -17,6 +17,7 @@ internal sealed class SectionConfiguration : IEntityTypeConfiguration<Section>
         builder.Property(x => x.Slug).HasMaxLength(100).IsRequired();
         builder.Property(x => x.Title).HasMaxLength(300).IsRequired();
         builder.Property(x => x.IntroHtml).IsRequired();
+        builder.Property(x => x.Kind).HasConversion<string>().HasMaxLength(20);
         builder.Ignore(x => x.Questions);
 
         builder.HasMany(x => x.Groups).WithOne()

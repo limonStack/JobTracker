@@ -16,7 +16,7 @@ namespace JobTracker.Infrastructure.Content;
 public static partial class AnswersHtmlParser
 {
     /// <summary>Меняется вместе с логикой разбора: тогда тексты переимпортируются, даже если файлы те же.</summary>
-    public const string Version = "1";
+    public const string Version = "2";
 
     private static readonly HtmlParser Parser = new();
 
@@ -46,7 +46,8 @@ public static partial class AnswersHtmlParser
         var number = int.Parse(heading.Groups[1].Value, CultureInfo.InvariantCulture);
         var blocks = element.Children.SkipWhile(c => c != h1).Skip(1).ToList();
 
-        var section = Section.Create(number, h1.Id ?? "", heading.Groups[2].Value, Html(blocks.TakeWhile(b => !IsHeading(b))));
+        var section = Section.Create(number, h1.Id ?? "", heading.Groups[2].Value, Html(blocks.TakeWhile(b => !IsHeading(b))),
+            ParseKind(element, number));
         QuestionGroup? group = null;
 
         for (var i = 0; i < blocks.Count; i++)
@@ -90,6 +91,14 @@ public static partial class AnswersHtmlParser
         var importance = mark.Success ? ImportanceExtensions.FromIcon(mark.Groups[1].Value) : Importance.None;
         return (code, mark.Success ? text[..mark.Index].TrimEnd() : text, importance);
     }
+
+    /// <summary>&lt;section data-kind="company"&gt; — раздел под вакансию компании; без атрибута — общая база.</summary>
+    private static SectionKind ParseKind(IElement section, int number) => section.GetAttribute("data-kind") switch
+    {
+        null or "" => SectionKind.General,
+        "company" => SectionKind.Company,
+        var other => throw new DomainException($"У раздела {number} неизвестный data-kind «{other}» (допустимо: company)."),
+    };
 
     private static bool IsHeading(IElement element) =>
         element.LocalName == "h2" || (element.LocalName == "h3" && element.Id?.StartsWith('q') == true);

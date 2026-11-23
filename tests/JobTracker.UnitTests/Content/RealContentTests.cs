@@ -41,6 +41,13 @@ public class RealContentTests
     }
 
     [Fact]
+    public void PublicFile_HasNoCompanySections()
+    {
+        // разделы под компании — только в личном файле
+        Assert.All(Sections.Value, s => Assert.Equal(SectionKind.General, s.Kind));
+    }
+
+    [Fact]
     public void EveryQuestion_HasImportanceMark()
     {
         var withoutMark = Sections.Value.SelectMany(s => s.Questions).Where(q => q.Importance == Importance.None).Select(q => q.Code.ToString());

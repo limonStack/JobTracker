@@ -26,6 +26,10 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 "Segoe UI",s
 #side summary a{color:var(--text);text-decoration:none;font-weight:600}
 #side ul{list-style:none;margin:2px 0 6px;padding-left:14px}#side li a{color:var(--muted);text-decoration:none;display:block;padding:1px 0;line-height:1.35}
 #side li a:hover{color:var(--accent)}
+/* разделы под вакансии компаний — отдельный блок под общей базой; при поиске без совпадений скрывается целиком */
+.toc-companies{margin-top:12px;padding-top:8px;border-top:1px solid var(--line)}
+.toc-companies:not(:has(details:not([hidden]))){display:none}
+.toc-title{font-size:12px;font-weight:600;color:var(--muted);padding:0 4px 4px;letter-spacing:.02em}
 main{margin-left:300px;padding:24px 48px 80px;max-width:1080px}
 section{border-bottom:1px solid var(--line);padding-bottom:24px}
 h1{font-size:30px;margin:40px 0 8px;scroll-margin-top:16px}

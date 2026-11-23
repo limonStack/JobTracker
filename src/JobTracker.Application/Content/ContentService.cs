@@ -38,7 +38,7 @@ public sealed partial class ContentService(
 
         var sections = await repository.ListAsync(ct);
         return new ContentDto(version, sections.Select(s => new SectionDto(
-            s.Number, s.Slug, s.Title, s.IntroHtml,
+            s.Number, s.Slug, s.Title, s.Kind, s.IntroHtml,
             s.Groups.Select(g => new GroupDto(
                 g.Title, g.IntroHtml,
                 g.Questions.Select(q => new QuestionDto(q.Code.ToString(), q.Title, q.Importance, q.IsTrick, q.BodyHtml)).ToList()

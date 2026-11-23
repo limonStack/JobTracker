@@ -51,7 +51,7 @@ public sealed class ContentOptions
 
 public sealed record ContentDto(string Version, IReadOnlyList<SectionDto> Sections);
 
-public sealed record SectionDto(int Number, string Slug, string Title, string IntroHtml, IReadOnlyList<GroupDto> Groups);
+public sealed record SectionDto(int Number, string Slug, string Title, SectionKind Kind, string IntroHtml, IReadOnlyList<GroupDto> Groups);
 
 public sealed record GroupDto(string? Title, string IntroHtml, IReadOnlyList<QuestionDto> Questions);
 

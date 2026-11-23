@@ -116,4 +116,22 @@ public class AnswersHtmlParserTests
 
         Assert.Throws<DomainException>(() => AnswersHtmlParser.Parse(html));
     }
+
+    [Fact]
+    public void Kind_GeneralByDefault_CompanyByDataKind()
+    {
+        var html = Sample.Replace("<section><h1 id=\"13-testing\">", "<section data-kind=\"company\"><h1 id=\"13-testing\">", StringComparison.Ordinal);
+
+        var sections = AnswersHtmlParser.Parse(html);
+
+        Assert.Equal([SectionKind.General, SectionKind.Company, SectionKind.General], sections.Select(s => s.Kind));
+    }
+
+    [Fact]
+    public void UnknownKind_Throws()
+    {
+        var html = Sample.Replace("<section><h1 id=\"13-testing\">", "<section data-kind=\"vendor\"><h1 id=\"13-testing\">", StringComparison.Ordinal);
+
+        Assert.Throws<DomainException>(() => AnswersHtmlParser.Parse(html));
+    }
 }

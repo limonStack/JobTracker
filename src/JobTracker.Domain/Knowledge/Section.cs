@@ -21,20 +21,22 @@ public sealed class Section
     /// <summary>Текст до первой группы или вопроса; у шпаргалки — весь раздел.</summary>
     public string IntroHtml { get; private set; } = "";
 
+    public SectionKind Kind { get; private set; }
+
     public IReadOnlyList<QuestionGroup> Groups => _groups;
 
     public IEnumerable<Question> Questions => _groups.SelectMany(g => g.Questions);
 
     private Section() { } // для EF Core
 
-    public static Section Create(int number, string slug, string title, string introHtml)
+    public static Section Create(int number, string slug, string title, string introHtml, SectionKind kind = SectionKind.General)
     {
         if (number <= 0)
             throw new DomainException("Номер раздела должен быть положительным.");
         if (string.IsNullOrWhiteSpace(slug) || string.IsNullOrWhiteSpace(title))
             throw new DomainException($"У раздела {number} нет якоря или названия.");
 
-        return new Section { Number = number, Slug = slug.Trim(), Title = title.Trim(), IntroHtml = introHtml };
+        return new Section { Number = number, Slug = slug.Trim(), Title = title.Trim(), IntroHtml = introHtml, Kind = kind };
     }
 
     /// <summary>Новая группа в конце раздела. Без названия — вопросы раздела, у которого нет подзаголовков.</summary>

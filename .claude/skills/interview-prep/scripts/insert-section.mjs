@@ -1,6 +1,6 @@
 // Вставить раздел в файл контента или заменить существующий (по id h1).
 //   node insert-section.mjs <private|public> <файл-раздела.html> [--replace]
-// Файл раздела — один <section>…</section> с <h1 id="…">N. Название</h1>.
+// Файл раздела — один <section>…</section> с <h1 id="…">N. Название</h1>; раздел компании — <section data-kind="company">.
 // Перед записью копия файла кладётся в backups/content/ (папка вне git).
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
@@ -15,9 +15,9 @@ if (!file || !sectionPath) {
 }
 
 const section = readFileSync(sectionPath, 'utf8').trim();
-const h1 = section.match(/^<section><h1 id="([^"]+)">(\d+)\.\s+[^<]+<\/h1>/);
-if (!h1 || !section.endsWith('</section>') || (section.match(/<section>/g) ?? []).length !== 1) {
-  console.error('Раздел должен начинаться с <section><h1 id="…">N. Название</h1> и быть одним <section>…</section>.');
+const h1 = section.match(/^<section(?: data-kind="company")?><h1 id="([^"]+)">(\d+)\.\s+[^<]+<\/h1>/);
+if (!h1 || !section.endsWith('</section>') || (section.match(/<section[\s>]/g) ?? []).length !== 1) {
+  console.error('Раздел должен начинаться с <section><h1 id="…">N. Название</h1> (у компании — <section data-kind="company">) и быть одним <section>…</section>.');
   process.exit(1);
 }
 const [, id, numberText] = h1;
@@ -36,7 +36,8 @@ if (!existsSync(file.path)) {
 }
 let html = readFileSync(file.path, 'utf8');
 
-const start = html.indexOf(`<section><h1 id="${id}">`);
+// заменяемый раздел мог быть записан и без data-kind (до появления блока «Компании»)
+const start = Math.max(html.indexOf(`<section><h1 id="${id}">`), html.indexOf(`<section data-kind="company"><h1 id="${id}">`));
 if (start >= 0) {
   if (!replace) {
     console.error(`Раздел #${id} уже есть в файле. Чтобы заменить его, добавьте --replace.`);
