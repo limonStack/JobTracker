@@ -38,3 +38,19 @@ test('раздела нет — подсказка без него', () => {
   assert.doesNotMatch(text, /уже есть/);
   assert.equal(findSection('acme', files), null);
 });
+
+// .claude/hooks/dev-app.mjs: какие команды мешают запущенному приложению (пишут в bin/Debug или занимают его порт)
+import { needsStop } from '../../.claude/hooks/dev-app.mjs';
+
+test('Debug-сборка, тесты, миграции и запуск — останавливать приложение', () => {
+  for (const cmd of ['dotnet build', 'dotnet test --filter "FullyQualifiedName~X"', 'dotnet ef migrations add X --project a',
+    'dotnet run --project src/JobTracker.Api', 'cd e:/x && dotnet build 2>&1 | tail', 'dotnet tool restore; dotnet build -c Debug'])
+    assert.equal(needsStop(cmd), true, cmd);
+});
+
+test('Release, --no-build, свой экземпляр на другом порту и не-dotnet — не трогать', () => {
+  for (const cmd of ['dotnet build -c Release', 'dotnet build --configuration Release', 'dotnet ef migrations add X --configuration Release',
+    'dotnet test -c Release --no-build', 'dotnet test --no-build', 'dotnet run -c Release --no-build --urls http://localhost:5298',
+    'dotnet run --no-build --no-launch-profile --urls http://localhost:5299', 'echo "dotnet build"', 'npm test', 'git status', 'dotnet tool restore'])
+    assert.equal(needsStop(cmd), false, cmd);
+});
