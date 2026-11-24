@@ -3618,11 +3618,14 @@
 </ul>
 <hr />
 <h3 id="q9.4"><a class="anchor" href="#q9.4">#</a>9.4 Уровни изоляции и аномалии 🔥</h3>
+<p><strong>Коротко:</strong> уровень изоляции определяет, какие <strong>аномалии</strong> параллельного выполнения транзакций допустимы. Чем выше уровень, тем меньше аномалий, но тем больше блокировок или откатов. <strong>Serializable</strong> гарантирует результат, как при <em>каком-то</em> последовательном выполнении транзакций. Большинство СУБД работают на MVCC, и их Repeatable Read на деле является snapshot isolation: фантомов нет, но <strong>write skew возможен</strong>.</p>
 <p><strong>Аномалии:</strong></p>
 <ul>
+<li><strong>Dirty write (грязная запись)</strong> — перезапись незакоммиченных изменений другой транзакции. Запрещена на всех уровнях.</li>
 <li><strong>Dirty read (грязное чтение)</strong> — читаем незакоммиченные изменения другой транзакции, которая потом откатится.</li>
 <li><strong>Non-repeatable read (неповторяющееся чтение)</strong> — повторно читаем ту же строку и видим другие значения (другая транзакция сделала UPDATE и закоммитила).</li>
 <li><strong>Phantom read (фантомное чтение)</strong> — повторный запрос по условию возвращает <strong>новые строки</strong> (другая транзакция сделала INSERT).</li>
+<li><strong>Read skew</strong> — связанные данные прочитаны в разные моменты и несогласованы: во время перевода между счетами видим один счёт до перевода, а другой после, и сумма «не сходится».</li>
 <li><strong>Lost update (потерянное обновление)</strong> — две транзакции читают значение, обе изменяют, второй коммит перезаписывает первый.</li>
 <li><strong>Write skew</strong> — две транзакции читают пересекающиеся данные и пишут разные строки, нарушая общий инвариант (два дежурных врача одновременно снимаются с дежурства).</li>
 </ul>
@@ -3675,6 +3678,52 @@
 <li><strong>Repeatable Read</strong> — нужно несколько раз читать одни и те же строки внутри транзакции согласованно.</li>
 <li><strong>Serializable</strong> — критичные операции, где важна полная корректность (финансы, проверка инвариантов). Цена — блокировки диапазонов, deadlock-и, ошибки сериализации (нужен retry).</li>
 <li><strong>Snapshot</strong> — согласованные долгие чтения/отчёты без блокировки писателей.</li>
+</ul>
+<p><strong>Как реализуют.</strong> <strong>Блокировки</strong> (2PL): читатель ставит shared-блокировку, писатель exclusive, против фантомов блокируются диапазоны. Читатели и писатели ждут друг друга, бывают deadlock-и. <strong>MVCC</strong>: хранятся версии строк, читатель видит снимок и не мешает писателю, а конфликт записи приводит к ожиданию или откату.</p>
+<table>
+<thead>
+<tr>
+<th>СУБД</th>
+<th>По умолчанию</th>
+<th>Особенности</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PostgreSQL</td>
+<td>Read Committed</td>
+<td>MVCC. Repeatable Read = snapshot, Serializable = SSI: ловит write skew и откатывает транзакцию с ошибкой <code>40001</code> (вопрос <a href="#q9.14">9.14</a>)</td>
+</tr>
+<tr>
+<td>SQL Server</td>
+<td>Read Committed на блокировках</td>
+<td>Версии строк включаются отдельно: <code>READ_COMMITTED_SNAPSHOT</code> и уровень <code>SNAPSHOT</code>. Serializable — range-блокировки (вопрос <a href="#q10.17">10.17</a>)</td>
+</tr>
+<tr>
+<td>MySQL InnoDB</td>
+<td>Repeatable Read</td>
+<td>Обычный <code>SELECT</code> читает снимок, а <code>UPDATE</code> и <code>SELECT ... FOR UPDATE</code> работают с актуальными строками и ставят next-key locks против фантомов</td>
+</tr>
+<tr>
+<td>Oracle</td>
+<td>Read Committed</td>
+<td>Его «Serializable» на деле является snapshot isolation, write skew возможен</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Защита от lost update и write skew без Serializable</strong> (подробнее — вопросы <a href="#q9.11">9.11</a>, <a href="#q9.17">9.17</a>):</p>
+<ul>
+<li>атомарный <code>UPDATE accounts SET balance = balance - @sum WHERE id = @id AND balance &gt;= @sum</code>: чтение и запись в одной команде;</li>
+<li>пессимистичная блокировка: <code>SELECT ... FOR UPDATE</code>, в SQL Server <code>WITH (UPDLOCK)</code>;</li>
+<li>оптимистичная блокировка по версии строки (<code>rowversion</code>, <code>xmin</code>, <code>[ConcurrencyCheck]</code> в EF Core);</li>
+<li>ограничения в БД (<code>UNIQUE</code>, <code>CHECK</code>, exclusion constraint) вместо проверки «прочитал → решил → записал» в коде;</li>
+<li>материализация конфликта: если write skew касается строк, которых ещё нет (бронирование слота), заводят строку-«замок», которую можно заблокировать.</li>
+</ul>
+<p><strong>Подвохи:</strong></p>
+<ul>
+<li><code>new TransactionScope()</code> по умолчанию открывает транзакцию <strong>Serializable</strong>. Это частая причина deadlock-ов. Задавайте <code>IsolationLevel.ReadCommitted</code> явно через <code>TransactionOptions</code>.</li>
+<li>На Serializable и Snapshot конфликт приводит к откату транзакции, поэтому её нужно <strong>повторить целиком</strong>, а не просто записать ошибку в лог.</li>
+<li>«Repeatable Read защищает от фантомов» — верно для PostgreSQL и MySQL, но не по стандарту и не для SQL Server.</li>
 </ul>
 <figure class="vs"><div class="vs-tabs"><div class="vs-tab active"><span class="badge">C#</span>Program.cs<span class="x">✕</span></div></div><pre class="vs-code" style="--w:1ch"><code><div class="ln"><span class="no">1</span><span class="src"><span class="k">await</span><span class="w"> </span><span class="k">using</span><span class="w"> </span><span class="nn">var</span><span class="w"> </span><span class="n">tx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="n">db</span><span class="p">.</span><span class="n">Database</span><span class="p">.</span><span class="n">BeginTransactionAsync</span><span class="p">(</span><span class="n">IsolationLevel</span><span class="p">.</span><span class="n">Serializable</span><span class="p">);</span></span></div></code></pre></figure>
 <hr />
