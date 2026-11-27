@@ -18,6 +18,11 @@
 |---|---|---|
 | [![Поиск](docs/screenshots/search.png)](docs/screenshots/search.png) | [![Календарь](docs/screenshots/calendar.png)](docs/screenshots/calendar.png) | [![Отклики](docs/screenshots/tracker.png)](docs/screenshots/tracker.png) |
 
+Раздел под вакансию: вероятные вопросы, «Карта подготовки» со ссылками на темы базы и проход по ним по одной
+(панель внизу) — см. [`/interview-prep`](#interview-prep--подготовка-к-вакансии).
+
+![Раздел компании: карта подготовки и панель прохода по темам](docs/screenshots/company.png)
+
 <sub>На скриншотах — демо-данные: компании выдуманные.</sub>
 
 ## Запуск
