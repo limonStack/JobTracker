@@ -132,9 +132,12 @@ async function afterTurn(input) {
   }
 
   const log = join(stateDir, 'dotnet-run.log');
-  // профиль http — как из IDE: Development, порт 5196 и новая вкладка (старую закроет single-tab.js);
+  // Приложение уже работало — вкладка открыта: новую не открываем (вкладку с историей переходов
+  // single-tab.js закрыть не может и показал бы заглушку), достаточно обновить страницу.
+  // Не работало — профиль http, как из IDE: Development, порт 5196 и новая вкладка.
   // JOBTRACKER_HOOK_NO_BROWSER=1 — без вкладки, для проверок самого хука
-  const args = process.env.JOBTRACKER_HOOK_NO_BROWSER === '1'
+  const hadTab = running.length > 0 || stoppedByUs;
+  const args = process.env.JOBTRACKER_HOOK_NO_BROWSER === '1' || hadTab
     ? ['run', '--project', apiProject, '--no-launch-profile', '--urls', appUrl]
     : ['run', '--project', apiProject, '--launch-profile', 'http'];
   mkdirSync(stateDir, { recursive: true });
@@ -148,7 +151,7 @@ async function afterTurn(input) {
   for (let i = 0; i < 100; i++) {
     if (await appResponds()) {
       const why = changedAt > started ? 'с правками этого ответа' : 'после сборки';
-      say(`JobTracker перезапущен ${why}: ${appUrl}. ${attachHint}`);
+      say(`JobTracker перезапущен ${why}: ${appUrl}${hadTab ? ' — обновите открытую вкладку (F5)' : ''}. ${attachHint}`);
       return;
     }
     await new Promise(r => setTimeout(r, 1000));

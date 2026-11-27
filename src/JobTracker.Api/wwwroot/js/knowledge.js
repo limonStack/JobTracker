@@ -3,6 +3,7 @@
 // store (store.js) отдаёт состояние, загруженное из API, и отправляет изменения обратно.
 // Запускается после того, как render.js построил меню и тексты ответов из GET /api/content.
 import { startDailyNote } from './motivation.js';
+import { startRoutes } from './route.js';
 
 export function startKnowledge(store) {
   const side = document.getElementById('side');
@@ -152,6 +153,7 @@ export function startKnowledge(store) {
 
   // общий прогресс и счётчики фильтров — только по общей базе; разделы компаний считаются у себя в меню
   const baseItems = items.filter(it => !it.company);
+  let routes = null;                                 // проход по карте подготовки компаний (route.js)
   function renderProgress() {
     const total = baseItems.length, n = baseItems.filter(it => done.has(it.code)).length;
     const pct = total ? Math.round(n * 100 / total) : 0;
@@ -186,9 +188,13 @@ export function startKnowledge(store) {
     for (const d of groups) {
       const list = items.filter(it => it.d === d);
       const k = list.filter(it => done.has(it.code)).length;
-      d.secProgress.textContent = list.length ? ` ${k}/${list.length}` : '';
-      d.secProgress.classList.toggle('complete', list.length > 0 && k === list.length);
+      // у раздела компании своих вопросов нет — счётчик по темам его карты подготовки
+      const route = !list.length && routes?.progress(d.querySelector('summary a')?.getAttribute('href')?.slice(1));
+      const [kk, nn] = route ? [route.k, route.n] : [k, list.length];
+      d.secProgress.textContent = nn ? ` ${kk}/${nn}` : '';
+      d.secProgress.classList.toggle('complete', nn > 0 && kk === nn);
     }
+    routes?.refresh();
     renderCalendar();
   }
 
@@ -1110,6 +1116,14 @@ export function startKnowledge(store) {
   addEventListener('scroll', () => { if (!hlBar.hidden) hlHideBar(); }, { passive: true });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !hlBar.hidden) hlHideBar(); });
 
+  // кнопки прохода по карте — в текст раздела до восстановления выделений: их позиции считаются по этому тексту
+  routes = startRoutes({
+    navigate,
+    item: code => byCode.get(code) ?? null,
+    isDone: code => done.has(code),
+    toggleDone,
+  });
+
   for (const key of new Set(hlList.map(h => h.sec))) if (secByKey.has(key)) hlRender(secByKey.get(key));
 
   document.getElementById('menu').onclick = () => document.body.classList.toggle('open');
@@ -1138,11 +1152,15 @@ export function startKnowledge(store) {
     if (!d.open) d.open = true;                      // аккордеон сам свернёт остальные разделы
     (it ? it.li : d.querySelector('summary')).scrollIntoView({ block: 'nearest' });
   }
-  // Переход по якорю без новой записи в истории. Вкладку с одной записью скрипт может закрыть (single-tab.js),
-  // а с историей — нет: после каждого запуска из IDE старые вкладки оставались бы висеть с заглушкой.
-  // Цена — «назад» не возвращает к предыдущему вопросу.
+  // Переход по якорю — новая запись в истории: «назад» (и кнопка на мышке) возвращает туда, откуда ушли.
+  // В текущую запись перед уходом сохраняется прокрутка — возврат на то же место, а не к началу вопроса.
+  // Вкладку с историей single-tab.js закрыть не может и показывает заглушку; поэтому хук dev-app
+  // при перезапуске уже открытого приложения новую вкладку не открывает.
   function navigate(id) {
-    if (decodeURIComponent(location.hash.slice(1)) !== id) history.replaceState(history.state, '', '#' + id);
+    if (decodeURIComponent(location.hash.slice(1)) !== id) {
+      history.replaceState({ ...history.state, y: scrollY }, '');
+      history.pushState({ y: null }, '', '#' + id);
+    }
     revealAnswer(id);
     document.getElementById(id)?.scrollIntoView({ block: 'start' });
     syncMenu(id);
@@ -1156,6 +1174,15 @@ export function startKnowledge(store) {
     if (!id || !document.getElementById(id)) return;
     e.preventDefault();
     navigate(id);
+  });
+  // «назад» / «вперёд»: на сохранённое место, а если его нет — к началу якоря
+  addEventListener('popstate', e => {
+    const id = decodeURIComponent(location.hash.slice(1));
+    revealAnswer(id);
+    if (typeof e.state?.y === 'number') scrollTo(0, e.state.y);
+    else if (id) document.getElementById(id)?.scrollIntoView({ block: 'start' });
+    else scrollTo(0, 0);
+    syncMenu(id);
   });
   // адрес с якорем, исправленный вручную в строке браузера
   addEventListener('hashchange', () => {

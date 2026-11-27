@@ -5,7 +5,7 @@ const CACHE = 'kb-338-shell-v4';
 const SHELL = [
   '/', '/index.html', '/app.css', '/app.js', '/single-tab.js', '/manifest.webmanifest',
   '/css/knowledge.css',
-  '/js/main.js', '/js/db.js', '/js/sync.js', '/js/render.js', '/js/store.js', '/js/knowledge.js', '/js/motivation.js',
+  '/js/main.js', '/js/db.js', '/js/sync.js', '/js/render.js', '/js/store.js', '/js/knowledge.js', '/js/motivation.js', '/js/route.js',
   '/icons/favicon.svg', '/icons/icon-192.png', '/icons/icon-512.png',
 ];
 
