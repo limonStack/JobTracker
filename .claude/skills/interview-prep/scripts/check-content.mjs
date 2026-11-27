@@ -14,6 +14,12 @@ for (const s of all) {
   if (!s.id) warnings.push(`${where}: у h1 нет id — на раздел нельзя сослаться`);
   if (s.dataKind != null && s.dataKind !== 'company') errors.push(`${where}: неизвестный data-kind «${s.dataKind}» — импорт упадёт (допустимо: company)`);
   if (s.company && s.kind !== 'личный') errors.push(`${where}: раздел компании в публичном файле — всё о компании только в личный`);
+  if (s.company && s.questions.length) errors.push(`${where}: в разделе компании есть вопросы h3 — новые темы идут в тематические разделы, здесь только таблица ссылок (append-questions.mjs)`);
+  if (s.kind === 'публичный') {
+    const privateIds = new Set(all.filter(x => x.kind === 'личный').flatMap(x => x.ids ?? []));
+    for (const link of new Set(s.links)) if (privateIds.has(link))
+      errors.push(`${where}: ссылка #${link} ведёт в личный файл — на GitHub она будет битой`);
+  }
 
   s.questions.forEach((q, i) => {
     const [sec, num] = q.code.split('.').map(Number);

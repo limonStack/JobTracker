@@ -29,11 +29,11 @@ public class RealContentTests
     }
 
     [Fact]
-    public void PublicFile_Has419Questions_NumberedWithinSections()
+    public void PublicFile_Has451Questions_NumberedWithinSections()
     {
         var questions = Sections.Value.SelectMany(s => s.Questions).ToList();
 
-        Assert.Equal(419, questions.Count);
+        Assert.Equal(451, questions.Count);
         Assert.All(questions, q => Assert.False(string.IsNullOrWhiteSpace(q.BodyHtml), $"пустой ответ {q.Code}"));
         // номера в разделе — 1..N без пропусков
         foreach (var section in Sections.Value)

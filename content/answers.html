@@ -677,6 +677,32 @@
 <figure class="vs"><div class="vs-tabs"><div class="vs-tab active"><span class="badge">C#</span>Greeter.cs<span class="x">✕</span></div></div><pre class="vs-code" style="--w:2ch"><code><div class="ln"><span class="no">1</span><span class="src"><span class="k">interface</span><span class="w"> </span><span class="nc">IGreeter</span></span></div><div class="ln"><span class="no">2</span><span class="src"><span class="p">{</span></span></div><div class="ln"><span class="no">3</span><span class="src"><span class="w">    </span><span class="kt">string</span><span class="w"> </span><span class="nf">Hello</span><span class="p">(</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">"Привет"</span><span class="p">;</span><span class="w">       </span><span class="c1">// реализация по умолчанию</span></span></div><div class="ln"><span class="no">4</span><span class="src"><span class="p">}</span></span></div><div class="ln"><span class="no">5</span><span class="src"></span></div><div class="ln"><span class="no">6</span><span class="src"><span class="k">class</span><span class="w"> </span><span class="nc">Greeter</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">IGreeter</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span></span></div><div class="ln"><span class="no">7</span><span class="src"></span></div><div class="ln"><span class="no">8</span><span class="src"><span class="k">var</span><span class="w"> </span><span class="n">g</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="nc">Greeter</span><span class="p">(</span><span class="p">)</span><span class="p">;</span></span></div><div class="ln"><span class="no">9</span><span class="src"><span class="c1">// Console.WriteLine(g.Hello());              // ?</span></span></div><div class="ln"><span class="no">10</span><span class="src"><span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="p">(</span><span class="p">(</span><span class="n">IGreeter</span><span class="p">)</span><span class="n">g</span><span class="p">)</span><span class="p">.</span><span class="nf">Hello</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">;</span><span class="w">     </span><span class="c1">// ?</span></span></div></code></pre></figure>
 <p><strong>Ответ:</strong> первая строка — <strong>ошибка компиляции</strong> CS1061, вторая выведет <code>Привет</code>.</p>
 <p><strong>Почему:</strong> метод по умолчанию принадлежит <strong>интерфейсу</strong>, а не классу; класс его не наследует. Вызвать его можно только через ссылку типа интерфейса. Это сделано, чтобы добавление метода в интерфейс не ломало существующие классы (вопрос <a href="#q1.8">1.8</a>).</p>
+<hr />
+<h2>Новое в платформе</h2>
+<h3 id="q1.36"><a class="anchor" href="#q1.36">#</a>1.36 Что нового в .NET 9/10 и C# 13/14 🔥</h3>
+<p>.NET 10 — LTS-релиз (ноябрь 2025, поддержка 3 года). Если версия указана в вакансии, вопрос «что нового и чем пользовались» почти неизбежен.</p>
+<p><strong>C# 13 (.NET 9):</strong></p>
+<ul>
+<li><code>params</code> для коллекций: <code>params ReadOnlySpan&lt;T&gt;</code>, <code>params IEnumerable&lt;T&gt;</code> — без выделения массива.</li>
+<li>Новый тип <code>System.Threading.Lock</code>: <code>lock</code> по нему использует более быстрый механизм, чем <code>Monitor</code>.</li>
+<li><code>ref struct</code> и <code>ref</code>-локальные переменные в итераторах и async-методах; <code>ref struct</code> может реализовывать интерфейсы (<code>allows ref struct</code>).</li>
+<li>Partial-свойства и индексаторы (нужны генераторам кода), индекс с конца <code>^1</code> в инициализаторах объектов.</li>
+</ul>
+<p><strong>C# 14 (.NET 10):</strong></p>
+<ul>
+<li><strong>Extension members</strong> — блоки <code>extension(Type t) { ... }</code>: не только методы, но и свойства-расширения, статические члены-расширения.</li>
+<li>Ключевое слово <strong><code>field</code></strong> в свойствах: <code>public string Name { get; set =&gt; field = value.Trim(); }</code> — без ручного поля.</li>
+<li><strong>Null-conditional assignment:</strong> <code>order?.Driver = driver;</code> — присвоить, только если <code>order</code> не null.</li>
+<li><code>nameof(List&lt;&gt;)</code> для несвязанных generic-типов; неявные преобразования к <code>Span&lt;T&gt;</code>/<code>ReadOnlySpan&lt;T&gt;</code>; модификаторы (<code>ref</code>, <code>out</code>) у параметров лямбд без указания типов; partial-конструкторы и события; пользовательские составные операторы присваивания (<code>+=</code>).</li>
+</ul>
+<p><strong>Платформа и библиотеки:</strong></p>
+<ul>
+<li><strong>.NET 9:</strong> <code>HybridCache</code> (локальный + распределённый кеш с защитой от stampede, <a href="#q14.8">14.8</a>); <code>Task.WhenEach</code>; LINQ <code>CountBy</code>, <code>AggregateBy</code>, <code>Index</code>; встроенная генерация OpenAPI (<code>Microsoft.AspNetCore.OpenApi</code> вместо Swashbuckle по умолчанию); <code>MapStaticAssets</code>.</li>
+<li><strong>.NET 10 / ASP.NET Core 10:</strong> встроенная валидация в Minimal API (<code>AddValidation()</code>); OpenAPI 3.1; Server-Sent Events через <code>TypedResults.ServerSentEvents</code>; passkeys в Identity; file-based apps — <code>dotnet run app.cs</code> без проекта.</li>
+<li><strong>EF Core 10:</strong> LINQ-операторы <code>LeftJoin</code>/<code>RightJoin</code>; <strong>именованные глобальные фильтры</strong> — несколько фильтров на сущность и выборочное отключение (<code>IgnoreQueryFilters(["SoftDelete"])</code>); JSON-столбцы и complex types; <code>ExecuteUpdateAsync</code> с обычной лямбдой; векторный поиск (SQL Server, Azure SQL).</li>
+<li>Производительность: каждый релиз ускоряет JIT, GC и библиотеки (Dynamic PGO, девиртуализация, escape analysis — часть объектов размещается на стеке), меньше выделений памяти. Native AOT для консольных приложений и Minimal API.</li>
+</ul>
+<p><strong>Как отвечать:</strong> назовите 2–3 вещи, которыми пользовались сами, и зачем (например: «<code>field</code> убрал поля в DTO с нормализацией, <code>HybridCache</code> заменил связку <code>IMemoryCache</code> + Redis со своим кодом от stampede, именованные фильтры EF Core — разделение данных по пользователям и soft delete одновременно»).</p>
 </section><section><h1 id="02-types-collections">2. Типы данных и коллекции</h1>
 <h2>Значимые и ссылочные типы</h2>
 <h3 id="q2.1"><a class="anchor" href="#q2.1">#</a>2.1 Типы данных; значимые и ссылочные типы 🔥</h3>
@@ -3284,6 +3310,83 @@
 <p><strong>«Микросервисы лучше монолита?»</strong> — Нет, это компромисс. Для небольшой команды и нового продукта чаще правильнее <strong>модульный монолит</strong> с чёткими границами модулей, а сервисы выделять, когда появится реальная причина: независимое масштабирование, отдельная команда, другой цикл релизов (вопрос <a href="#q12.1">12.1</a>).</p>
 <p><strong>«Нужно ли 100% покрытие тестами?»</strong> — Нет. Покрытие показывает, какой код <strong>выполнялся</strong>, а не какой <strong>проверен</strong>. 100% достигается тестами без проверок (assert). Важнее покрыть бизнес-логику и сложные ветвления; геттеры и конфигурацию тестировать смысла нет.</p>
 <p><strong>«Singleton — антипаттерн?»</strong> — Классический Singleton со статическим <code>Instance</code> — да, во многом: скрытая глобальная зависимость, трудно подменить в тестах. Время жизни <strong>Singleton в DI-контейнере</strong> — нормальная практика: экземпляр один, но зависимость явная, через конструктор (вопрос <a href="#q7.14">7.14</a>).</p>
+<hr />
+<h2>Моделирование домена и решения</h2>
+<h3 id="q7.22"><a class="anchor" href="#q7.22">#</a>7.22 Домен заказов и доставок: статусы как конечный автомат, частичные поставки, аудит 🔥</h3>
+<p><strong>Коротко:</strong> ядро такой CRM — заказ материалов для объекта, который исполняется одним или несколькими рейсами. Главные сложности не в CRUD, а в жизненном цикле: частичные поставки, окна приёмки на стройке, отмены и переносы, подтверждение доставки и аудит «кто и когда поменял».</p>
+<p><strong>Сущности (вероятные):</strong></p>
+<ul>
+<li><strong>Клиент</strong> — строительная компания или подрядчик; <strong>объект</strong> (site) — адрес, контактное лицо, окна приёмки, ограничения подъезда (габариты, нужен кран или манипулятор).</li>
+<li><strong>Заказ</strong> — позиции (материал, количество, единица), желаемая дата, цена; <strong>поставщик или склад</strong>.</li>
+<li><strong>Доставка (рейс)</strong> — часть заказа на конкретную машину и дату; <strong>машина</strong> (грузоподъёмность, объём, тип) и <strong>водитель</strong>.</li>
+<li><strong>Подтверждение доставки</strong> (proof of delivery) — фото, подпись, фактически принятое количество, расхождения.</li>
+<li><strong>Документы и счета</strong> — накладные, акты; выставляются по фактически доставленному.</li>
+</ul>
+<p><strong>Статусы — конечный автомат в агрегате.</strong> Переход выполняет метод сущности, который знает допустимые переходы; контроллер не пишет <code>Status = ...</code>. Недопустимый переход — доменное исключение → 409/422.</p>
+<pre><code class="language-csharp">public enum DeliveryStatus { Planned, Loaded, InTransit, Delivered, PartiallyDelivered, Failed, Cancelled }
+
+public sealed class Delivery
+{
+    private static readonly Dictionary&lt;DeliveryStatus, DeliveryStatus[]&gt; Allowed = new()
+    {
+        [DeliveryStatus.Planned]   = [DeliveryStatus.Loaded, DeliveryStatus.Cancelled],
+        [DeliveryStatus.Loaded]    = [DeliveryStatus.InTransit, DeliveryStatus.Cancelled],
+        [DeliveryStatus.InTransit] = [DeliveryStatus.Delivered, DeliveryStatus.PartiallyDelivered, DeliveryStatus.Failed],
+    };
+
+    private readonly List&lt;DeliveryStatusChange&gt; _history = [];
+    public DeliveryStatus Status { get; private set; }
+
+    public void MoveTo(DeliveryStatus next, DateTimeOffset at, string by, string? reason = null)
+    {
+        if (!Allowed.TryGetValue(Status, out var targets) || !targets.Contains(next))
+            throw new DomainException($"Нельзя перевести доставку из {Status} в {next}.");
+        if (next is DeliveryStatus.Failed or DeliveryStatus.Cancelled &amp;&amp; string.IsNullOrWhiteSpace(reason))
+            throw new DomainException("Укажите причину.");
+
+        _history.Add(new DeliveryStatusChange(Status, next, at, by, reason));
+        Status = next;
+        AddDomainEvent(new DeliveryStatusChanged(Id, next));   // уведомить клиента — после коммита, через outbox
+    }
+}</code></pre>
+<p><strong>Что спросить себя (и показать на интервью):</strong></p>
+<ul>
+<li><strong>Частичная поставка:</strong> привезли 18 т из 20 — заказ остаётся открытым на остаток, счёт — по факту. Статус заказа выводится из статусов его рейсов, а не хранится отдельно и не расходится с ними.</li>
+<li><strong>Аудит:</strong> история статусов — append-only таблица; для остальных полей — перехват изменений в <code>SaveChanges</code> (EF interceptor) с автором и временем. В спорах «мы не заказывали столько» это главный аргумент.</li>
+<li><strong>Мультиарендность:</strong> если CRM продаётся нескольким компаниям — глобальный фильтр по арендатору (<a href="#q7.12">7.12</a>).</li>
+<li><strong>Время:</strong> окна приёмки — в часовом поясе объекта; «сегодняшние доставки» считаются в нём же.</li>
+<li><strong>Справочники материалов и единиц:</strong> тонны, кубометры, штуки, поддоны — пересчёт и округление только в домене, не на фронтенде.</li>
+</ul>
+
+<hr />
+<h3 id="q7.23"><a class="anchor" href="#q7.23">#</a>7.23 Деньги в коде: decimal, округление, валюты, проводки и сверка 🔥</h3>
+<ul>
+<li><strong>Тип:</strong> в C# — <code>decimal</code>, никогда <code>double</code> (<a href="#q2.29">2.29</a>); в PostgreSQL — <code>numeric(19,4)</code> или целое число в минимальных единицах (копейки, <code>bigint</code>); в JSON и TypeScript — строка или целые копейки (<a href="#q23.1">23.1</a>).</li>
+<li><strong>Валюта всегда рядом с суммой:</strong> value object <code>Money(Amount, Currency)</code>; сложение разных валют — исключение, а не тихая ошибка. Гривна и узбекский сум имеют разные правила точности.</li>
+<li><strong>Округление:</strong> явный режим (<code>MidpointRounding.ToEven</code> — банковское, или <code>AwayFromZero</code> — как в бухгалтерии) и явное место округления. Разделение суммы на доли (комиссия, автопарк, водитель) — так, чтобы сумма долей точно равнялась целому: остаток копейки отдать одной из сторон (алгоритм распределения остатка).</li>
+<li><strong>Журнал проводок (ledger, двойная запись):</strong> баланс не хранится как поле, которое меняют (<code>balance += x</code>), а вычисляется из неизменяемых проводок: каждая операция — пара записей «дебет одного счёта, кредит другого» с одинаковой суммой. Ошибки исправляются <strong>сторнирующей проводкой</strong>, а не правкой старых записей. Баланс — сумма проводок (плюс периодические снимки для скорости).</li>
+<li><strong>Идемпотентность:</strong> начисление за поездку — уникальный ключ по <code>trip_id</code> и типу операции; выплата — ключ идемпотентности при вызове банка или платёжного провайдера (<a href="#q12.19">12.19</a>, <a href="#q12.23">12.23</a>).</li>
+<li><strong>Конкурентность:</strong> две выплаты с одного баланса одновременно — блокировка строки счёта (<code>SELECT ... FOR UPDATE</code>, <a href="#q9.17">9.17</a>) или оптимистичная конкуренция по версии (<a href="#q8.7">8.7</a>); проверка «баланс не уходит в минус» — в той же транзакции.</li>
+<li><strong>Сверка (reconciliation):</strong> регулярное сравнение своих данных с банком или провайдером и между сервисами (сумма поездок = сумма начислений); расхождения — в отчёт и алерт.</li>
+<li><strong>Аудит:</strong> кто и когда изменил комиссию или вручную скорректировал баланс; время — в UTC и с часовым поясом автопарка для отчётов за день (<a href="#q9.18">9.18</a>).</li>
+</ul>
+<hr />
+<h3 id="q7.24"><a class="anchor" href="#q7.24">#</a>7.24 Ответственность за решения в маленьком продукте: ADR, trade-offs, MVP против качества ⭐</h3>
+<p><strong>Почему спросят:</strong> в вакансиях небольших продуктов пишут «ваш код идёт в продакшен, вы владеете архитектурными решениями», «маленькая команда без лишней бюрократии», «архитектурное мышление, а не просто компилирующийся код». Хотят понять, можно ли доверить вам решение и его последствия.</p>
+<p><strong>Вероятные вопросы и как отвечать:</strong></p>
+<ul>
+<li><strong>«Как вы принимаете архитектурное решение?»</strong> Формулирую проблему и ограничения (нагрузка, сроки, кто будет поддерживать) → 2–3 варианта с плюсами и минусами → выбираю самый простой, который решает задачу, и записываю короткий <strong>ADR</strong> (Architecture Decision Record): контекст, решение, альтернативы, последствия, когда пересмотреть. Полстраницы в репозитории — этого достаточно.</li>
+<li><strong>«Сделать быстро или правильно?»</strong> Разделяю, что <strong>дорого переделать</strong> (схема данных, контракт публичного API, денежные операции, безопасность) — здесь не экономлю — и что <strong>дёшево поменять</strong> (UI, внутренние реализации за интерфейсом) — здесь делаю MVP. Технический долг записываю явно, с причиной.</li>
+<li><strong>«Расскажите о решении, которое оказалось неудачным».</strong> По STAR: решение, почему оно казалось верным, как заметили проблему, что исправили, какой вывод. Признать ошибку и показать вывод — плюс, а не минус.</li>
+<li><strong>«Как вы довели свой сервис до продакшена?»</strong> Docker, CI/CD, миграции, healthcheck, логи, откат (вопросы <a href="#q16.3">16.3</a>, <a href="#q16.21">16.21</a>).</li>
+<li><strong>«Не согласны с решением коллеги в code review»</strong> — аргументы и данные вместо мнений, обсуждение один на один, а если решили не в вашу пользу — выполнить добросовестно.</li>
+</ul>
+<p><strong>Подготовьте 2 истории по STAR</strong> из своего опыта: (1) решение, которое вы предложили и защитили (с цифрами результата); (2) компромисс между сроком и качеством. Подойдёт и собственный проект: например, решение хранить правила в базе (ограничения, идемпотентные запросы), а не только в коде.</p>
+<p><strong>На английском</strong> (если заказчик или команда англоязычные):</p>
+<blockquote>
+<p>“When I make an architecture decision, I start with the problem and the constraints: expected load, deadline, and who will maintain it. I compare two or three options and usually choose the simplest one that solves the problem. I write a short decision record, so the team knows why we chose it and when to revisit it. I don’t cut corners on things that are expensive to change later, like the data model, public API contracts, payments and security. For everything else, I’m happy to ship an MVP first and improve it based on real usage.”</p>
+</blockquote>
+<p>Полезные фразы: <em>“The trade-off here is…”</em>, <em>“I'd start simple and revisit it when…”</em>, <em>“This is hard to change later, so I'd invest more here.”</em>, <em>“I took ownership of…”</em>, <em>“In hindsight, I would…”</em>.</p>
 </section><section><h1 id="08-ef-core">8. Entity Framework Core</h1>
 <h2>Основы</h2>
 <h3 id="q8.1"><a class="anchor" href="#q8.1">#</a>8.1 ORM и EF Core 🔥</h3>
@@ -4191,6 +4294,88 @@
 <li><strong>SQL Server и несколько каскадных путей:</strong> если к таблице можно прийти каскадным удалением двумя путями, SQL Server откажется создавать такой FK («may cause cycles or multiple cascade paths»). Один из путей делают <code>NO ACTION</code>.</li>
 </ul>
 <p><strong>Пример ответа:</strong> «Связи строятся на внешних ключах. Один ко многим — FK на стороне многих, например <code>orders.customer_id</code>. Один к одному — тот же FK, но с <code>UNIQUE</code> или как общий первичный ключ; так выносят необязательные или чувствительные данные. Многие ко многим — связующая таблица с двумя FK и составным ключом, в ней можно хранить данные самой связи. Ещё решаю, обязательна ли связь (<code>NOT NULL</code>) и что делать при удалении родителя: <code>CASCADE</code>, <code>SET NULL</code> или запрет. И не забываю про индекс на FK».</p>
+<hr />
+<h2>Прикладные задачи хранения</h2>
+<h3 id="q9.21"><a class="anchor" href="#q9.21">#</a>9.21 Redis: структуры данных и сценарии использования 🔥</h3>
+<p><strong>Redis</strong> — in-memory хранилище «ключ — структура данных». Однопоточная обработка команд (каждая команда атомарна), задержки меньше миллисекунды, опциональное сохранение на диск (RDB-снимки, AOF-журнал). Не основная база: данные могут потеряться, объём ограничен памятью.</p>
+<table>
+<thead><tr><th>Структура</th><th>Команды</th><th>Сценарий</th></tr></thead>
+<tbody>
+<tr><td>String</td><td><code>SET key val EX 60 NX</code>, <code>GET</code>, <code>INCR</code></td><td>Кеш, счётчики, распределённая блокировка (<code>SET NX EX</code>), rate limiting (<code>INCR</code> + <code>EXPIRE</code>)</td></tr>
+<tr><td>Hash</td><td><code>HSET</code>, <code>HGET</code>, <code>HINCRBY</code></td><td>Объект по полям: профиль водителя, состояние сессии</td></tr>
+<tr><td>List</td><td><code>LPUSH</code>, <code>BRPOP</code></td><td>Простая очередь, последние N событий</td></tr>
+<tr><td>Set</td><td><code>SADD</code>, <code>SISMEMBER</code>, <code>SINTER</code></td><td>Уникальные значения: водители онлайн, отправленные уведомления</td></tr>
+<tr><td>Sorted Set</td><td><code>ZADD</code>, <code>ZRANGE</code>, <code>ZRANGEBYSCORE</code></td><td>Рейтинги, лидерборды, очередь с приоритетом, скользящее окно rate limiter</td></tr>
+<tr><td><strong>Geo</strong> (на основе Sorted Set)</td><td><code>GEOADD</code>, <code>GEOSEARCH ... BYRADIUS 3 km ASC</code></td><td><strong>Поиск ближайших свободных водителей</strong> (<a href="#q17.21">17.21</a>)</td></tr>
+<tr><td>Stream</td><td><code>XADD</code>, <code>XREADGROUP</code>, <code>XACK</code></td><td>Лог событий с группами потребителей (лёгкая альтернатива Kafka)</td></tr>
+<tr><td>Pub/Sub</td><td><code>PUBLISH</code>, <code>SUBSCRIBE</code></td><td>Рассылка без хранения: инвалидация локальных кешей, backplane для SignalR (<a href="#q11.32">11.32</a>)</td></tr>
+<tr><td>HyperLogLog, Bitmap</td><td><code>PFADD</code>/<code>PFCOUNT</code>, <code>SETBIT</code></td><td>Примерное число уникальных пользователей, флаги активности по дням</td></tr>
+</tbody>
+</table>
+<ul>
+<li><strong>TTL и вытеснение:</strong> <code>EXPIRE</code>; при нехватке памяти — политика <code>maxmemory-policy</code> (для кеша — <code>allkeys-lru</code>/<code>allkeys-lfu</code>; <code>noeviction</code> — ошибки записи).</li>
+<li><strong>Атомарность нескольких команд:</strong> Lua-скрипты (<code>EVAL</code>) или <code>MULTI/EXEC</code> (без отката). Pipelining — отправка пачки команд без ожидания ответов.</li>
+<li><strong>Масштабирование и отказоустойчивость:</strong> репликация + Sentinel (автоматическое переключение) или Redis Cluster (16384 hash slots, шардинг по ключу; многоключевые операции — только в одном слоте, хеш-теги <code>{driver:42}:*</code>). В AWS — ElastiCache/MemoryDB. Репликация асинхронная: при переключении последние записи могут потеряться — для блокировок это важно (<a href="#q9.12">9.12</a>).</li>
+<li><strong>Антипаттерны:</strong> <code>KEYS *</code> в продакшене (блокирует сервер — используйте <code>SCAN</code>); огромные ключи (big keys) и горячие ключи; кеш без TTL; Redis как единственное хранилище важных данных.</li>
+</ul>
+<hr />
+<h3 id="q9.22"><a class="anchor" href="#q9.22">#</a>9.22 Бронирование слота без двойной брони: конкурентность, exclusion constraint, идемпотентность, часовые пояса 🔥</h3>
+<p><strong>Коротко:</strong> проверка «слот свободен → вставляю бронь» в коде не защищает от двух одновременных запросов: оба прочитают «свободно», оба вставят. Это write skew (вопрос <a href="#q9.4">9.4</a>). Надёжная защита — <strong>правило в самой базе</strong>: в PostgreSQL — <strong>exclusion constraint</strong> «на одних воротах интервалы не пересекаются». Проверку в коде оставляют для понятного сообщения пользователю, но гарантию даёт база.</p>
+<p><strong>Почему проверка в коде не работает:</strong></p>
+<table>
+<thead>
+<tr><th>Время</th><th>Запрос A</th><th>Запрос B</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td><code>SELECT</code> пересечений на воротах 3 в 10:00–10:30 → нет</td><td></td></tr>
+<tr><td>2</td><td></td><td>тот же <code>SELECT</code> → нет</td></tr>
+<tr><td>3</td><td><code>INSERT</code> брони, <code>COMMIT</code></td><td></td></tr>
+<tr><td>4</td><td></td><td><code>INSERT</code> брони, <code>COMMIT</code> → две брони на один слот</td></tr>
+</tbody>
+</table>
+<p>Read Committed (уровень по умолчанию) это пропускает. Repeatable Read в PostgreSQL — тоже: обе транзакции вставляют <strong>разные</strong> строки, конфликта записи нет.</p>
+<p><strong>Варианты защиты:</strong></p>
+<table>
+<thead>
+<tr><th>Способ</th><th>Как</th><th>Плюсы и минусы</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Exclusion constraint</strong> (рекомендую)</td><td><code>EXCLUDE USING gist (dock_id WITH =, period WITH &amp;&amp;)</code></td><td>Гарантия в базе при любом коде и любом числе экземпляров сервиса. Работает с интервалами любой длины. Нужно расширение <code>btree_gist</code></td></tr>
+<tr><td>Уникальный индекс</td><td><code>UNIQUE (dock_id, slot_start)</code></td><td>Просто, но только для фиксированной сетки слотов одной длины</td></tr>
+<tr><td>Блокировка родителя</td><td><code>SELECT ... FROM docks WHERE id = @id FOR UPDATE</code>, затем проверка и вставка</td><td>Брони на одни ворота выполняются по очереди. Работает везде, но держит блокировку, и легко забыть в новом коде (вопрос <a href="#q9.17">9.17</a>)</td></tr>
+<tr><td>Serializable</td><td>Транзакция на уровне Serializable + retry на <code>40001</code></td><td>Корректно (SSI ловит write skew), но нужен повтор всей операции и возможны ложные конфликты (вопрос <a href="#q9.14">9.14</a>)</td></tr>
+<tr><td>Advisory lock</td><td><code>pg_advisory_xact_lock(dock_id)</code></td><td>Блокировка по ключу без строки в таблице; так же легко забыть</td></tr>
+</tbody>
+</table>
+<figure class="vs"><div class="vs-tabs"><div class="vs-tab active"><span class="badge">SQL</span>Bookings.sql<span class="x">✕</span></div></div><pre class="vs-code" style="--w:2ch"><code><div class="ln"><span class="no">1</span><span class="src"><span class="k">CREATE</span> EXTENSION IF <span class="k">NOT</span> EXISTS btree_gist;  <span class="c1">-- чтобы в gist-индексе было сравнение int через =</span></span></div><div class="ln"><span class="no">2</span><span class="src"> </span></div><div class="ln"><span class="no">3</span><span class="src"><span class="k">CREATE</span> <span class="k">TABLE</span> bookings (</span></div><div class="ln"><span class="no">4</span><span class="src">    id       <span class="kt">uuid</span> <span class="k">PRIMARY</span> <span class="k">KEY</span>,               <span class="c1">-- генерирует клиент: повтор запроса не создаст дубль</span></span></div><div class="ln"><span class="no">5</span><span class="src">    dock_id  <span class="kt">int</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">REFERENCES</span> docks (id),</span></div><div class="ln"><span class="no">6</span><span class="src">    period   tstzrange <span class="k">NOT</span> <span class="k">NULL</span>,             <span class="c1">-- [начало, конец) в UTC</span></span></div><div class="ln"><span class="no">7</span><span class="src">    status   <span class="kt">varchar</span>(<span class="mi">20</span>) <span class="k">NOT</span> <span class="k">NULL</span>,</span></div><div class="ln"><span class="no">8</span><span class="src">    <span class="k">CONSTRAINT</span> no_overlap EXCLUDE USING gist (</span></div><div class="ln"><span class="no">9</span><span class="src">        dock_id WITH =,</span></div><div class="ln"><span class="no">10</span><span class="src">        period  WITH &amp;&amp;</span></div><div class="ln"><span class="no">11</span><span class="src">    ) <span class="k">WHERE</span> (status IN (<span class="s">'Pending'</span>, <span class="s">'Confirmed'</span>, <span class="s">'CheckedIn'</span>))  <span class="c1">-- отменённые не занимают ворота</span></span></div><div class="ln"><span class="no">12</span><span class="src">);</span></div><div class="ln"><span class="no">13</span><span class="src"><span class="c1">-- PostgreSQL 18+: то же правило короче — UNIQUE (dock_id, period WITHOUT OVERLAPS)</span></span></div><div class="ln"><span class="no">14</span><span class="src"><span class="c1">-- (но без условия WHERE: отменённые брони придётся хранить отдельно или менять им ворота)</span></span></div></code></pre></figure><p>Интервал полуоткрытый <code>[10:00, 10:30)</code>: бронь 10:30–11:00 с ним не пересекается. Нарушение даёт ошибку <code>23P01</code> (exclusion_violation). В .NET её ловят и превращают в <code>409 Conflict</code> «Слот уже занят» с подсказкой ближайших свободных слотов:</p>
+<figure class="vs"><div class="vs-tabs"><div class="vs-tab active"><span class="badge">C#</span>BookingService.cs<span class="x">✕</span></div></div><pre class="vs-code" style="--w:1ch"><code><div class="ln"><span class="no">1</span><span class="src">try</span></div><div class="ln"><span class="no">2</span><span class="src">{</span></div><div class="ln"><span class="no">3</span><span class="src">    await db.SaveChangesAsync(ct);</span></div><div class="ln"><span class="no">4</span><span class="src">}</span></div><div class="ln"><span class="no">5</span><span class="src">catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: <span class="s">"23P01"</span> })</span></div><div class="ln"><span class="no">6</span><span class="src">{</span></div><div class="ln"><span class="no">7</span><span class="src">    <span class="k">return</span> Results.Problem(statusCode: <span class="mi">409</span>, title: <span class="s">"Слот уже занят"</span>);</span></div><div class="ln"><span class="no">8</span><span class="src">}</span></div></code></pre></figure><p>В EF Core exclusion constraint объявляют в миграции через <code>migrationBuilder.Sql(...)</code>, а тип <code>tstzrange</code> Npgsql отображает на <code>NpgsqlRange&lt;DateTime&gt;</code> (вопрос <a href="#q8.11">8.11</a>).</p>
+<p><strong>Удержание слота на время оплаты.</strong> Бронь создаётся со статусом <code>Pending</code> и временем истечения (например, 15 минут) — она уже занимает ворота. Оплата прошла (вебхук Stripe) → <code>Confirmed</code>. Не прошла — фоновая задача переводит просроченные <code>Pending</code> в <code>Expired</code>, слот освобождается. Фоновую выборку делают через <code>FOR UPDATE SKIP LOCKED</code>, чтобы несколько экземпляров не обрабатывали одно и то же (вопросы <a href="#q9.17">9.17</a>, <a href="#q11.16">11.16</a>).</p>
+<p><strong>Идемпотентность.</strong> Водитель нажал «Забронировать», сеть оборвалась, приложение повторило запрос. Если id брони генерирует клиент (<code>PUT /bookings/{id}</code>) или запрос несёт <code>Idempotency-Key</code>, повтор вернёт ту же бронь, а не упрётся в «слот занят» собственной же бронью (вопросы <a href="#q11.3">11.3</a>, <a href="#q12.19">12.19</a>). Тот же ключ передают в Stripe.</p>
+<p><strong>Время и часовые пояса</strong> — второй частый источник ошибок:</p>
+<ul>
+<li>в базе — <code>timestamptz</code> (UTC), а <strong>часовой пояс склада</strong> хранится у склада (<code>America/Chicago</code>);</li>
+<li>сетку слотов строят в локальном времени склада и переводят в UTC: «8:00 по Чикаго» в разные даты — разные моменты UTC;</li>
+<li>переход на летнее время: в день перевода часов слота 2:00–3:00 может не существовать или он повторится дважды;</li>
+<li>водителю показывают время <strong>склада</strong>, а не его телефона. Подробнее — вопрос <a href="#q9.18">9.18</a>.</li>
+</ul>
+<p><strong>Пример ответа:</strong> «Проверка в коде не спасает от гонки двух запросов — это write skew, его не ловит даже Repeatable Read. Я бы поставил exclusion constraint в PostgreSQL: на одних воротах активные брони не пересекаются по <code>tstzrange</code>. Ошибку <code>23P01</code> превращаю в 409 и предлагаю ближайшие слоты. Слот на время оплаты удерживается бронью в статусе Pending с таймаутом. Запросы идемпотентны по id брони, а время храню в UTC, но строю сетку в часовом поясе склада».</p>
+<hr />
+<h3 id="q9.23"><a class="anchor" href="#q9.23">#</a>9.23 Файлы документов: BLOB в Oracle или объектное хранилище ⭐</h3>
+<p><strong>Коротко:</strong> оба варианта рабочие. Файлы в БД — транзакционность и одна резервная копия, но БД растёт и дорожает. Файлы снаружи — дешёвое масштабирование, но согласованность между БД и хранилищем надо обеспечивать самому.</p>
+<table>
+<thead>
+<tr><th></th><th>BLOB (SecureFiles) в Oracle</th><th>Объектное хранилище (S3, MinIO)</th></tr>
+</thead>
+<tbody>
+<tr><td>Согласованность</td><td>Файл и метаданные в одной транзакции</td><td>Две системы: возможны «сироты» и битые ссылки — нужны очистка и сверка</td></tr>
+<tr><td>Резервное копирование</td><td>Вместе с БД, но бэкап огромный и долгий</td><td>Отдельно, с версионированием и репликацией хранилища</td></tr>
+<tr><td>Стоимость и масштаб</td><td>Дорогое хранилище БД, лицензии по ядрам</td><td>Дешёвые диски, горизонтальный рост</td></tr>
+<tr><td>Отдача клиенту</td><td>Через приложение (нагрузка на API и БД)</td><td>Напрямую по pre-signed URL, CDN</td></tr>
+<tr><td>Возможности</td><td>Сжатие, дедупликация, шифрование SecureFiles; Oracle Text индексирует содержимое</td><td>Политики жизненного цикла, WORM-хранение (object lock) для неизменности</td></tr>
+</tbody>
+</table>
+<p><strong>Как ответить:</strong> «Для большого объёма и долгого хранения — объектное хранилище: в БД ключ, SHA-256 и размер, сначала загрузка файла, потом коммит метаданных; периодическая задача удаляет файлы без записей. Если файлов мало и важна простота — SecureFiles в БД». Хеш нужен в любом случае: им проверяют целостность и сопоставляют файл с подписью.</p>
+<p><strong>Подвох .NET:</strong> не читать большой BLOB целиком в <code>byte[]</code> — потоково (<code>OracleDataReader.GetOracleBlob()</code> → <code>Stream</code>, <code>CommandBehavior.SequentialAccess</code>), иначе каждый файл в 100 МБ попадает в LOH (<a href="#q3.2">3.2</a>).</p>
 </section><section><h1 id="10-sql-practice">10. SQL: запросы и задачи</h1>
 <blockquote>
 <p>Теория баз данных — в разделе «Базы данных и PostgreSQL». Здесь — то, на чём проверяют <strong>уверенное владение SQL</strong>: как выполняется запрос, NULL, группировки, оконные функции и задачи, которые дают писать на листке или в редакторе. Синтаксис — SQL Server (T-SQL), отличия PostgreSQL указаны отдельно.</p>
@@ -5539,6 +5724,68 @@
 </tr>
 </tbody>
 </table>
+<hr />
+<h2>API для фронтенда и real-time</h2>
+<h3 id="q11.31"><a class="anchor" href="#q11.31">#</a>11.31 API для SPA: OpenAPI и типизированный клиент, ProblemDetails, пагинация, сортировка и фильтры для таблиц 🔥</h3>
+<p><strong>Коротко:</strong> в CRM почти каждый экран — таблица с фильтрами или форма. Хороший API для них — это описанный контракт (OpenAPI, из которого фронтенд генерирует типы), единый формат ошибок (ProblemDetails, ошибки валидации по полям), предсказуемая пагинация и сортировка только по разрешённым полям, плюс защита от одновременной правки.</p>
+<p><strong>Контракт.</strong> С .NET 9 в шаблонах ASP.NET Core используется встроенный <code>Microsoft.AspNetCore.OpenApi</code> (<code>AddOpenApi()</code> / <code>MapOpenApi()</code>) вместо Swashbuckle. Из документа фронтенд генерирует TypeScript-типы и клиент (openapi-typescript, orval, NSwag) — и тогда переименованное поле ломает сборку фронтенда, а не продакшен. Генерацию стоит запускать в CI и падать, если сгенерированный клиент устарел.</p>
+<p><strong>Ошибки.</strong> <code>builder.Services.AddProblemDetails()</code> + обработчик исключений: любая ошибка — <code>application/problem+json</code> с <code>type</code>, <code>title</code>, <code>status</code>, <code>traceId</code>. Ошибки валидации — <code>ValidationProblemDetails</code> со словарём <code>errors</code> «поле → сообщения»: форма подсвечивает поля без разбора текста. Нарушение бизнес-правила (нельзя отменить доставленный заказ) — 409 или 422 с понятным <code>detail</code>, не 500. Подробнее — <a href="#q11.24">11.24</a>.</p>
+<p><strong>Списки.</strong></p>
+<table>
+<thead><tr><th>Вопрос</th><th>Решение</th></tr></thead>
+<tbody>
+<tr><td>Пагинация</td><td>Для таблиц с номерами страниц — offset + <code>total</code>; для длинных лент и экспорта — keyset (курсор), см. <a href="#q10.14">10.14</a></td></tr>
+<tr><td>Сортировка</td><td>Только по белому списку полей: строка из запроса не попадает в SQL, иначе инъекция или полное сканирование по неиндексированному полю</td></tr>
+<tr><td>Фильтры</td><td>Явные параметры (<code>status</code>, <code>siteId</code>, <code>dateFrom</code>/<code>dateTo</code>) вместо «универсального языка фильтров»; под частые комбинации — индексы</td></tr>
+<tr><td>Ответ</td><td><code>{ items, total, page, pageSize }</code> — DTO, не сущности EF (не утекают лишние поля и ленивые связи)</td></tr>
+<tr><td>Даты</td><td>ISO 8601 со смещением, хранение в UTC — <a href="#q9.18">9.18</a>; у доставок важен часовой пояс объекта</td></tr>
+<tr><td>Одновременная правка</td><td>Версия строки (<code>xmin</code> в PostgreSQL, <code>rowversion</code> в SQL Server) в DTO; при конфликте — 409 и «данные изменил другой диспетчер» (<a href="#q8.7">8.7</a>)</td></tr>
+</tbody>
+</table>
+<pre><code class="language-csharp">var sortable = new Dictionary&lt;string, Expression&lt;Func&lt;Delivery, object&gt;&gt;&gt;(StringComparer.OrdinalIgnoreCase)
+{
+    ["date"] = d =&gt; d.PlannedOn,
+    ["status"] = d =&gt; d.Status,
+    ["site"] = d =&gt; d.Site.Name,
+};
+
+app.MapGet("/api/deliveries", async ([AsParameters] DeliveryQuery q, AppDb db, CancellationToken ct) =&gt;
+{
+    if (q.Sort is not null &amp;&amp; !sortable.ContainsKey(q.Sort))
+        return Results.ValidationProblem(new Dictionary&lt;string, string[]&gt; { ["sort"] = ["Нельзя сортировать по этому полю"] });
+
+    var query = db.Deliveries.AsNoTracking()
+        .Where(d =&gt; q.Status == null || d.Status == q.Status)
+        .Where(d =&gt; q.DateFrom == null || d.PlannedOn &gt;= q.DateFrom);
+
+    var total = await query.CountAsync(ct);
+    var key = sortable[q.Sort ?? "date"];
+    var items = await (q.Desc ? query.OrderByDescending(key) : query.OrderBy(key))
+        .ThenBy(d =&gt; d.Id)                       // стабильный порядок между страницами
+        .Skip((q.Page - 1) * q.PageSize).Take(Math.Min(q.PageSize, 100))
+        .Select(d =&gt; new DeliveryRow(d.Id, d.Site.Name, d.PlannedOn, d.Status, d.Version))
+        .ToListAsync(ct);
+
+    return Results.Ok(new Page&lt;DeliveryRow&gt;(items, total, q.Page, q.PageSize));
+});</code></pre>
+<p><strong>Подвох:</strong> сортировка без уникального «добивающего» поля (<code>ThenBy(Id)</code>) — строки с одинаковой датой перескакивают между страницами, и пользователь видит дубли или теряет записи.</p>
+<p><strong>Как отвечать про React.</strong> «Мой фронтенд-опыт — TypeScript, Angular и ванильный JS. React Query решает ту же задачу, что я решал сам: кеш серверного состояния, повторные запросы, инвалидация после изменения. Со стороны API я даю ему стабильные ключи, ETag и предсказуемые ошибки».</p>
+<hr />
+<h3 id="q11.32"><a class="anchor" href="#q11.32">#</a>11.32 Real-time: SignalR, WebSocket, SSE — обновления на карте и в кабинете ⭐</h3>
+<table>
+<thead><tr><th></th><th>Polling</th><th>SSE</th><th>WebSocket</th></tr></thead>
+<tbody>
+<tr><td>Направление</td><td>Клиент спрашивает</td><td>Сервер → клиент</td><td>В обе стороны</td></tr>
+<tr><td>Протокол</td><td>Обычный HTTP</td><td>HTTP, поток <code>text/event-stream</code>, автопереподключение</td><td>Отдельный протокол после upgrade</td></tr>
+<tr><td>Когда</td><td>Редкие обновления, простота</td><td>Уведомления, статусы, ленты, стриминг ответа LLM</td><td>Чат, совместное редактирование, частые двусторонние сообщения</td></tr>
+</tbody>
+</table>
+<ul>
+<li><strong>SignalR</strong> — библиотека ASP.NET Core поверх WebSocket (с откатом на SSE и long polling): хабы, группы (<code>Groups.AddToGroupAsync(connId, $"fleet:{fleetId}")</code> — все пользователи одного автопарка), автоматическое переподключение, клиент для Angular (<code>@microsoft/signalr</code>). В .NET 10 есть и простой SSE: <code>TypedResults.ServerSentEvents</code>.</li>
+<li><strong>Масштабирование:</strong> соединение привязано к конкретному pod-у → чтобы отправить сообщение пользователю на другом pod-е, нужен <strong>backplane</strong> (Redis Pub/Sub) или Azure SignalR Service; на балансировщике — поддержка WebSocket и, при откате на long polling, sticky sessions.</li>
+<li><strong>Сценарий «водители на карте автопарка»:</strong> приложение водителя отправляет координаты каждые несколько секунд → сервис геолокации (Redis Geo, <a href="#q9.21">9.21</a>) → событие в Kafka → сервис кабинета пушит обновления в группу автопарка, <strong>троттлинг</strong> (раз в 2–5 секунд, только изменившиеся) — браузеру не нужны все точки. На фронтенде — Observable из событий хаба, <code>throttleTime</code>, обновление маркеров вне change detection (сигналы, OnPush).</li>
+<li><strong>Надёжность:</strong> WebSocket — не гарантия доставки; после переподключения клиент запрашивает актуальное состояние по REST, а поток только догоняет изменения.</li>
+</ul>
 </section><section><h1 id="12-microservices">12. Микросервисы, сообщения и интеграции</h1>
 <h2>Микросервисы</h2>
 <h3 id="q12.1"><a class="anchor" href="#q12.1">#</a>12.1 Какую проблему решают микросервисы ⭐</h3>
@@ -6136,6 +6383,58 @@
 </ul>
 <p><strong>Решение — Transactional Outbox</strong> (вопрос <a href="#q12.18">12.18</a>): событие записывается в таблицу <code>Outbox</code> <strong>в той же транзакции</strong>, что и заказ; отдельный процесс читает её и публикует в брокер с повторами. Доставка становится at-least-once, поэтому потребители должны быть <strong>идемпотентными</strong> (Inbox, вопрос <a href="#q12.8">12.8</a>).</p>
 <p><strong>Подвох:</strong> «а если просто добавить retry на Publish?» — retry не поможет, если процесс <strong>упал</strong> между двумя строками: повторять будет некому.</p>
+<hr />
+<h2>Kafka</h2>
+<h3 id="q12.26"><a class="anchor" href="#q12.26">#</a>12.26 Kafka в .NET: партиции и ключ, consumer group, ребалансировка, коммит offset, exactly-once 🔥</h3>
+<p>Основы Kafka — в <a href="#q12.12">12.12</a>. Здесь — то, что спрашивают у тех, кто с Kafka работал.</p>
+<ul>
+<li><strong>Ключ сообщения → партиция → порядок.</strong> Порядок гарантирован только внутри партиции. Ключ выбирают по сущности, для которой важен порядок: все события одной поездки (<code>tripId</code>) или одного водителя (<code>driverId</code>) — в одну партицию. Плохой ключ (например, id города) даёт <strong>горячую партицию</strong>: перекос нагрузки.</li>
+<li><strong>Число партиций</strong> = верхний предел параллелизма группы потребителей. Увеличить можно, но тогда меняется соответствие ключ → партиция и порядок для старых ключей нарушается в момент перехода. Уменьшить нельзя.</li>
+<li><strong>Consumer group и ребалансировка.</strong> При добавлении или падении консьюмера партиции перераспределяются. Классический протокол «stop-the-world» останавливает всю группу; <strong>cooperative sticky</strong> (<code>PartitionAssignmentStrategy = CooperativeSticky</code>) переносит только нужные партиции. Static membership (<code>group.instance.id</code>) спасает от ребалансировки при перезапуске pod-а в Kubernetes. Обработка дольше <code>max.poll.interval.ms</code> — консьюмера исключат из группы.</li>
+<li><strong>Коммит offset:</strong>
+<ul>
+<li>Авто-коммит (по умолчанию в Confluent.Kafka) коммитит в фоне — при падении сообщение может потеряться (закоммичено, но не обработано) или обработаться повторно.</li>
+<li>Надёжно: <code>EnableAutoCommit = false</code> (или <code>EnableAutoOffsetStore = false</code>) и коммит <strong>после</strong> успешной обработки → <strong>at-least-once</strong>: возможны дубликаты, поэтому консьюмер должен быть идемпотентным (<a href="#q12.27">12.27</a>).</li>
+</ul>
+</li>
+<li><strong>Продюсер:</strong> <code>Acks = All</code>, <code>EnableIdempotence = true</code> — нет дубликатов из-за повторной отправки продюсером и сохраняется порядок; <code>LingerMs</code>/<code>BatchSize</code>/сжатие — компромисс задержки и пропускной способности.</li>
+<li><strong>Exactly-once</strong> в Kafka — только для цепочки «прочитать из Kafka → записать в Kafka» (транзакции продюсера + <code>isolation.level=read_committed</code>). Если побочный эффект — запись в PostgreSQL или вызов внешнего API, exactly-once на уровне Kafka не поможет: нужна идемпотентная обработка или хранение offset в той же транзакции БД.</li>
+<li><strong>Запись в БД и публикация события</strong> — Outbox (<a href="#q12.18">12.18</a>) или CDC (Debezium читает журнал PostgreSQL и пишет в Kafka).</li>
+<li><strong>Схемы:</strong> Schema Registry (Avro/Protobuf/JSON Schema) и правила совместимости — новые поля только необязательные, удалять поля нельзя, пока их читают потребители.</li>
+<li><strong>Мониторинг:</strong> главная метрика — <strong>consumer lag</strong> (насколько консьюмер отстаёт от конца партиции); алерт на рост lag.</li>
+</ul>
+<pre><code class="language-csharp">var config = new ConsumerConfig
+{
+    BootstrapServers = "...", GroupId = "fleet-payouts",
+    EnableAutoCommit = false, AutoOffsetReset = AutoOffsetReset.Earliest,
+    PartitionAssignmentStrategy = PartitionAssignmentStrategy.CooperativeSticky,
+};
+using var consumer = new ConsumerBuilder&lt;string, TripCompleted&gt;(config).SetValueDeserializer(...).Build();
+consumer.Subscribe("trips.completed");
+while (!ct.IsCancellationRequested)
+{
+    var result = consumer.Consume(ct);
+    await handler.HandleAsync(result.Message.Value, ct);   // идемпотентно
+    consumer.Commit(result);                                // после обработки → at-least-once
+}
+</code></pre>
+<p>В реальных проектах часто используют обёртки: MassTransit (Kafka rider), KafkaFlow, Wolverine — они берут на себя ретраи, сериализацию и параллельную обработку по ключам.</p>
+<hr />
+<h3 id="q12.27"><a class="anchor" href="#q12.27">#</a>12.27 Kafka: ошибки и повторы — retry-топики, DLQ, идемпотентный консьюмер, порядок 🔥</h3>
+<p>В Kafka нет «вернуть одно сообщение в очередь»: пока консьюмер не закоммитил offset, он стоит на месте. Одно «ядовитое» сообщение (poison message) блокирует всю партицию.</p>
+<p><strong>Классификация ошибок:</strong></p>
+<ul>
+<li><strong>Временная</strong> (БД недоступна, таймаут внешнего API) — повтор с задержкой на месте (Polly с экспоненциальной задержкой); если сбой долгий — пауза консьюмера (<code>Pause</code>) и circuit breaker (<a href="#q12.17">12.17</a>), чтобы не прокрутить все сообщения в DLQ.</li>
+<li><strong>Постоянная</strong> (не десериализуется, нарушает бизнес-правило, ошибка в коде) — повтор бесполезен: сообщение отправляют в <strong>DLQ-топик</strong> (с заголовками: исходный топик, партиция, offset, текст ошибки), коммитят offset и идут дальше. Из DLQ сообщения разбирают вручную или переотправляют после исправления.</li>
+</ul>
+<p><strong>Retry-топики:</strong> <code>orders</code> → <code>orders.retry.1m</code> → <code>orders.retry.10m</code> → <code>orders.dlq</code>. Основной поток не блокируется, но <strong>порядок нарушается</strong>: следующее событие той же поездки может обработаться раньше повторного. Если порядок важен — останавливать обработку только этого ключа (запомнить «заблокированные» ключи и откладывать их события) или проверять версию сущности.</p>
+<p><strong>Идемпотентный консьюмер</strong> (при at-least-once дубликаты неизбежны):</p>
+<ul>
+<li>Таблица обработанных сообщений <code>processed_messages(message_id PK)</code> — вставка в той же транзакции, что и изменение данных; дубликат упадёт на уникальном ключе (<a href="#q12.19">12.19</a>, <a href="#q12.20">12.20</a>).</li>
+<li>Естественная идемпотентность: <code>INSERT ... ON CONFLICT DO NOTHING</code> по бизнес-ключу (<code>trip_id</code> для начисления за поездку), установка состояния вместо приращения («статус = оплачено», а не «баланс += сумма»).</li>
+<li>Версия или порядковый номер в событии — игнорировать события старше уже применённого (защита и от дубликатов, и от нарушения порядка).</li>
+</ul>
+<p><strong>Ответ на «что будет, если консьюмер упал посреди обработки»:</strong> offset не закоммичен → после перезапуска или ребалансировки сообщение придёт снова → обработка идемпотентна, поэтому повтор безопасен.</p>
 </section><section><h1 id="13-testing">13. Тестирование</h1>
 <h3 id="q13.1"><a class="anchor" href="#q13.1">#</a>13.1 Зачем нужны unit-тесты ⭐</h3>
 <p><strong>Коротко:</strong> unit-тесты проверяют небольшие изолированные части кода (метод, класс) в отрыве от внешних зависимостей. Они быстрые, детерминированные и запускаются при каждой сборке.</p>
@@ -6460,6 +6759,30 @@
 <li><strong>Главное</strong> — алгоритмическая сложность: <code>Contains</code> по <code>List</code> внутри цикла (O(n²)) против <code>HashSet</code> (O(n)) даёт разницу в тысячи раз, а <code>for</code> против <code>foreach</code> — проценты.</li>
 <li>«Без измерения не оптимизирую: профилировщик → узкое место → BenchmarkDotNet» (вопрос <a href="#q14.1">14.1</a>).</li>
 </ul>
+<hr />
+<h2>Кеширование в .NET</h2>
+<h3 id="q14.8"><a class="anchor" href="#q14.8">#</a>14.8 Redis в .NET: IDistributedCache, HybridCache, StackExchange.Redis; инвалидация ⭐</h3>
+<ul>
+<li><strong>StackExchange.Redis</strong> — основной клиент. <code>ConnectionMultiplexer</code> — <strong>один на приложение</strong> (Singleton): он мультиплексирует команды через одно соединение и потокобезопасен. Создавать его на каждый запрос — классическая ошибка, как с <code>HttpClient</code> (<a href="#q11.29">11.29</a>).</li>
+<li><strong><code>IDistributedCache</code></strong> (<code>AddStackExchangeRedisCache</code>) — простая абстракция: байты по ключу с TTL.</li>
+<li><strong><code>HybridCache</code></strong> (.NET 9+) — двухуровневый кеш: L1 в памяти процесса + L2 в Redis; <strong>защита от cache stampede</strong> (одновременные промахи по одному ключу вызывают фабрику один раз), сериализация, теги для инвалидации:
+<pre><code class="language-csharp">builder.Services.AddHybridCache();
+builder.Services.AddStackExchangeRedisCache(o =&gt; o.Configuration = "...");
+
+var fleet = await cache.GetOrCreateAsync(
+    $"fleet:{fleetId}",
+    async ct =&gt; await db.Fleets.AsNoTracking().FirstAsync(f =&gt; f.Id == fleetId, ct),
+    new HybridCacheEntryOptions { Expiration = TimeSpan.FromMinutes(10), LocalCacheExpiration = TimeSpan.FromMinutes(1) },
+    tags: [$"fleet:{fleetId}"],
+    cancellationToken: ct);
+
+await cache.RemoveByTagAsync($"fleet:{fleetId}");   // после изменения автопарка
+</code></pre>
+</li>
+<li><strong>Инвалидация</strong> — главный вопрос. Стратегии: короткий TTL (данные могут быть устаревшими до N минут — согласовать с продуктом); удаление ключа после записи в БД (cache-aside, <a href="#q17.6">17.6</a>); события об изменении через Kafka или Redis Pub/Sub для сброса L1 на всех pod-ах. Сначала пишем в БД, потом удаляем из кеша (а не обновляем кеш), иначе гонка двух записей оставит в кеше старое значение.</li>
+<li><strong>Что не кешировать:</strong> деньги и балансы, по которым принимаются решения (баланс к выплате читать из БД), данные с правами доступа без учёта пользователя в ключе.</li>
+<li><strong>Если Redis упал:</strong> приложение должно работать дальше — промах кеша и запрос в БД (с ограничением нагрузки), а не ошибка 500.</li>
+</ul>
 </section><section><h1 id="15-security">15. Безопасность</h1>
 <h3 id="q15.1"><a class="anchor" href="#q15.1">#</a>15.1 Как обеспечивать безопасность .NET-приложений ⭐</h3>
 <p><strong>Практики:</strong></p>
@@ -6613,6 +6936,64 @@
 </table>
 <p><strong>Рекомендация (OWASP, IETF «OAuth 2.0 for Browser-Based Apps»):</strong> паттерн <strong>BFF (Backend for Frontend)</strong> — SPA общается со своим бэкендом через <code>HttpOnly</code> cookie сессии; access/refresh токены хранятся <strong>на сервере</strong> и никогда не попадают в браузер; BFF проксирует вызовы к API, подставляя токен. Если без BFF — access token в памяти (короткая жизнь), refresh token в <code>HttpOnly</code> cookie.</p>
 <p>Главное: <strong>никакое хранилище не спасёт при XSS</strong> полностью — основная защита это предотвращение XSS (CSP, экранирование).</p>
+<hr />
+<h2>Доступ, подпись, регулирование</h2>
+<h3 id="q15.5"><a class="anchor" href="#q15.5">#</a>15.5 Заказ без регистрации: доступ по ссылке и его безопасность ⭐</h3>
+<p><strong>Коротко:</strong> гость оформляет бронь, указав телефон или email, а дальше управляет ею по <strong>секретной ссылке</strong> или <strong>коду подтверждения</strong>. Аккаунта нет, но доступ всё равно нужно защищать: ссылка становится паролем к брони.</p>
+<p><strong>Как устроить:</strong></p>
+<ol>
+<li><strong>Оформление.</strong> Гость вводит контакты, бронирует и платит. Сервер создаёт бронь и <strong>токен доступа</strong>: 32 случайных байта (<code>RandomNumberGenerator</code>), в базе хранится только его хеш (SHA-256), как с паролем.</li>
+<li><strong>Ссылка</strong> <code>https://.../b/{token}</code> уходит по SMS или email. По ней можно посмотреть, перенести или отменить бронь.</li>
+<li><strong>Опасные действия</strong> (отмена с возвратом денег, смена контактов) — дополнительно одноразовый код (OTP) на телефон.</li>
+<li><strong>Привязка к аккаунту:</strong> если гость позже зарегистрируется с тем же подтверждённым телефоном или email, его брони переходят в аккаунт.</li>
+</ol>
+<p><strong>Чего нельзя делать:</strong></p>
+<table>
+<thead>
+<tr><th>Ошибка</th><th>Что случится</th><th>Как правильно</th></tr>
+</thead>
+<tbody>
+<tr><td>Ссылка вида <code>/bookings/1042</code></td><td><strong>IDOR</strong>: перебором номеров видны чужие брони, телефоны водителей, адреса (вопрос <a href="#q15.3">15.3</a>)</td><td>Неугадываемый токен; id брони и токен доступа — разные вещи</td></tr>
+<tr><td>UUID брони как секрет</td><td>UUID v7 содержит время и частично предсказуем; id попадает в логи и ответы API</td><td>Отдельный случайный токен ≥ 128 бит</td></tr>
+<tr><td>Токен в базе открытым текстом</td><td>Утечка базы = доступ ко всем броням</td><td>Хранить хеш, сравнивать хеши</td></tr>
+<tr><td>Вечная ссылка</td><td>Пересланное SMS даёт доступ навсегда</td><td>Срок жизни (до конца брони + N дней), отзыв при смене контактов</td></tr>
+<tr><td>Нет ограничения частоты</td><td>Перебор OTP-кодов, спам SMS за ваш счёт (SMS pumping)</td><td>Rate limit по IP и номеру, лимит попыток кода, CAPTCHA на отправку (вопрос <a href="#q17.10">17.10</a>)</td></tr>
+<tr><td>Токен в query-строке</td><td>Попадает в логи прокси и заголовок Referer</td><td>Токен в пути и <code>Referrer-Policy: no-referrer</code>, обмен на короткую сессию после первого открытия</td></tr>
+</tbody>
+</table>
+<p><strong>В ASP.NET Core</strong> гостевой доступ удобно оформить как отдельную схему аутентификации: обработчик проверяет токен из ссылки, выдаёт claim <code>booking_id</code>, а политика авторизации разрешает действия только с этой бронью. Так гостевые эндпоинты используют обычный <code>[Authorize(Policy = "GuestBooking")]</code>, а не ручные проверки в каждом методе (вопрос <a href="#q11.22">11.22</a>).</p>
+<p><strong>Пример ответа:</strong> «Гостю выдаю неугадываемый токен доступа — 128+ бит из криптографического генератора, в базе храню хеш. Ссылка с токеном уходит по SMS, у неё срок жизни, а отмена с возвратом требует OTP. Обязательно rate limit на отправку SMS и проверку кодов — иначе перебор и SMS pumping. Последовательные id в ссылках — это IDOR».</p>
+<hr />
+<h3 id="q15.6"><a class="anchor" href="#q15.6">#</a>15.6 Электронная подпись: КЕП, Дія.Підпис, ДСТУ 4145 и ECDSA — что нужно разработчику ⭐</h3>
+<p><strong>Коротко:</strong> квалифицированная электронная подпись (КЕП, кваліфікований електронний підпис) по закону равна собственноручной. Она подтверждает автора и <strong>целостность</strong>: изменился хотя бы один байт подписанного файла — подпись недействительна. Поэтому подписывается конкретная неизменяемая версия документа.</p>
+<p><strong>Как работает (на собеседовании хватит этого):</strong></p>
+<ol>
+<li>От содержимого считается хеш.</li>
+<li>Хеш подписывается закрытым ключом подписанта: файл-ключ, токен, облачное хранилище ключей (Дія.Підпис, облачные КЕП банков и сервисов).</li>
+<li>Результат упаковывается в контейнер с сертификатом подписанта и, желательно, меткой времени: CAdES (<code>.p7s</code>, отдельно или вместе с данными), PAdES (подпись внутри PDF), XAdES (XML), ASiC (архив-контейнер).</li>
+<li>Проверка: пересчитать хеш, проверить подпись открытым ключом из сертификата, проверить цепочку сертификатов до доверенного центра (КНЕДП → ЦЗО) и статус сертификата на момент подписи (OCSP, CRL), метку времени.</li>
+</ol>
+<p><strong>Алгоритмы в Украине</strong> (по состоянию на ноябрь 2026): исторически национальный ДСТУ 4145-2002 (эллиптические кривые) с хешем ДСТУ 7564:2014 «Купина». Параллельно идёт переход к международным алгоритмам: в 2025 году ЦЗО и КНЕДП «Дія» получили сертификаты для RSA и ECDSA наряду с ДСТУ 4145. Системам, которые проверяют подписи, нужно поддерживать оба вида. <em>Регулирование меняется — проверьте актуальное состояние на сайте ЦЗО (czo.gov.ua) перед интервью.</em></p>
+<p><strong>Что это значит для кода:</strong></p>
+<ul>
+<li>Подпись и проверку обычно делают через библиотеки, сертифицированные для украинских алгоритмов (например, библиотеки ИИТ «Користувач ЦСК»), или через внешний сервис подписи. Стандартная <code>System.Security.Cryptography</code> умеет RSA и ECDSA, но не ДСТУ 4145.</li>
+<li>Подписанную версию и подпись хранят неизменными; после подписания правка — только новой версией и новой подписью.</li>
+<li>Долгосрочная проверяемость: сертификат истечёт, а документ должен проверяться и через 10 лет — нужны метка времени и сохранённые данные о статусе сертификата на момент подписи (форматы «long-term», CAdES-X Long / LTV).</li>
+<li>Подпись в браузере пользователя (fullstack) — через виджет или библиотеку КНЕДП; закрытый ключ не должен попадать на сервер.</li>
+</ul>
+<p><strong>Подвох:</strong> «Зачем подпись, если у нас есть аудит и права?» Журнал аудита — запись внутри вашей системы, её может изменить администратор БД. Подпись проверяется независимо от системы и юридически значима для внешних сторон и суда.</p>
+<hr />
+<h3 id="q15.7"><a class="anchor" href="#q15.7">#</a>15.7 Разработка в банке: безопасность, аудит, персональные данные ⭐</h3>
+<p><strong>Коротко:</strong> в банке у кода больше ограничений, чем в продуктовой компании: регулятор (НБУ), банковская тайна и персональные данные клиентов, обязательный аудит, разделение обязанностей. Хорошо показать, что вы это учитываете без напоминаний.</p>
+<ul>
+<li><strong>Доступ к данным:</strong> разработчики обычно не имеют доступа к продакшен-данным; для тестов — обезличенные копии. Никаких персональных данных в логах (ФИО, ИНН, номера карт и счетов) — маскирование в structured logging.</li>
+<li><strong>Аудит:</strong> кто и что изменил (и просмотрел) — неизменяемый журнал; в БД — отдельная схема или Oracle Unified Auditing.</li>
+<li><strong>Права:</strong> принцип наименьших привилегий — приложение ходит в БД отдельной учётной записью только с нужными <code>GRANT</code>, а не владельцем схемы.</li>
+<li><strong>Секреты</strong> — в хранилище секретов, не в конфигурации (<a href="#q11.23">11.23</a>); шифрование соединений с БД.</li>
+<li><strong>Изменения в продакшен</strong> — через change management: заявка, review, согласование, окно релиза, план отката. Деплой БД — версионированными скриптами (<a href="#q27.10">27.10</a>).</li>
+<li><strong>Уязвимости:</strong> OWASP Top 10 (<a href="#q15.3">15.3</a>), особенно контроль доступа к документам по id (IDOR) и SQL-инъекции в динамическом SQL PL/SQL (<code>EXECUTE IMMEDIATE</code> с конкатенацией) — только bind-переменные (<a href="#q10.18">10.18</a>).</li>
+<li><strong>Деньги и даты:</strong> <code>decimal</code>, а не <code>double</code>; часовой пояс Киева и переходы на летнее время (<a href="#q9.18">9.18</a>).</li>
+</ul>
 </section><section><h1 id="16-devops-cloud-git">16. DevOps, облака и Git</h1>
 <h2>Docker и CI/CD</h2>
 <h3 id="q16.1"><a class="anchor" href="#q16.1">#</a>16.1 Docker, multi-stage сборки ⭐</h3>
@@ -6961,6 +7342,137 @@
 </ul>
 <p><strong>Конфликты:</strong> возникают, когда две ветки изменили одни и те же строки. Решение: подтянуть свежий <code>main</code> (<code>rebase</code> или <code>merge</code>), открыть конфликтующие файлы, оставить правильный вариант (часто — объединить оба изменения), <strong>запустить тесты</strong>, продолжить (<code>git rebase --continue</code>). Профилактика — маленькие PR и частая синхронизация с <code>main</code>.</p>
 <p><strong>Сообщения коммитов:</strong> коротко и по делу, в повелительном наклонении; многие команды используют Conventional Commits: <code>feat: add slot hold expiration</code>, <code>fix: prevent double booking on concurrent requests</code>.</p>
+<hr />
+<h2>Kubernetes, GitOps и облака</h2>
+<h3 id="q16.16"><a class="anchor" href="#q16.16">#</a>16.16 Kubernetes для разработчика: probes, requests/limits, HPA, graceful shutdown 🔥</h3>
+<p>Основы (pod, deployment, service, ingress) — <a href="#q16.13">16.13</a>. Разработчику в Kubernetes важно уметь сделать так, чтобы сервис корректно жил в кластере:</p>
+<ul>
+<li><strong>Probes:</strong>
+<ul>
+<li><strong>liveness</strong> — «процесс жив?»; при провале pod перезапускается. Проверять только сам процесс, <strong>не</strong> БД: иначе при сбое базы Kubernetes перезапустит все pod-ы, и это ничего не исправит.</li>
+<li><strong>readiness</strong> — «готов принимать трафик?»; при провале pod убирают из Service, но не перезапускают. Здесь можно проверять критичные зависимости и прогрев.</li>
+<li><strong>startup</strong> — для медленного старта; пока не пройдёт, liveness не проверяется.</li>
+<li>В ASP.NET Core — <code>AddHealthChecks()</code> с тегами и разные эндпоинты: <code>/health/live</code>, <code>/health/ready</code>.</li>
+</ul>
+</li>
+<li><strong>Resources:</strong> <code>requests</code> — сколько CPU/памяти гарантировано (по ним планировщик выбирает узел); <code>limits</code> — максимум. Превышение лимита памяти → <strong>OOMKilled</strong>; превышение CPU → троттлинг (замедление, а не убийство). .NET учитывает лимиты контейнера (GC heap ≈ 75% лимита памяти по умолчанию, <code>DOTNET_GCHeapHardLimit</code>); при маленьком CPU-лимите стоит проверить настройки GC (Server GC создаёт кучу на каждое ядро).</li>
+<li><strong>HPA</strong> (Horizontal Pod Autoscaler) — масштабирование по CPU/памяти или по своим метрикам; для консьюмеров Kafka — по consumer lag (KEDA). Помнить: число консьюмеров больше числа партиций ничего не даст (<a href="#q12.26">12.26</a>).</li>
+<li><strong>Graceful shutdown:</strong> Kubernetes посылает <strong>SIGTERM</strong>, ждёт <code>terminationGracePeriodSeconds</code> (по умолчанию 30 с), затем SIGKILL. ASP.NET Core по SIGTERM останавливает приём запросов и ждёт текущие (<code>HostOptions.ShutdownTimeout</code>); <code>BackgroundService</code> получает отмену <code>stoppingToken</code> — консьюмер должен закончить сообщение и закоммитить offset. Из-за задержки обновления Endpoints запросы могут ещё приходить пару секунд после SIGTERM — поэтому добавляют <code>preStop</code> со <code>sleep</code> на несколько секунд.</li>
+<li><strong>Rolling update:</strong> <code>maxSurge</code>/<code>maxUnavailable</code>; новая версия должна работать одновременно со старой → обратно совместимые миграции БД (<a href="#q9.19">9.19</a>) и контракты событий.</li>
+<li><strong>Конфигурация:</strong> ConfigMap и Secret → переменные окружения (<code>ConnectionStrings__Db</code>) или файлы; секреты лучше из внешнего хранилища (AWS Secrets Manager через External Secrets).</li>
+<li><strong>PodDisruptionBudget</strong> — чтобы обслуживание узлов не выключило все реплики одновременно.</li>
+<li><strong>Отладка:</strong> <code>kubectl get pods</code>, <code>describe pod</code> (события: OOMKilled, CrashLoopBackOff, ImagePullBackOff), <code>logs --previous</code>, <code>port-forward</code>, <code>exec</code>.</li>
+</ul>
+<hr />
+<h3 id="q16.17"><a class="anchor" href="#q16.17">#</a>16.17 Argo CD и GitOps: как изменение доходит до продакшена и как откатить ⭐</h3>
+<p><strong>GitOps</strong> (<a href="#q16.14">16.14</a>): желаемое состояние кластера описано в Git (манифесты, Helm-чарты, Kustomize), а агент в кластере приводит реальность к нему. <strong>Argo CD</strong> — такой агент: следит за Git-репозиторием и синхронизирует Kubernetes.</p>
+<p><strong>Путь изменения:</strong></p>
+<ol>
+<li>PR в репозиторий сервиса → CI: сборка, тесты, анализ → Docker-образ с тегом (SHA коммита) в реестр (ECR).</li>
+<li>CI (или Argo CD Image Updater) меняет тег образа в <strong>репозитории конфигурации</strong> для нужного окружения — отдельный коммит или PR.</li>
+<li>Argo CD видит расхождение (<em>OutOfSync</em>) и синхронизирует — автоматически или по кнопке; статусы <em>Synced</em>/<em>Healthy</em>.</li>
+<li>Продвижение по окружениям (dev → stage → prod) — тоже коммитами в конфигурацию.</li>
+</ol>
+<ul>
+<li><strong>Pull-модель:</strong> CI не имеет доступа к кластеру — безопаснее, чем <code>kubectl apply</code> из пайплайна.</li>
+<li><strong>Откат:</strong> <code>git revert</code> коммита с тегом образа (история и аудит в Git) или откат в интерфейсе Argo CD к прошлой ревизии (но при включённой автосинхронизации Argo CD вернёт состояние из Git — поэтому правильно откатывать через Git). Миграции БД сами не откатятся — поэтому их делают обратно совместимыми.</li>
+<li><strong>Drift detection и self-heal:</strong> ручные изменения в кластере (<code>kubectl edit</code>) будут видны как расхождение и откатятся.</li>
+<li><strong>Прогрессивная доставка:</strong> Argo Rollouts — canary и blue-green с автоматическим анализом метрик (Prometheus) и откатом (<a href="#q16.21">16.21</a>).</li>
+<li>Понятия: <em>Application</em>, <em>ApplicationSet</em> (шаблон для многих сервисов и кластеров), sync waves и hooks (например, задача миграции до развёртывания).</li>
+</ul>
+<hr />
+<h3 id="q16.18"><a class="anchor" href="#q16.18">#</a>16.18 AWS для .NET-разработчика: S3, Lambda, SQS/SNS, IAM ⭐</h3>
+<ul>
+<li><strong>S3</strong> — объектное хранилище (бакет + ключ). Сценарии в кабинете автопарка: фото документов водителя и авто, акты, отчёты и выгрузки по выплатам.
+<ul>
+<li><strong>Presigned URL</strong> — временная подписанная ссылка: клиент загружает или скачивает файл <strong>напрямую в S3</strong>, минуя API (не нагружает сервис и не держит файл в памяти). Сервер выдаёт ссылку после проверки прав, срок жизни — минуты (<a href="#q17.18">17.18</a>).</li>
+<li>Бакет закрыт для публичного доступа; шифрование (SSE-S3/SSE-KMS); lifecycle-правила (перенос в дешёвые классы хранения, удаление); событие «файл загружен» → Lambda или SQS (проверка, распознавание, превью).</li>
+<li>Персональные данные (паспорт, водительское удостоверение) — отдельный бакет, минимальные права, аудит доступа.</li>
+</ul>
+</li>
+<li><strong>Lambda</strong> — функции по событию (S3, SQS, API Gateway, расписание EventBridge). Подходит для фоновых и редких задач: обработка загруженного файла, ночная выгрузка. Для .NET — холодный старт (<a href="#q16.6">16.6</a>): лечится Native AOT, SnapStart, provisioned concurrency. Ограничение — 15 минут выполнения. Пакет <code>Amazon.Lambda.AspNetCoreServer.Hosting</code> позволяет запускать Minimal API в Lambda.</li>
+<li><strong>SQS / SNS / EventBridge:</strong> SQS — очередь (visibility timeout, DLQ, FIFO-очереди с группами сообщений); SNS — рассылка подписчикам (fan-out в несколько SQS); EventBridge — шина событий с правилами маршрутизации. Kafka (Amazon MSK) — когда нужны журнал, повторное чтение и большие объёмы (<a href="#q12.12">12.12</a>).</li>
+<li><strong>IAM</strong> — права через роли, а не ключи в конфиге: в EKS — IRSA или EKS Pod Identity (pod получает роль); принцип наименьших привилегий. Секреты — Secrets Manager или Parameter Store.</li>
+<li><strong>.NET SDK:</strong> пакеты <code>AWSSDK.S3</code> и др., регистрация через <code>AWSSDK.Extensions.NETCore.Setup</code> (<code>services.AddAWSService&lt;IAmazonS3&gt;()</code>); локальные тесты — LocalStack в Testcontainers.</li>
+<li>Прочее: RDS/Aurora PostgreSQL, ElastiCache (Redis), CloudWatch (логи и метрики), ECR (реестр образов), EKS (Kubernetes).</li>
+</ul>
+<hr />
+<h3 id="q16.19"><a class="anchor" href="#q16.19">#</a>16.19 GCP Cloud Run для .NET: контейнер, холодный старт, Cloud SQL, секреты ⭐</h3>
+<p><strong>Коротко:</strong> Cloud Run запускает ваш контейнер как serverless-сервис: масштабирует число экземпляров по запросам (вплоть до нуля), берёт плату за использование, а HTTPS, балансировку и ревизии с переключением трафика даёт из коробки. Для ASP.NET Core это обычный Docker-образ с несколькими особенностями. Актуально на ноябрь 2026 — детали сверяйте с документацией Google Cloud.</p>
+<p><strong>Контракт контейнера:</strong></p>
+<ul>
+<li>слушать порт из переменной <code>PORT</code> (по умолчанию 8080 — совпадает с портом по умолчанию в образах .NET 8+);</li>
+<li>не хранить состояние в экземпляре: файловая система в памяти и исчезает, сессии и кеш — во внешнем хранилище;</li>
+<li>логи — структурированный JSON в stdout, Cloud Logging разберёт поля (<a href="#q12.22">12.22</a>);</li>
+<li>корректно завершаться по SIGTERM — у ASP.NET Core это поведение хоста по умолчанию.</li>
+</ul>
+<p><strong>Холодный старт .NET</strong> — несколько секунд на запуск рантайма, DI и EF Core. Что помогает:</p>
+<ul>
+<li><strong>startup CPU boost</strong> (<code>--cpu-boost</code>) — больше CPU на время старта и 10 секунд после него;</li>
+<li><strong>min instances</strong> (например, 1) — нет старта с нуля, но платите за простаивающий экземпляр; при росте нагрузки новые экземпляры всё равно стартуют холодными;</li>
+<li>ReadyToRun, лёгкий старт (без тяжёлой работы в <code>Program.cs</code>, без миграций при старте), Native AOT — с ограничениями (рефлексия, часть возможностей EF Core).</li>
+</ul>
+<p><strong>Cloud SQL.</strong> Подключение через Cloud SQL connector или Unix-сокет, без открытого IP. Главный подвох: <em>число экземпляров × размер пула соединений</em> легко превышает лимит соединений PostgreSQL. Ограничьте <code>max instances</code> и <code>Maximum Pool Size</code> или поставьте пулер соединений.</p>
+<p><strong>Секреты</strong> — Secret Manager, подключённый к сервису как переменная окружения или файл; в .NET читаются обычной конфигурацией (<a href="#q11.23">11.23</a>). Доступ — через сервисный аккаунт сервиса, без ключей в репозитории. Деплой из GitHub Actions — через Workload Identity Federation, без JSON-ключа.</p>
+<p><strong>Фоновая работа — подвох.</strong> По умолчанию CPU выделяется только во время обработки запроса, поэтому <code>BackgroundService</code>, работающий после ответа, может «замирать». Варианты: режим, где CPU выделен всегда (дороже); Cloud Run jobs для пакетных задач; Pub/Sub с push-доставкой — каждая задача приходит как HTTP-запрос; Cloud Scheduler для расписаний.</p>
+<table>
+<thead><tr><th>GCP</th><th>Аналог в Azure</th><th>Аналог в AWS</th></tr></thead>
+<tbody>
+<tr><td>Cloud Run</td><td>Container Apps</td><td>App Runner / ECS Fargate</td></tr>
+<tr><td>Cloud SQL</td><td>Azure Database for PostgreSQL</td><td>RDS</td></tr>
+<tr><td>Pub/Sub</td><td>Service Bus</td><td>SNS + SQS</td></tr>
+<tr><td>Secret Manager</td><td>Key Vault</td><td>Secrets Manager</td></tr>
+</tbody>
+</table>
+<p><strong>Как отвечать без опыта GCP:</strong> «Продакшен на GCP у меня не было, но модель мне знакома: контейнер, без состояния, конфигурация из окружения, управляемая база. Вот что я проверил бы в первую очередь…» — и назвать пул соединений, холодный старт и фоновые задачи.</p>
+<hr />
+<h2>Наблюдаемость, релизы и инциденты</h2>
+<h3 id="q16.20"><a class="anchor" href="#q16.20">#</a>16.20 Наблюдаемость: OpenTelemetry, Prometheus, Grafana, Loki, Tempo; метрики и алерты 🔥</h3>
+<p>Три сигнала (<a href="#q12.22">12.22</a>): <strong>метрики</strong> (что происходит, в цифрах), <strong>логи</strong> (подробности события), <strong>трейсы</strong> (путь запроса через сервисы). Типичный стек вокруг Grafana:</p>
+<table>
+<thead><tr><th>Сигнал</th><th>Сбор в .NET</th><th>Хранилище</th><th>Просмотр</th></tr></thead>
+<tbody>
+<tr><td>Метрики</td><td><code>System.Diagnostics.Metrics</code> + OpenTelemetry</td><td>Prometheus / Mimir</td><td>Grafana (PromQL), алерты</td></tr>
+<tr><td>Логи</td><td><code>ILogger</code> / Serilog, структурированные</td><td>Loki (или ELK)</td><td>Grafana (LogQL)</td></tr>
+<tr><td>Трейсы</td><td><code>ActivitySource</code> + OpenTelemetry</td><td>Tempo (или Jaeger)</td><td>Grafana</td></tr>
+</tbody>
+</table>
+<ul>
+<li><strong>OpenTelemetry в .NET:</strong> <code>AddOpenTelemetry().WithMetrics(...).WithTracing(...)</code>, инструментирование ASP.NET Core, HttpClient, EF Core/Npgsql, Kafka; экспорт по OTLP в коллектор. Связь между сигналами: <code>TraceId</code> в каждой строке лога → из лога в Grafana переход к трейсу, из точки на графике (exemplar) — к конкретному трейсу.</li>
+<li><strong>Какие метрики снимать:</strong>
+<ul>
+<li><strong>RED</strong> для сервисов: Rate (запросов в секунду), Errors (доля ошибок), Duration (латентность — перцентили p95/p99, а не среднее).</li>
+<li><strong>USE</strong> для ресурсов: Utilization, Saturation, Errors (CPU, память, пул соединений к БД).</li>
+<li>Специфичные: consumer lag в Kafka, глубина очередей, hit ratio кеша, паузы GC, число потоков в пуле.</li>
+<li><strong>Бизнес-метрики</strong> — то, по чему бизнес оценивает фичу: число начислений и выплат, сумма выплат за час, доля неуспешных выплат, время онбординга водителя.</li>
+</ul>
+</li>
+<li><strong>Метки (labels):</strong> не добавлять метки с высокой кардинальностью (userId, tripId) в метрики — это взорвёт Prometheus; такие значения — в логи и трейсы.</li>
+<li><strong>Алерты</strong> — на симптомы, которые видит пользователь (рост ошибок, латентности, нарушение SLO, рост lag), а не на каждый всплеск CPU; у каждого алерта — ссылка на runbook. SLO и error budget — <a href="#q17.12">17.12</a>.</li>
+<li><strong>Дашборд сервиса:</strong> RED по эндпоинтам, зависимости (БД, Redis, Kafka, внешние API), ресурсы pod-ов, бизнес-метрики, отметки релизов (аннотации) — чтобы видеть, что изменилось после выкатки.</li>
+</ul>
+<hr />
+<h3 id="q16.21"><a class="anchor" href="#q16.21">#</a>16.21 Релиз своих изменений: feature flags, canary, проверка после релиза 🔥</h3>
+<p>Вакансия требует «супроводжувати процес релізу власних змін» и «увагу до поведінки системи після релізу». Ответ — по шагам:</p>
+<ol>
+<li><strong>До релиза:</strong> тесты (unit, интеграционные с Testcontainers), code review, миграции БД обратно совместимые (expand → migrate → contract, <a href="#q9.19">9.19</a>), контракты событий и API совместимы со старой версией, план отката, заранее подготовленный дашборд или метрики новой фичи.</li>
+<li><strong>Feature flags</strong> — разделить <em>деплой</em> (код в продакшене) и <em>релиз</em> (фича включена). Включать постепенно: внутренние пользователи → 1 автопарк → 5% → 100%. Выключить флаг быстрее, чем откатить версию. Инструменты: LaunchDarkly, Unleash, Flagsmith, <code>Microsoft.FeatureManagement</code>. Флаги — технический долг: удалять после раскатки.</li>
+<li><strong>Canary / blue-green</strong> (<a href="#q16.4">16.4</a>): новая версия получает малую долю трафика, автоматический анализ метрик (Argo Rollouts, <a href="#q16.17">16.17</a>) и откат при росте ошибок.</li>
+<li><strong>После релиза:</strong> смотреть дашборд с отметкой релиза — ошибки, латентность, consumer lag, логи с уровнем Error, <strong>бизнес-метрики фичи</strong>; проверить вручную основной сценарий в продакшене; быть на связи первые часы. Релиз в пятницу вечером — плохая идея.</li>
+<li><strong>Если сломалось:</strong> сначала остановить ущерб (выключить флаг или откатить), потом искать причину (<a href="#q16.22">16.22</a>).</li>
+</ol>
+<p><strong>Пример ответа:</strong> «Новый расчёт комиссии я выкатил под флагом на один тестовый автопарк, параллельно считал старым и новым способом и сравнивал результаты в логах (shadow mode). Когда неделю расхождений не было, раскатил на всех и удалил старый код».</p>
+<hr />
+<h3 id="q16.22"><a class="anchor" href="#q16.22">#</a>16.22 Инцидент в продакшене: от алерта до постмортема 🔥</h3>
+<ol>
+<li><strong>Обнаружение:</strong> алерт (рост ошибок, латентности, lag) или жалоба поддержки. Подтвердить, что проблема реальная, и оценить масштаб: какие пользователи, города, функции; растёт ли.</li>
+<li><strong>Коммуникация:</strong> сообщить в канал инцидентов, назначить ответственного (incident commander), регулярно писать статус — даже «пока ищем».</li>
+<li><strong>Смягчение (mitigation) раньше поиска причины:</strong> откатить последний релиз, выключить feature flag, переключить на резервный путь, увеличить число реплик, отключить проблемного консьюмера. Цель — восстановить сервис, а не найти виноватую строку кода.</li>
+<li><strong>Диагностика:</strong> что изменилось (релизы, конфиг, трафик, зависимости) → метрики RED по сервисам и зависимостям → трейсы медленных или упавших запросов → логи по <code>traceId</code> → БД (медленные запросы, блокировки, пул соединений — <a href="#q9.8">9.8</a>, <a href="#q9.15">9.15</a>). Типичные причины: релиз, медленный запрос после роста данных, исчерпание пула соединений, ретраи, которые усиливают нагрузку (retry storm), внешний поставщик, сертификат, переполненный диск.</li>
+<li><strong>Исправление и проверка</strong> по тем же метрикам; восстановление данных — например, переобработать сообщения из DLQ (<a href="#q12.27">12.27</a>), пересчитать начисления за период.</li>
+<li><strong>Постмортем без поиска виноватых</strong> (blameless): хронология, влияние, корневая причина (5 почему), что сработало и что нет, задачи с владельцами — чтобы не повторилось (тест, алерт, ограничение, автоматическая проверка).</li>
+</ol>
+<p>На интервью подготовьте <strong>свою историю</strong> инцидента по STAR: что сломалось, как узнали, что сделали в первые минуты, корневая причина, какие улучшения внедрили после.</p>
 </section><section><h1 id="17-system-design">17. System Design</h1>
 <blockquote>
 <p><strong>Чего ждут от Middle.</strong> От вас не ждут идеального дизайна Twitter за 45 минут. Ждут, что вы <strong>задаёте уточняющие вопросы</strong>, знаете <strong>строительные блоки</strong> (кеш, очередь, балансировщик, реплики, шарды), умеете <strong>прикинуть нагрузку</strong> и <strong>называете компромиссы</strong> («это быстрее, но данные могут отставать на секунду»). Уверенность на этом интервью даёт не знание «правильного ответа» (его нет), а <strong>понятный порядок рассуждения</strong> — он описан в вопросе <a href="#q17.1">17.1</a>.</p>
@@ -7654,6 +8166,142 @@
 </ul>
 <p><strong>Write-ahead log (WAL)</strong> — перед изменением данных БД записывает намерение в последовательный журнал. После сбоя по журналу восстанавливается согласованное состояние; на нём же строится репликация. Отсюда «D» в ACID (вопрос <a href="#q9.3">9.3</a>).</p>
 <p><strong>Как применить на интервью:</strong> «Для подсчёта уникальных посетителей страницы не буду хранить все ID — возьму HyperLogLog в Redis, погрешность меньше процента нас устроит».</p>
+<hr />
+<h2>Задачи по предметным областям</h2>
+<h3 id="q17.21"><a class="anchor" href="#q17.21">#</a>17.21 System design: райдхейлинг — поиск ближайших водителей, матчинг, трекинг 🔥</h3>
+<p>Классическая задача на интервью в такси-компаниях. Строим по схеме <a href="#q17.1">17.1</a>.</p>
+<p><strong>1. Требования.</strong> Функциональные: пассажир заказывает поездку, система находит ближайшего свободного водителя, водитель принимает или отклоняет, обе стороны видят движение на карте, расчёт стоимости. Нефункциональные: матчинг за секунды, высокая доступность, координаты могут быть немного устаревшими (eventual consistency допустима), но <strong>один водитель не должен получить два заказа одновременно</strong>.</p>
+<p><strong>2. Оценка нагрузки</strong> (<a href="#q17.2">17.2</a>): например, 50 тыс. водителей онлайн в пике × координата каждые 4 с ≈ <strong>12,5 тыс. обновлений в секунду</strong> — это основная нагрузка записи; заказов — на порядки меньше (десятки–сотни в секунду).</p>
+<p><strong>3. Компоненты:</strong></p>
+<ul>
+<li><strong>Location service:</strong> приём координат (WebSocket или HTTP от приложения водителя) → текущее положение в памяти: <strong>Redis Geo</strong> (<code>GEOADD drivers:kyiv:free</code>, <code>GEOSEARCH ... BYRADIUS 3 km ASC COUNT 20</code>) или своя сетка — geohash, H3 (гексагоны Uber), S2 (<a href="#q17.20">17.20</a>). Ключ по городу и статусу. История треков — асинхронно через Kafka в отдельное хранилище (для расчёта стоимости и споров), а не в основную БД.</li>
+<li><strong>Matching service:</strong> взять кандидатов в радиусе → отфильтровать (класс авто, статус, рейтинг) → ранжировать по <strong>времени подачи (ETA по дорогам)</strong>, а не по расстоянию по прямой → предложить заказ одному водителю (или нескольким по очереди) с таймаутом на ответ. Резервирование водителя атомарно: <code>SET driver:{id}:lock tripId NX EX 15</code> в Redis или условное обновление статуса в БД — чтобы два заказа не достались одному водителю.</li>
+<li><strong>Trip service:</strong> заказ как <strong>конечный автомат</strong> (создан → ищем водителя → назначен → водитель приехал → в пути → завершён / отменён) в PostgreSQL; переходы через доменные методы и события в Kafka (биллинг, уведомления, аналитика, кабинет автопарков).</li>
+<li><strong>Pricing:</strong> тариф, расстояние и время, коэффициент спроса (surge) по зонам.</li>
+<li><strong>Notifications / real-time:</strong> push-уведомления, WebSocket для трекинга (<a href="#q11.32">11.32</a>).</li>
+</ul>
+<p><strong>4. Масштабирование и надёжность:</strong> шардирование по городу или геозоне (города почти независимы — естественный ключ); stateless-сервисы за балансировщиком; Kafka с ключом <code>tripId</code> для порядка событий поездки; потеря координат не критична (следующая придёт через 4 с) — не нужна транзакционная запись каждой точки; деградация: если ETA-сервис недоступен — ранжировать по расстоянию.</p>
+<p><strong>5. Что обсудить дополнительно:</strong> водители на границе ячеек (искать в соседних ячейках), «телепортация» из-за плохого GPS (фильтрация), батарея телефона (частота обновлений зависит от статуса водителя), мошенничество (подмена GPS).</p>
+<hr />
+<h3 id="q17.22"><a class="anchor" href="#q17.22">#</a>17.22 System design: кабинет автопарка — начисления и выплаты водителям ⭐</h3>
+<p>Типичная задача для B2B-кабинета автопарков или маркетплейса исполнителей. Ключевое — <strong>корректность денег</strong> важнее скорости.</p>
+<p><strong>Требования:</strong> по каждой завершённой поездке начислить доли сервиса, автопарка и водителя по правилам автопарка (процент, фиксированная плата за смену или аренду авто, бонусы, штрафы); показывать балансы и историю; выплаты водителям по расписанию и по запросу; отчёты за период; исправления задним числом.</p>
+<p><strong>Решение:</strong></p>
+<ol>
+<li><strong>Вход:</strong> событие <code>TripCompleted</code> из Kafka (ключ — <code>tripId</code>) → идемпотентный консьюмер (<a href="#q12.27">12.27</a>). Правила начисления действуют <strong>на момент поездки</strong> — хранить версии правил с датами действия, чтобы пересчёт давал тот же результат.</li>
+<li><strong>Ledger</strong> (<a href="#q7.23">7.23</a>): неизменяемые проводки по счетам (водитель, автопарк, сервис); уникальный ключ <code>(trip_id, operation_type)</code>; корректировки — сторнирующими проводками со ссылкой на причину и автора.</li>
+<li><strong>Балансы</strong> — сумма проводок; для быстрого чтения — таблица текущих балансов, обновляемая в той же транзакции, что и проводка, или проекция, плюс регулярная сверка с ledger.</li>
+<li><strong>Выплаты:</strong> заявка (статусы: создана → отправлена → подтверждена / отклонена) → блокировка суммы на балансе (холд) → вызов банка или провайдера с ключом идемпотентности через Outbox (<a href="#q12.18">12.18</a>) → подтверждение по вебхуку или опросом → финальная проводка. Таймаут вызова банка — состояние «неизвестно», выяснять запросом статуса, а не повторной выплатой.</li>
+<li><strong>Отчёты</strong> — из реплики для чтения или отдельной аналитической БД; тяжёлые выгрузки — фоновой задачей в файл в S3 со ссылкой (presigned URL, <a href="#q16.18">16.18</a>).</li>
+<li><strong>Кабинет (Angular):</strong> таблицы с серверной пагинацией и фильтрами, NgRx или Signal Store для состояния фильтров, real-time обновление баланса (<a href="#q11.32">11.32</a>), права по ролям сотрудников автопарка.</li>
+</ol>
+<p><strong>Что обсудить:</strong> поздние и повторные события (поездку отменили после завершения — сторно); изменение правил автопарка в середине дня; водитель перешёл в другой автопарк; часовой пояс и границы «дня» для отчётов; сверка с биллингом поездок; аудит ручных корректировок; нагрузка в конце периода (массовые выплаты — пачками, с ограничением скорости вызовов банка).</p>
+<hr />
+<h3 id="q17.23"><a class="anchor" href="#q17.23">#</a>17.23 System design: планирование и диспетчеризация доставок стройматериалов 🔥</h3>
+<p>Структура ответа — как в <a href="#q17.1">17.1</a> и <a href="#q17.3">17.3</a>.</p>
+<p><strong>1. Требования.</strong> Функциональные: менеджер создаёт заказ; диспетчер раскладывает рейсы по машинам и датам на доске; водитель в мобильном приложении видит маршрут и меняет статусы, отправляет GPS и фото; клиент видит ETA и получает уведомления. Нефункциональные: нельзя дважды занять машину на одно время; водитель работает при плохой связи; история и документы хранятся годами.</p>
+<p><strong>2. Оценка.</strong> Допустим, 500 машин, 3 000 рейсов в день, GPS раз в 10 секунд: 500 / 10 = 50 записей в секунду, около 4 млн точек в день. Это нагрузка для одного PostgreSQL с партиционированием по дате, не повод для Kafka и микросервисов. Скажите это вслух — интервьюер оценит отказ от лишней сложности.</p>
+<p><strong>3. Компоненты.</strong></p>
+<table>
+<thead><tr><th>Компонент</th><th>Решение</th><th>Почему</th></tr></thead>
+<tbody>
+<tr><td>API CRM</td><td>ASP.NET Core, модульный монолит</td><td>Один домен, одна команда; границы модулей — заказы, планирование, трекинг, биллинг</td></tr>
+<tr><td>Хранилище</td><td>PostgreSQL; точки GPS — отдельная таблица с партициями по дню</td><td>Транзакции для заказов; старые партиции легко удалять или архивировать</td></tr>
+<tr><td>Последняя позиция машины</td><td>Строка «last position» или Redis</td><td>Доска диспетчера читает только текущее положение</td></tr>
+<tr><td>Обновления в реальном времени</td><td>SignalR для доски диспетчера (<a href="#q11.32">11.32</a>)</td><td>Статусы и позиции без перезагрузки</td></tr>
+<tr><td>Уведомления клиенту</td><td>Outbox → очередь → отправка SMS/email (<a href="#q12.18">12.18</a>, <a href="#q17.17">17.17</a>)</td><td>Уведомление не теряется и не уходит дважды</td></tr>
+<tr><td>Файлы (фото, подписи, накладные)</td><td>Объектное хранилище, в БД — ссылка (<a href="#q17.18">17.18</a>)</td><td>Не раздувать базу</td></tr>
+</tbody>
+</table>
+<p><strong>4. Ключевые решения.</strong></p>
+<ul>
+<li><strong>Двойное бронирование машины.</strong> Проверка в коде не спасает от гонки двух диспетчеров. В PostgreSQL — ограничение исключения по диапазону времени:
+<pre><code class="language-sql">CREATE EXTENSION IF NOT EXISTS btree_gist;
+ALTER TABLE vehicle_bookings ADD CONSTRAINT no_overlap
+  EXCLUDE USING gist (vehicle_id WITH =, slot WITH &amp;&amp;);   -- slot: tstzrange</code></pre>
+Второй диспетчер получит ошибку от базы → API отвечает 409 «машина уже занята». Альтернатива — <code>SELECT … FOR UPDATE</code> по машине (<a href="#q9.17">9.17</a>).</li>
+<li><strong>Офлайн у водителя.</strong> Приложение копит события локально и отправляет пачкой; у каждого события id от клиента и время события, сервер принимает идемпотентно (<a href="#q12.19">12.19</a>). Порядок восстанавливается по времени события, а не по времени прихода.</li>
+<li><strong>Планирование.</strong> Сначала — ручная доска с подсказками (вместимость машины, окно приёмки, конфликт времени). Автоматическая оптимизация маршрутов (задача VRP, например Google OR-Tools) — отдельным сервисом позже, когда понятны правила. Хороший senior-ответ — не начинать с оптимизатора.</li>
+<li><strong>ETA.</strong> Из последней позиции и API карт (расчёт маршрута); пересчитывать по событию, а не каждую секунду для всех клиентов.</li>
+</ul>
+<p><strong>5. На GCP</strong> (если проект в Google Cloud): API — Cloud Run, база — Cloud SQL for PostgreSQL, очередь — Pub/Sub, кеш — Memorystore, файлы — Cloud Storage. Подробнее — <a href="#q16.19">16.19</a>.</p>
+<p><strong>6. Что может сломаться:</strong> всплеск GPS после восстановления связи (пачки, backpressure — <a href="#q17.11">17.11</a>); падение сервиса карт (кеш ETA, <a href="#q12.17">12.17</a>); рост таблицы точек (партиции и срок хранения).</p>
+<hr />
+<h3 id="q17.24"><a class="anchor" href="#q17.24">#</a>17.24 System design: платформа бронирования складских слотов 🔥</h3>
+<p><strong>Задача, как её могут дать:</strong> «Спроектируйте сервис, где склады публикуют расписание ворот, а перевозчики бронируют и оплачивают слоты; водитель получает подтверждение и напоминания». Ход ответа — по вопросам <a href="#q17.1">17.1</a> и <a href="#q17.3">17.3</a>; похожая задача — <a href="#q17.23">17.23</a>.</p>
+<p><strong>1. Уточнить требования (2–3 минуты).</strong></p>
+<ul>
+<li>Функциональные: поиск свободных слотов по складу и дате; бронь с удержанием на время оплаты; оплата; отмена и перенос; уведомления (SMS, email); кабинет склада (расписание, ворота, check-in машин); заказ <strong>без регистрации</strong> (вопрос <a href="#q15.5">15.5</a>).</li>
+<li>Нефункциональные: <strong>никакой двойной брони</strong> (строгая согласованность для записи); поиск слотов может быть чуть устаревшим; доступность важнее скорости; часовые пояса США.</li>
+</ul>
+<p><strong>2. Оценка нагрузки «на салфетке»</strong> (вопрос <a href="#q17.2">17.2</a>). Допустим, 1 000 складов × 10 ворот × 30 слотов в день = 300 тыс. слотов в день; броней — десятки тысяч в день, это единицы запросов в секунду на запись. Чтение (поиск слотов) — в 10–50 раз больше, пики утром. Вывод: <strong>один PostgreSQL справится</strong>, шардинг не нужен; масштабируем чтение кешем и репликой. Это важно сказать вслух: сложность должна соответствовать нагрузке.</p>
+<p><strong>3. Архитектура.</strong> Для маленькой команды — <strong>модульный монолит</strong>, а не микросервисы (вопросы <a href="#q12.1">12.1</a>, <a href="#q7.21">7.21</a>):</p>
+<figure class="vs"><div class="vs-tabs"><div class="vs-tab active"><span class="badge"></span>Architecture.txt<span class="x">✕</span></div></div><pre class="vs-code" style="--w:2ch"><code><div class="ln"><span class="no">1</span><span class="src">Клиенты: веб (склад, перевозчик), мобильное приложение водителя</span></div><div class="ln"><span class="no">2</span><span class="src">        │ HTTPS</span></div><div class="ln"><span class="no">3</span><span class="src">API (ASP.NET Core, stateless, N экземпляров за балансировщиком)</span></div><div class="ln"><span class="no">4</span><span class="src">   ├─ модуль Facilities  — склады, ворота, расписание, часовые пояса</span></div><div class="ln"><span class="no">5</span><span class="src">   ├─ модуль Booking     — поиск слотов, брони, статусы (агрегат Booking)</span></div><div class="ln"><span class="no">6</span><span class="src">   ├─ модуль Payments    — Stripe: PaymentIntent, вебхуки, возвраты</span></div><div class="ln"><span class="no">7</span><span class="src">   └─ модуль Notifications — шаблоны, SMS/email, напоминания</span></div><div class="ln"><span class="no">8</span><span class="src">        │</span></div><div class="ln"><span class="no">9</span><span class="src">PostgreSQL (основная запись) ── реплика для отчётов</span></div><div class="ln"><span class="no">10</span><span class="src">Redis (кеш доступности слотов, rate limit)</span></div><div class="ln"><span class="no">11</span><span class="src">Outbox → фоновый воркер → SMS/email провайдеры, QuickBooks</span></div></code></pre></figure><p><strong>4. Ключевые сценарии.</strong></p>
+<ul>
+<li><strong>Поиск слотов.</strong> Свободные слоты не хранятся заранее: из расписания склада генерируется сетка на дату и из неё вычитаются активные брони (один запрос по индексу <code>(dock_id, period)</code>). Результат кешируется на 10–30 секунд по ключу «склад + дата» и сбрасывается при новой брони. Устаревший кеш не страшен: окончательную проверку делает база при бронировании (вопрос <a href="#q17.6">17.6</a>).</li>
+<li><strong>Бронирование.</strong> <code>PUT /bookings/{id}</code> → бронь <code>Pending</code> с exclusion constraint (вопрос <a href="#q9.22">9.22</a>) → создание PaymentIntent в Stripe с ключом идемпотентности → клиент платит → вебхук → <code>Confirmed</code> → событие в Outbox.</li>
+<li><strong>Просроченные удержания.</strong> Фоновая задача раз в минуту переводит <code>Pending</code> старше 15 минут в <code>Expired</code> (<code>FOR UPDATE SKIP LOCKED</code>).</li>
+<li><strong>Уведомления.</strong> События из Outbox → очередь → отправка с retry и DLQ; напоминание водителю за 2 часа — отложенная задача (вопросы <a href="#q17.17">17.17</a>, <a href="#q12.9">12.9</a>).</li>
+<li><strong>Интеграции.</strong> Stripe, SMS-провайдер, QuickBooks — через адаптеры с таймаутами, retry и circuit breaker; никаких внешних вызовов внутри транзакции БД (вопросы <a href="#q12.17">12.17</a>, <a href="#q12.24">12.24</a>).</li>
+</ul>
+<p><strong>5. Данные.</strong> Таблицы <code>facilities</code> (с <code>time_zone</code>), <code>docks</code>, <code>schedule_rules</code>, <code>bookings</code> (<code>tstzrange</code> + exclusion constraint + статус), <code>payments</code>, <code>outbox</code>. Мультиарендность: у каждого склада и перевозчика — свой <code>tenant_id</code> и глобальный фильтр в EF Core (вопрос <a href="#q7.12">7.12</a>).</p>
+<p><strong>6. Надёжность и наблюдаемость.</strong> Healthchecks, структурные логи с id брони, метрики (брони в минуту, доля конфликтов 409, ошибки Stripe, длина очереди уведомлений), алерт на рост просроченных <code>Pending</code> (вопрос <a href="#q12.22">12.22</a>).</p>
+<p><strong>7. Что улучшить дальше</strong> (показать, что видите развитие): перенос брони одной операцией; лист ожидания на занятый слот; динамическая длительность слота по типу груза; приложение водителя с check-in по геозоне; ИИ-разбор документов при check-in (вопрос <a href="#q19.17">19.17</a>); real-time обновление расписания склада (SignalR, вопрос <a href="#q11.32">11.32</a>).</p>
+<p><strong>Подвох:</strong> не начинайте с Kafka и микросервисов. Для десятков броней в минуту правильный ответ — монолит на PostgreSQL с правильными ограничениями. Интервьюер в маленькой команде оценит именно это.</p>
+<hr />
+<h3 id="q17.25"><a class="anchor" href="#q17.25">#</a>17.25 Система электронного документооборота: сущности, жизненный цикл, маршруты согласования, аудит 🔥</h3>
+<p><strong>Коротко:</strong> СЭД (EDMS, ECM) — система, через которую документ проходит весь путь: создание или поступление, регистрация, согласование по маршруту, подписание, исполнение, хранение и архив. Для банка это внутренние приказы и служебные записки, договоры с клиентами и контрагентами, кредитные досье, входящая и исходящая корреспонденция, документы для регулятора. <em>Какие именно процессы в СЭД банка — уточните на интервью.</em></p>
+<p><strong>Основные сущности:</strong></p>
+<table>
+<thead>
+<tr><th>Сущность</th><th>Что хранит</th><th>На что обратить внимание</th></tr>
+</thead>
+<tbody>
+<tr><td>Документ (карточка)</td><td>Тип, регистрационный номер, дата, автор, подразделение, статус, атрибуты типа</td><td>Атрибуты отличаются по типам: отдельные столбцы, таблица «атрибут — значение» (EAV) или JSON — у каждого варианта свои минусы</td></tr>
+<tr><td>Версия и файл</td><td>Номер версии, файл (или ссылка на хранилище), хеш, размер, кто и когда загрузил</td><td>Версии не перезаписываются; подпись относится к конкретной версии</td></tr>
+<tr><td>Маршрут и шаги</td><td>Шаблон маршрута и экземпляр на документе: этапы, исполнители, параллельно или последовательно, сроки</td><td>Замещение отсутствующих, эскалация просрочек, возврат на доработку</td></tr>
+<tr><td>Решение по шагу</td><td>Согласовал / отклонил / с замечаниями, комментарий, время</td><td>Неизменяемая запись</td></tr>
+<tr><td>Подпись</td><td>Подписанная версия, подписант, сертификат, время, тип (КЕП, печать)</td><td><a href="#q15.6">15.6</a></td></tr>
+<tr><td>Связи</td><td>Ответ на письмо, приложение к договору, дополнительное соглашение</td><td>Граф документов</td></tr>
+<tr><td>Права доступа</td><td>Кто видит и что может делать: по роли, подразделению, грифу, участию в маршруте</td><td>Проверка прав в каждом запросе, включая поиск и выгрузки</td></tr>
+<tr><td>Журнал аудита</td><td>Кто, что, когда сделал с документом — включая просмотр</td><td>Только добавление; часто — партиционирование по дате (<a href="#q27.6">27.6</a>)</td></tr>
+</tbody>
+</table>
+<p><strong>Жизненный цикл</strong> — конечный автомат: «Черновик → На согласовании → Согласован / Отклонён → На подписании → Подписан → Зарегистрирован → На исполнении → Исполнен → В архиве». Переходы и проверки — в одном месте (агрегат «Документ» или пакет PL/SQL), а не размазаны по коду. Паттерн State — <a href="#q21.16">21.16</a>.</p>
+<p><strong>Регистрационный номер</strong> — частый вопрос: формат вида «ПР-2026/000123», без дыр и уникальный в пределах года и типа. <code>SEQUENCE</code> дыры допускает (<a href="#q27.4">27.4</a>), поэтому — отдельная таблица счётчиков с <code>SELECT … FOR UPDATE</code> внутри транзакции регистрации. Цена — сериализация регистраций одного типа, что для документооборота приемлемо.</p>
+<p><strong>Маршруты согласования:</strong> шаблон задаётся настройкой, а не кодом (тип документа, сумма, подразделение → набор этапов). Внутри этапа — параллельное согласование (нужны все или достаточно одного) или последовательное. Нужны сроки и напоминания (фоновая задача, <a href="#q11.16">11.16</a>), замещение на время отпуска, повторный запуск после доработки. Для сложных процессов используют BPM-движки (Camunda, Elsa Workflows для .NET), для типовых — свою таблицу шагов.</p>
+<p><strong>Хранение и поиск:</strong> файлы — <a href="#q9.23">9.23</a>; поиск по атрибутам — индексы и партиционирование, полнотекстовый по содержимому — Oracle Text или отдельный поисковый движок (Elasticsearch/OpenSearch).</p>
+<p><strong>Законодательная основа в Украине</strong> (знать названия достаточно): Закон «Об электронных документах и электронном документообороте» и Закон «Об электронной идентификации и электронных доверительных услугах»; сроки хранения документов — по перечням типовых документов. <em>Детали — сверьте по актуальной редакции на zakon.rada.gov.ua.</em></p>
+<p><strong>Если спросят про опыт с СЭД</strong>, а его нет: проведите параллель с тем, что делали, — статусная модель и переходы, история изменений, роли и права, файлы. Покажите, что понимаете, что важно домену: неизменность подписанного, аудит, сроки.</p>
+<hr />
+<h3 id="q17.26"><a class="anchor" href="#q17.26">#</a>17.26 System design: СЭД банка 🔥</h3>
+<p><strong>Задача:</strong> «Спроектируйте систему электронного документооборота для банка: загрузка документов, согласование по маршруту, подписание КЕП, поиск, аудит». Ход ответа — по <a href="#q17.1">17.1</a> и <a href="#q17.3">17.3</a>.</p>
+<p><strong>1. Требования (уточнить вслух):</strong></p>
+<ul>
+<li>Функциональные: создать документ и загрузить файл, маршрут согласования с параллельными и последовательными этапами, подписание КЕП, регистрационный номер, поиск по атрибутам и тексту, уведомления, история и аудит, права по ролям и подразделениям.</li>
+<li>Нефункциональные: надёжность и неизменность важнее скорости; аудит каждого действия; доступность в рабочее время по всей стране; хранение 5–75 лет по типам; безопасность и требования регулятора.</li>
+</ul>
+<p><strong>2. Оценка «на салфетке»</strong> (<a href="#q17.2">17.2</a>): 1700 сотрудников, около 20 документов в день на человека → ~35 тыс. документов в день, ~10 млн в год. Средний файл 1 МБ с версиями → ~10 ТБ файлов в год. Пиковая нагрузка — сотни запросов в секунду: это не high-load по запросам, но объём файлов, журнала аудита и поиска растёт быстро.</p>
+<p><strong>3. Архитектура:</strong></p>
+<ul>
+<li><strong>Веб-клиент</strong> (SPA) → <strong>API</strong> на ASP.NET Core (stateless, несколько экземпляров в Kubernetes за балансировщиком, <a href="#q17.4">17.4</a>). Аутентификация через корпоративный SSO (Active Directory / OIDC, <a href="#q11.22">11.22</a>).</li>
+<li><strong>Oracle</strong> — метаданные: документы, версии, маршруты, решения, права. Таблицы документов и аудита партиционированы по дате (<a href="#q27.6">27.6</a>), старые партиции — сжатие и дешёвое хранилище.</li>
+<li><strong>Файлы</strong> — в объектном хранилище (S3-совместимое on-premise, например MinIO, или SecureFiles в Oracle — <a href="#q9.23">9.23</a>); загрузка напрямую по pre-signed URL, в БД — ключ, хеш, размер (<a href="#q17.18">17.18</a>). Антивирусная проверка перед тем, как файл станет доступен.</li>
+<li><strong>Сервис подписи</strong> — проверка КЕП, метки времени, сохранение подписи рядом с версией (<a href="#q15.6">15.6</a>).</li>
+<li><strong>Движок маршрутов</strong> — таблица шагов и фоновые задачи по срокам; при сложных процессах — BPM-движок.</li>
+<li><strong>Поиск</strong> — Oracle Text или OpenSearch: индексация текста из файлов (OCR для сканов) по событию «версия загружена».</li>
+<li><strong>Уведомления</strong> — email и внутренние уведомления через очередь; события из транзакции — через Outbox (<a href="#q12.18">12.18</a>), чтобы не потерять и не отправить лишнего.</li>
+<li><strong>Аудит</strong> — только добавление, в той же транзакции, что и действие; отдельная схема и права, чтобы приложение не могло его изменить.</li>
+</ul>
+<p><strong>4. Ключевые решения, которые стоит проговорить:</strong></p>
+<ul>
+<li><strong>Конкурентность:</strong> два согласующих одновременно — оптимистичная блокировка по версии документа (<a href="#q8.7">8.7</a>) или <code>SELECT … FOR UPDATE</code> на шаге маршрута (<a href="#q27.8">27.8</a>).</li>
+<li><strong>Неизменность:</strong> подписанная версия неизменяема на уровне модели и прав в БД; правка — новая версия.</li>
+<li><strong>Права при поиске:</strong> фильтр по доступу применяется в самом запросе поиска, иначе пользователь увидит в результатах заголовки чужих документов.</li>
+<li><strong>Идемпотентность</strong> загрузки и решений — повтор запроса не создаёт дубль (<a href="#q11.3">11.3</a>).</li>
+<li><strong>Интеграции:</strong> АБС банка, кадровая система (оргструктура и замещения), внешний ЭДО с контрагентами — через адаптеры (<a href="#q21.6">21.6</a>).</li>
+</ul>
+<p><strong>5. Узкие места и развитие:</strong> рост аудита и файлов (партиции, архив); тяжёлые отчёты — на реплику или в материализованные представления (<a href="#q27.4">27.4</a>); индексация файлов — асинхронно через очередь; монолит, разделённый на модули, — разумный старт; выделять сервисы (подпись, поиск, хранение) по мере необходимости (<a href="#q12.1">12.1</a>).</p>
 </section><section><h1 id="18-algorithms">18. Алгоритмы и live coding</h1>
 <h2>Сложность алгоритмов</h2>
 <h3 id="q18.1"><a class="anchor" href="#q18.1">#</a>18.1 Сложность алгоритмов (Big O) 🔥</h3>
@@ -8215,6 +8863,59 @@
 </tr>
 </tbody>
 </table>
+<hr />
+<h2>LLM в продукте и ИИ в процессе</h2>
+<h3 id="q19.16"><a class="anchor" href="#q19.16">#</a>19.16 Amazon Bedrock: LLM в AWS из .NET ⭐</h3>
+<p><strong>Amazon Bedrock</strong> — управляемый сервис AWS с доступом к моделям разных поставщиков (Anthropic Claude, Amazon Nova, Meta Llama, Mistral и др.) через единый API. Данные не покидают AWS-аккаунт и не используются для обучения моделей; доступ — через IAM, как к любому сервису AWS. Это причина, по которой компании выбирают Bedrock вместо прямого API поставщика.</p>
+<ul>
+<li><strong>Converse API</strong> — единый формат запросов к разным моделям (сообщения, system prompt, tool use, стриминг <code>ConverseStream</code>); модель меняется сменой <code>modelId</code>. В .NET — пакет <code>AWSSDK.BedrockRuntime</code>; есть реализация <code>IChatClient</code> из <code>Microsoft.Extensions.AI</code>, чтобы код не зависел от поставщика (<a href="#q19.7">19.7</a>).</li>
+<li><strong>Knowledge Bases</strong> — готовый RAG: документы из S3 → эмбеддинги → векторное хранилище → поиск релевантных фрагментов.</li>
+<li><strong>Agents</strong> — агенты с вызовом инструментов (Lambda, API); <strong>AgentCore</strong> — инфраструктура для запуска своих агентов.</li>
+<li><strong>Guardrails</strong> — фильтры на входе и выходе: запрещённые темы, токсичность, маскирование персональных данных (PII), проверка на галлюцинации по источнику.</li>
+<li><strong>Стоимость и лимиты:</strong> оплата за токены (on-demand) или выделенная пропускная способность; квоты на запросы и токены в минуту → ретраи с задержкой при троттлинге; <strong>cross-region inference</strong> (inference profiles) распределяет нагрузку между регионами; prompt caching снижает цену повторяющегося контекста.</li>
+<li><strong>Типичные применения:</strong> поддержка (классификация и черновики ответов на обращения водителей и автопарков), разбор документов (OCR + извлечение полей из техпаспорта), аналитика по запросу на естественном языке, внутренние инструменты разработчиков.</li>
+<li><strong>Инженерные вопросы:</strong> структурированный вывод (JSON по схеме) и его валидация, таймауты и фолбэк без ИИ, оценка качества на наборе примеров (evals), логирование запросов без персональных данных, контроль стоимости на запрос (<a href="#q19.8">19.8</a>).</li>
+</ul>
+<hr />
+<h3 id="q19.17"><a class="anchor" href="#q19.17">#</a>19.17 LLM в логистике: извлечение данных из документов, несколько провайдеров, оценка качества ⭐</h3>
+<p><strong>Коротко:</strong> в логистике много полуструктурированных документов — накладные (BOL), подтверждения ставки (rate confirmation), счета, фото документов от водителя. Типичная задача для LLM — <strong>извлечь из документа структурированные данные</strong> (номер груза, адреса, даты, вес, ставку) и заполнить бронь или заказ. Общая архитектура интеграции нескольких провайдеров — в вопросе <a href="#q19.7">19.7</a>, надёжность и промпты — в <a href="#q19.8">19.8</a>. Здесь — как это применить к их домену.</p>
+<p><strong>Примеры функций:</strong></p>
+<ul>
+<li><strong>Разбор документа:</strong> водитель фотографирует BOL при check-in → модель извлекает поля → система сверяет их с бронью (тот ли груз, сколько паллет) и подсвечивает расхождения.</li>
+<li><strong>Бронирование из письма:</strong> брокер присылает email «нужна разгрузка в Далласе в четверг утром, 22 паллеты» → модель извлекает намерение → система предлагает подходящие слоты. Модель <strong>не бронирует сама</strong>, а вызывает инструмент поиска (tool calling), бронь подтверждает человек.</li>
+<li><strong>Ассистент водителя:</strong> «где мои ворота, могу ли я приехать раньше?» — ответы по данным брони через инструменты, а не из «памяти» модели.</li>
+</ul>
+<p><strong>Как сделать надёжно:</strong></p>
+<ol>
+<li><strong>Structured output:</strong> модель возвращает JSON по схеме (класс C#), ответ валидируется; не прошёл схему — повтор с ошибкой в промпте или ручная проверка.</li>
+<li><strong>Бизнес-проверки после модели:</strong> дата в будущем, вес в разумных пределах, склад существует. Модель предлагает, код проверяет.</li>
+<li><strong>Уверенность и человек в контуре:</strong> поля, в которых модель не уверена или которые расходятся с бронью, показываются оператору, а не применяются молча.</li>
+<li><strong>Абстракция провайдера:</strong> общий интерфейс (например, <code>IChatClient</code> из Microsoft.Extensions.AI) и реализации под OpenAI, Anthropic и других; провайдер выбирается конфигурацией по задаче (дешёвая модель — для классификации писем, сильная — для сложных документов) и меняется при сбое (fallback) — вопрос <a href="#q19.7">19.7</a>.</li>
+<li><strong>Набор проверочных примеров (evals):</strong> 50–100 реальных документов с правильными ответами; при смене модели или промпта прогоняем набор и сравниваем точность по полям. Без этого «новая модель лучше» — только ощущение.</li>
+<li><strong>Стоимость и данные:</strong> лимиты токенов и бюджета, кеш одинаковых запросов, логирование без персональных данных; учесть, какие данные клиентов можно отправлять провайдеру (договор, хранение).</li>
+</ol>
+<figure class="vs"><div class="vs-tabs"><div class="vs-tab active"><span class="badge">C#</span>BolExtractor.cs<span class="x">✕</span></div></div><pre class="vs-code" style="--w:2ch"><code><div class="ln"><span class="no">1</span><span class="src"><span class="k">public</span> <span class="k">sealed</span> record BolData(<span class="kt">string</span> BolNumber, <span class="kt">string</span> Shipper, <span class="kt">string</span> Consignee,</span></div><div class="ln"><span class="no">2</span><span class="src">                             <span class="kt">int</span> Pallets, <span class="kt">decimal</span> WeightLbs, DateOnly PickupDate);</span></div><div class="ln"><span class="no">3</span><span class="src"> </span></div><div class="ln"><span class="no">4</span><span class="src"><span class="k">public</span> <span class="k">sealed</span> <span class="k">class</span> BolExtractor(IChatClient chat)</span></div><div class="ln"><span class="no">5</span><span class="src">{</span></div><div class="ln"><span class="no">6</span><span class="src">    <span class="k">public</span> async Task&lt;BolData?&gt; ExtractAsync(<span class="kt">string</span> documentText, CancellationToken ct)</span></div><div class="ln"><span class="no">7</span><span class="src">    {</span></div><div class="ln"><span class="no">8</span><span class="src">        <span class="k">var</span> response = await chat.GetResponseAsync&lt;BolData&gt;(</span></div><div class="ln"><span class="no">9</span><span class="src">            $<span class="s">"Извлеки поля накладной (BOL). Если поля нет — не выдумывай.\n\n{documentText}"</span>,</span></div><div class="ln"><span class="no">10</span><span class="src">            cancellationToken: ct);</span></div><div class="ln"><span class="no">11</span><span class="src"> </span></div><div class="ln"><span class="no">12</span><span class="src">        <span class="k">return</span> response.TryGetResult(out <span class="k">var</span> data) &amp;&amp; Validate(data) ? data : <span class="k">null</span>;  <span class="c1">// null → ручная проверка</span></span></div><div class="ln"><span class="no">13</span><span class="src">    }</span></div><div class="ln"><span class="no">14</span><span class="src"> </span></div><div class="ln"><span class="no">15</span><span class="src">    <span class="k">private</span> <span class="k">static</span> <span class="kt">bool</span> Validate(BolData d) =&gt; d.Pallets is &gt; <span class="mi">0</span> and &lt;= <span class="mi">60</span> &amp;&amp; d.WeightLbs is &gt; <span class="mi">0</span> and &lt;= _000;</span></div><div class="ln"><span class="no">16</span><span class="src">}</span></div></code></pre></figure><p><em>API Microsoft.Extensions.AI развивается; сигнатуры в примере — для понимания идеи, перед интервью сверьте с актуальной документацией.</em></p>
+<p><strong>Пример ответа:</strong> «LLM у меня только предлагает: извлекает данные в JSON по схеме, дальше код валидирует и сверяет с бронью, а сомнительное уходит человеку. Провайдеров прячу за общим интерфейсом и выбираю модель под задачу. Качество меряю на наборе реальных документов с эталонными ответами — так видно, стала ли новая модель или промпт лучше».</p>
+<hr />
+<h3 id="q19.18"><a class="anchor" href="#q19.18">#</a>19.18 ИИ в цикле разработки: автоматическое ревью PR, планы исправлений, ответственность за итоговый код 🔥</h3>
+<p><strong>Коротко:</strong> ИИ ускоряет каждый шаг — план, код, тесты, первое ревью, — но мерж остаётся за человеком, который прочитал каждую строку и может её объяснить. Процесс строится так, чтобы ошибку ИИ ловили автоматические барьеры (типы, тесты, линтеры, CI), а не удача ревьюера. Основы Claude Code — <a href="#q19.1">19.1</a>–<a href="#q19.5">19.5</a>, риски — <a href="#q19.6">19.6</a>.</p>
+<p><strong>Автоматическое ревью PR — как настроить.</strong></p>
+<ul>
+<li><strong>Инструмент:</strong> встроенное ревью GitHub Copilot (запрашивается как ревьюер-человек), сторонние боты (CodeRabbit, Qodo и другие) или Claude Code, запущенный в GitHub Actions на событие PR. Возможности и цены меняются быстро — актуальное проверяйте по документации (по состоянию на ноябрь 2026).</li>
+<li><strong>Правила проекта</strong> в файле, который читает агент (<code>CLAUDE.md</code>, <code>.github/copilot-instructions.md</code>): архитектурные границы, что считается ошибкой, на что не тратить комментарии.</li>
+<li><strong>Фокус:</strong> баги, безопасность, пропущенная обработка ошибок, N+1, нарушение контракта API. Стиль отдаём форматтеру и анализаторам — иначе бот тонет в шуме и его перестают читать.</li>
+<li><strong>Метрика пользы:</strong> доля комментариев, по которым что-то исправили. Если она низкая — сужаем правила, а не терпим шум.</li>
+<li><strong>Безопасность:</strong> токен агента с минимальными правами, без доступа к секретам продакшена; PR из форков не запускают агента с секретами; агент не мержит сам.</li>
+</ul>
+<p><strong>Планы исправлений от ИИ.</strong> Баг-репорт или упавший CI → агент читает код и логи и предлагает план: причина, затронутые файлы, тест, который воспроизводит баг → человек утверждает план → агент делает исправление в ветке, сначала падающий тест → CI → обычное ревью. Смысл в утверждении плана: дешевле поправить направление до кода, чем после.</p>
+<p><strong>«Ответственность за итоговый код» — как отвечать:</strong></p>
+<ul>
+<li>не мержу то, что не могу объяснить построчно;</li>
+<li>сгенерированные тесты проверяю на «проверяют ли они хоть что-то» — ломаю код и смотрю, что тест падает;</li>
+<li>зависимости и версии, которые предложил ИИ, сверяю с документацией (пакеты-галлюцинации — реальная атака);</li>
+<li>в код и промпты не попадают секреты и данные клиентов.</li>
+</ul>
+<p><strong>История для интервью (STAR) — подготовьте свою:</strong> <em>ситуация</em> — проект и команда; <em>задача</em> — скорость без потери качества и без утечки секретов; <em>действия</em> — правила проекта для агента (CLAUDE.md), skills для повторяемых процессов, проверки в CI (секреты, предупреждения как ошибки), тесты как барьер для сгенерированного кода, ревью каждого диффа; <em>результат</em> — в цифрах.</p>
 </section><section><h1 id="21-design-patterns">21. Паттерны проектирования</h1>
 <blockquote>
 <p><strong>Как пользоваться разделом.</strong> Здесь каждый паттерн GoF с примером на C# и местом в .NET, сравнения похожих паттернов, антипаттерны и задача на рефакторинг. Обзорная таблица всех 23 паттернов — <a href="#q7.13">7.13</a>; Singleton — <a href="#q7.14">7.14</a>, Strategy — <a href="#q7.15">7.15</a>, Dependency Injection — <a href="#q7.16">7.16</a>, Specification — <a href="#q7.17">7.17</a>, Repository и Unit of Work — <a href="#q7.19">7.19</a>. Минимум на вечер перед собеседованием: <a href="#q21.1">21.1</a>, <a href="#q21.25">21.25</a> и вопросы с 🔥.</p>
@@ -9785,6 +10486,18 @@ total = computed(() =&gt; this.items().reduce((s, i) =&gt; s + i.price, 0));
 selectedId = linkedSignal(() =&gt; this.items()[0]?.id);
 </code></pre>
 <p><strong>Правило:</strong> <code>effect</code> — только для побочных эффектов во внешний мир (localStorage, логирование, сторонний виджет, ручная работа с DOM). Сигналы внутри эффекта, которые не должны быть зависимостями, читают через <code>untracked()</code>. С v19 запись в сигнал внутри <code>effect</code> разрешена без флага <code>allowSignalWrites</code>, но это не значит, что так стоит делать.</p>
+<hr />
+<h2>Связка с бэкендом</h2>
+<h3 id="q23.55"><a class="anchor" href="#q23.55">#</a>23.55 Связка Angular + ASP.NET Core: контракты, авторизация, ошибки, пагинация ⭐</h3>
+<ul>
+<li><strong>Контракты:</strong> OpenAPI-документ из ASP.NET Core (встроенный в .NET 9+) → генерация TypeScript-клиента и типов (NSwag, Kiota, openapi-generator, orval). Изменение DTO на бэкенде ломает сборку фронтенда, а не продакшен. Альтернатива — общие типы вручную (быстро устаревают).</li>
+<li><strong>Авторизация:</strong> OIDC (Authorization Code + PKCE) с провайдером, токен в интерсепторе (<a href="#q23.33">23.33</a>) или BFF с cookie (<a href="#q23.24">23.24</a>); роли и права приходят в токене или отдельным запросом и используются в guards и директиве <code>*appHasPermission</code> — но проверка обязательно на сервере. В кабинете автопарка критично, чтобы владелец видел <strong>только своих</strong> водителей — проверка принадлежности на каждом запросе (IDOR, <a href="#q7.12">7.12</a>).</li>
+<li><strong>Ошибки:</strong> сервер отдаёт <code>ProblemDetails</code> (RFC 9457), ошибки валидации — <code>ValidationProblemDetails</code> со словарём по полям → фронтенд подсвечивает поля формы; общие ошибки — тост через интерсептор; <code>traceId</code> из ответа показывается пользователю для обращения в поддержку.</li>
+<li><strong>Пагинация, фильтры, сортировка</strong> — на сервере (keyset для больших таблиц, <a href="#q10.14">10.14</a>), состояние фильтров — в query-параметрах URL (ссылкой можно поделиться, работает кнопка «назад»).</li>
+<li><strong>Даты и деньги:</strong> даты в ISO 8601 с часовым поясом (<a href="#q9.18">9.18</a>), отображение в часовом поясе пользователя или автопарка; деньги — в минимальных единицах (копейки, целое число) или строкой, не <code>number</code> с дробной частью (<a href="#q7.23">7.23</a>).</li>
+<li><strong>Обратная совместимость при релизе:</strong> фронтенд и бэкенд выкатываются не одновременно — API должен поддерживать старую версию клиента (новые поля необязательные, старые не удаляются сразу).</li>
+<li><strong>Где хостить фронтенд:</strong> статика в S3 + CloudFront или в nginx-контейнере; <code>index.html</code> без кеширования, файлы с хешем в имени — с долгим кешем.</li>
+</ul>
 </section><section><h1 id="27-oracle">27. Oracle для .NET-разработчика</h1>
 <blockquote>
 <p><strong>Как пользоваться разделом.</strong> Здесь всё, что отличает Oracle от PostgreSQL и SQL Server: PL/SQL, объекты БД, планы выполнения, партиционирование, блокировки, работа из .NET, миграции и тестирование. Общие темы — в разделах <a href="#09-databases">9</a> (индексы, ACID, изоляция) и <a href="#10-sql-practice">10</a> (запросы и задачи), они работают и в Oracle. Версии актуальны на ноябрь 2026: текущий LTS-релиз — Oracle AI Database 26ai (сменил 23ai), в проектах банков часто ещё 19c.</p>
