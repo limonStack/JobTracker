@@ -931,6 +931,8 @@ export function startKnowledge(store) {
     if (!link) continue;
     link.addEventListener('click', e => {
       e.preventDefault();
+      // раздел без вопросов (компания, шпаргалка) раскрывать нечего — всегда переход, без «открыть/свернуть»
+      if (!d.querySelector('li')) { navigate(link.getAttribute('href').slice(1)); return; }
       d.open = !d.open;
       if (!d.open) return;
       navigate(link.getAttribute('href').slice(1));
@@ -1149,7 +1151,7 @@ export function startKnowledge(store) {
     const d = it ? it.d : groups.find(g => g.querySelector('summary a')?.getAttribute('href') === '#' + id);
     items.forEach(x => x.li.classList.toggle('current', x === it));
     if (!d || side.classList.contains('searching')) return;
-    if (!d.open) d.open = true;                      // аккордеон сам свернёт остальные разделы
+    if (!d.open && d.querySelector('li')) d.open = true;   // аккордеон сам свернёт остальные; пустой раздел не раскрываем
     (it ? it.li : d.querySelector('summary')).scrollIntoView({ block: 'nearest' });
   }
   // Переход по якорю — новая запись в истории: «назад» (и кнопка на мышке) возвращает туда, откуда ушли.
