@@ -238,6 +238,13 @@ export function startKnowledge(store) {
     store.setReviewed(day, code, on);
     renderCalendar();
   }
+  // «Отметить все»: ставим только недостающие отметки — каждая уходит своим идемпотентным PUT
+  function reviewAll(day, codes) {
+    const set = new Set(review[day] || []);
+    for (const code of codes) if (!set.has(code)) { set.add(code); store.setReviewed(day, code, true); }
+    review[day] = [...set];
+    renderCalendar();
+  }
 
   function toggleTrack(name, key) {
     if (!key || key > dayKey()) return;               // будущие дни не отмечаем (ГГГГ-ММ-ДД сравнивается как дата)
@@ -291,7 +298,9 @@ export function startKnowledge(store) {
       const k = dayList.filter(it => got.has(it.code)).length, all = k === dayList.length;
       const [, lm, ld] = listDay.split('-').map(Number);
       reviewHtml = `<div class="cal-list review${all ? ' all' : ''}">` +
-        `<div class="cal-list-head"><span>${all ? '🎉 Повторено — можно учить новое' : `🔁 Повторить · ${ld} ${MONTHS_GEN[lm - 1]}`}</span><span class="rv-count">${k}/${dayList.length}</span></div>` +
+        `<div class="cal-list-head"><span>${all ? '🎉 Повторено — можно учить новое' : `🔁 Повторить · ${ld} ${MONTHS_GEN[lm - 1]}`}</span><span class="rv-right">` +
+          (all ? '' : `<button type="button" class="rv-all" data-review-all="${listDay}" title="Отметить все темы повторёнными">Отметить все</button>`) +
+          `<span class="rv-count">${k}/${dayList.length}</span></span></div>` +
         `<div class="cal-goal-bar rv-bar"><i style="width:${k * 100 / dayList.length}%"></i></div>` +
         // всё повторено — список не пропадает, а сворачивается: темы дня можно открыть и пройтись по ним ещё раз
         (all ? `<details class="rv-done"${rvOpen ? ' open' : ''}><summary>Показать темы</summary>` : '') +
@@ -331,7 +340,11 @@ export function startKnowledge(store) {
   if (calendar) {
     calendar.addEventListener('click', e => {
       const t = e.target;
-      if (t.closest('[data-review]')) { const [day, code] = t.closest('[data-review]').dataset.review.split('|'); toggleReview(day, code); }
+      if (t.closest('[data-review-all]')) {
+        const day = t.closest('[data-review-all]').dataset.reviewAll;
+        reviewAll(day, (perDay().get(day) || []).map(it => it.code));
+      }
+      else if (t.closest('[data-review]')) { const [day, code] = t.closest('[data-review]').dataset.review.split('|'); toggleReview(day, code); }
       else if (t.closest('[data-track]')) toggleTrack(t.closest('[data-track]').dataset.track, calDay || dayKey());
       else if (t.closest('[data-backfill]')) { const k = t.closest('[data-backfill]').dataset.backfill; backDay = backDay === k ? null : k; renderProgress(); }
       else if (t.closest('[data-nav]')) { calMonth.setMonth(calMonth.getMonth() + +t.closest('[data-nav]').dataset.nav); renderCalendar(); }
