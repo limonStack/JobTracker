@@ -25,7 +25,7 @@ public class RealContentTests
     {
         var numbers = Sections.Value.Select(s => s.Number).ToList();
 
-        Assert.Equal([.. Enumerable.Range(1, 19), 21, 22, 23, 27], numbers);
+        Assert.Equal([.. Enumerable.Range(1, 19), 21, 23, 27], numbers);
     }
 
     [Fact]
