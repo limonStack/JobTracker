@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- Тексты ответов из 300questions/ANSWERS.html (2026-11-04) без личных разделов 20,21. Источник для импорта в базу. -->
 <html lang="ru"><head><meta charset="utf-8"><title>kb-338</title></head><body>
-<main><section><h1 id="01-csharp-dotnet">1. C# и платформа .NET</h1>
+<main><section><h1 id="01-csharp-dotnet">1. C# и .NET</h1>
 <h2>Платформа .NET</h2>
 <h3 id="q1.1"><a class="anchor" href="#q1.1">#</a>1.1 Как выполняется код .NET: IL, CLR, JIT, AOT; .NET Framework, .NET и .NET Standard 🔥</h3>
 <p><strong>Коротко:</strong> компилятор C# (Roslyn) превращает код не в машинные инструкции, а в <strong>промежуточный язык IL</strong> (Intermediate Language, он же CIL/MSIL) плюс метаданные о типах — это и есть сборка (<code>.dll</code>). При запуске <strong>CLR</strong> (Common Language Runtime) загружает сборку, и <strong>JIT-компилятор</strong> переводит каждый метод в машинный код <strong>при первом вызове</strong>.</p>
@@ -703,7 +703,7 @@
 <li>Производительность: каждый релиз ускоряет JIT, GC и библиотеки (Dynamic PGO, девиртуализация, escape analysis — часть объектов размещается на стеке), меньше выделений памяти. Native AOT для консольных приложений и Minimal API.</li>
 </ul>
 <p><strong>Как отвечать:</strong> назовите 2–3 вещи, которыми пользовались сами, и зачем (например: «<code>field</code> убрал поля в DTO с нормализацией, <code>HybridCache</code> заменил связку <code>IMemoryCache</code> + Redis со своим кодом от stampede, именованные фильтры EF Core — разделение данных по пользователям и soft delete одновременно»).</p>
-</section><section><h1 id="02-types-collections">2. Типы данных и коллекции</h1>
+</section><section><h1 id="02-types-collections">2. Типы и коллекции</h1>
 <h2>Значимые и ссылочные типы</h2>
 <h3 id="q2.1"><a class="anchor" href="#q2.1">#</a>2.1 Типы данных; значимые и ссылочные типы 🔥</h3>
 <p><strong>Коротко:</strong> в C# есть <strong>значимые типы</strong> (value types: <code>int</code>, <code>double</code>, <code>bool</code>, <code>char</code>, <code>decimal</code>, <code>DateTime</code>, <code>struct</code>, <code>enum</code>, <code>record struct</code>, <code>ValueTuple</code>) и <strong>ссылочные типы</strong> (reference types: <code>class</code>, <code>string</code>, <code>object</code>, массивы, делегаты, интерфейсы, <code>record</code>).</p>
@@ -1509,7 +1509,7 @@
 </ul>
 <p><strong>И наоборот:</strong> ссылка на объект может лежать на стеке, а сам объект — в куче. Только <code>ref struct</code> (например, <code>Span&lt;T&gt;</code>) <strong>гарантированно</strong> не попадает в кучу — поэтому его нельзя использовать в <code>async</code>-методах и лямбдах.</p>
 <p><strong>Как ответить:</strong> «Значимые типы хранятся там, где объявлены: локальная переменная — на стеке, поле класса — внутри объекта в куче. Важнее другое: значимый тип копируется по значению, а ссылочный — по ссылке» (вопросы <a href="#q2.1">2.1</a>, <a href="#q2.2">2.2</a>).</p>
-</section><section><h1 id="03-memory-gc">3. Память и сборка мусора</h1>
+</section><section><h1 id="03-memory-gc">3. Память и GC</h1>
 <h2>Сборка мусора</h2>
 <h3 id="q3.1"><a class="anchor" href="#q3.1">#</a>3.1 Сборщик мусора (GC), поколения 🔥</h3>
 <p><strong>Коротко:</strong> GC автоматически освобождает память объектов, на которые больше нет ссылок. Работает по принципу <strong>mark → sweep/compact</strong>, использует <strong>3 поколения</strong> (Gen0, Gen1, Gen2), исходя из гипотезы, что большинство объектов живут недолго.</p>
@@ -1666,7 +1666,7 @@
 <li>Если память растёт — это не повод звать GC, а повод искать <strong>утечку</strong>: подписки на события, статические коллекции, кеш без ограничений, незакрытые ресурсы (вопрос <a href="#q3.4">3.4</a>). Инструменты — <code>dotnet-counters</code>, <code>dotnet-gcdump</code>, профилировщик памяти.</li>
 </ul>
 <p><strong>Когда допустимо:</strong> в бенчмарках и тестах перед замером, в редких сценариях «после загрузки большого объёма данных — перед долгой спокойной работой». В веб-сервисе — нет.</p>
-</section><section><h1 id="04-async-multithreading">4. Асинхронность и многопоточность</h1>
+</section><section><h1 id="04-async-multithreading">4. Асинхронность</h1>
 <h2>Основы</h2>
 <h3 id="q4.1"><a class="anchor" href="#q4.1">#</a>4.1 Асинхронность vs многопоточность; CPU-bound и IO-bound 🔥</h3>
 <p><strong>Коротко:</strong></p>
@@ -2219,7 +2219,7 @@
 <p><strong>Почему:</strong> <code>users</code> — не коллекция, а <strong>рецепт</strong>. Каждый перебор заново выполняет <code>Select</code> и создаёт <strong>новые</strong> объекты <code>User</code>. <code>foreach</code> активировал одни объекты, а <code>All</code> проверяет другие, только что созданные.</p>
 <p><strong>Как исправить:</strong> материализовать один раз — <code>.ToList()</code>.</p>
 <p><strong>Подвох:</strong> то же самое с запросом к БД: <code>IQueryable</code>, перебранный дважды (<code>Count()</code>, а потом <code>foreach</code>), — это <strong>два запроса</strong> к базе. Rider и анализаторы предупреждают об этом: «Possible multiple enumeration».</p>
-</section><section><h1 id="06-exceptions">6. Исключения и обработка ошибок</h1>
+</section><section><h1 id="06-exceptions">6. Исключения</h1>
 <h2>Исключения</h2>
 <h3 id="q6.1"><a class="anchor" href="#q6.1">#</a>6.1 Исключения и custom exceptions ⭐</h3>
 <p><strong>Коротко:</strong> исключение — объект (наследник <code>System.Exception</code>), сигнализирующий об ошибке, которая не позволяет методу выполнить свой контракт. Бросается <code>throw</code>, ловится <code>catch</code>, разворачивает стек до подходящего обработчика.</p>
@@ -2320,7 +2320,7 @@
 <p><strong>Фильтры исключений (<code>when</code>)</strong> позволяют ловить по условию, не разворачивая стек:</p>
 <figure class="vs"><div class="vs-tabs"><div class="vs-tab active"><span class="badge">C#</span>Program.cs<span class="x">✕</span></div></div><pre class="vs-code" style="--w:1ch"><code><div class="ln"><span class="no">1</span><span class="src"><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nc">HttpRequestException</span><span class="w"> </span><span class="n">ex</span><span class="p">)</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="p">(</span><span class="n">ex</span><span class="p">.</span><span class="n">StatusCode</span><span class="w"> </span><span class="o">=</span><span class="o">=</span><span class="w"> </span><span class="n">HttpStatusCode</span><span class="p">.</span><span class="n">NotFound</span><span class="p">)</span></span></div><div class="ln"><span class="no">2</span><span class="src"><span class="p">{</span></span></div><div class="ln"><span class="no">3</span><span class="src"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">null</span><span class="p">;</span><span class="w">                          </span><span class="c1">// 404 — нормальная ситуация</span></span></div><div class="ln"><span class="no">4</span><span class="src"><span class="p">}</span></span></div><div class="ln"><span class="no">5</span><span class="src"><span class="c1">// остальные HttpRequestException летят дальше, стек не тронут</span></span></div></code></pre></figure>
 <p><strong>Подвох:</strong> «чем фильтр лучше <code>catch</code> + <code>if</code> + <code>throw;</code>?» — фильтр выполняется <strong>до</strong> раскрутки стека. Если условие ложно, исключение даже не считается пойманным: в отладчике и дампе виден исходный контекст ошибки. Поэтому через фильтр удобно логировать (вопрос <a href="#q6.6">6.6</a>).</p>
-</section><section><h1 id="07-architecture">7. Архитектура, принципы и паттерны</h1>
+</section><section><h1 id="07-architecture">7. Архитектура</h1>
 <h2>Принципы</h2>
 <h3 id="q7.1"><a class="anchor" href="#q7.1">#</a>7.1 SOLID 🔥</h3>
 <table>
@@ -3387,7 +3387,7 @@ public sealed class Delivery
 <p>“When I make an architecture decision, I start with the problem and the constraints: expected load, deadline, and who will maintain it. I compare two or three options and usually choose the simplest one that solves the problem. I write a short decision record, so the team knows why we chose it and when to revisit it. I don’t cut corners on things that are expensive to change later, like the data model, public API contracts, payments and security. For everything else, I’m happy to ship an MVP first and improve it based on real usage.”</p>
 </blockquote>
 <p>Полезные фразы: <em>“The trade-off here is…”</em>, <em>“I'd start simple and revisit it when…”</em>, <em>“This is hard to change later, so I'd invest more here.”</em>, <em>“I took ownership of…”</em>, <em>“In hindsight, I would…”</em>.</p>
-</section><section><h1 id="08-ef-core">8. Entity Framework Core</h1>
+</section><section><h1 id="08-ef-core">8. EF Core</h1>
 <h2>Основы</h2>
 <h3 id="q8.1"><a class="anchor" href="#q8.1">#</a>8.1 ORM и EF Core 🔥</h3>
 <p><strong>ORM (Object-Relational Mapping)</strong> — технология отображения объектов языка программирования на таблицы реляционной БД. Решает «object-relational impedance mismatch»: в коде — объекты, наследование, ссылки, коллекции; в БД — таблицы, строки, внешние ключи.</p>
@@ -3576,7 +3576,7 @@ public sealed class Delivery
 <li>Работает: фильтр — в SQL, а вызов <code>Format</code> в <strong>финальной проекции</strong> <code>Select</code> EF разрешает выполнить на клиенте после загрузки данных.</li>
 </ol>
 <p><strong>Подвох:</strong> «как переиспользовать условие, чтобы оно переводилось в SQL?» — хранить его как <strong>выражение</strong>, а не как метод: <code>static readonly Expression&lt;Func&lt;User, bool&gt;&gt; IsAdult = u =&gt; u.Age &gt; 18;</code> и <code>db.Users.Where(IsAdult)</code> (вопросы <a href="#q5.5">5.5</a>, <a href="#q8.6">8.6</a>).</p>
-</section><section><h1 id="09-databases">9. Базы данных и PostgreSQL</h1>
+</section><section><h1 id="09-databases">9. Базы данных</h1>
 <h2>Теория</h2>
 <h3 id="q9.1"><a class="anchor" href="#q9.1">#</a>9.1 Реляционные vs нереляционные БД 🔥</h3>
 <table>
@@ -4376,7 +4376,7 @@ public sealed class Delivery
 </table>
 <p><strong>Как ответить:</strong> «Для большого объёма и долгого хранения — объектное хранилище: в БД ключ, SHA-256 и размер, сначала загрузка файла, потом коммит метаданных; периодическая задача удаляет файлы без записей. Если файлов мало и важна простота — SecureFiles в БД». Хеш нужен в любом случае: им проверяют целостность и сопоставляют файл с подписью.</p>
 <p><strong>Подвох .NET:</strong> не читать большой BLOB целиком в <code>byte[]</code> — потоково (<code>OracleDataReader.GetOracleBlob()</code> → <code>Stream</code>, <code>CommandBehavior.SequentialAccess</code>), иначе каждый файл в 100 МБ попадает в LOH (<a href="#q3.2">3.2</a>).</p>
-</section><section><h1 id="10-sql-practice">10. SQL: запросы и задачи</h1>
+</section><section><h1 id="10-sql-practice">10. SQL: задачи</h1>
 <blockquote>
 <p>Теория баз данных — в разделе «Базы данных и PostgreSQL». Здесь — то, на чём проверяют <strong>уверенное владение SQL</strong>: как выполняется запрос, NULL, группировки, оконные функции и задачи, которые дают писать на листке или в редакторе. Синтаксис — SQL Server (T-SQL), отличия PostgreSQL указаны отдельно.</p>
 <p><strong>Схема для всех примеров:</strong></p>
@@ -4937,7 +4937,7 @@ public sealed class Delivery
 </ul>
 <p><strong>Тот же запрос в EF Core:</strong></p>
 <figure class="vs"><div class="vs-tabs"><div class="vs-tab active"><span class="badge">C#</span>Program.cs<span class="x">✕</span></div></div><pre class="vs-code" style="--w:1ch"><code><div class="ln"><span class="no">1</span><span class="src"><span class="kt">var</span><span class="w"> </span><span class="n">doctors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="n">db</span><span class="p">.</span><span class="n">Doctors</span></span></div><div class="ln"><span class="no">2</span><span class="src"><span class="w">    </span><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">d</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">d</span><span class="p">.</span><span class="n">Patients</span><span class="p">.</span><span class="n">Count</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">n</span><span class="p">)</span></span></div><div class="ln"><span class="no">3</span><span class="src"><span class="w">    </span><span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">d</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">d</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span><span class="w"> </span><span class="n">d</span><span class="p">.</span><span class="n">FullName</span><span class="p">,</span><span class="w"> </span><span class="n">PatientCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">d</span><span class="p">.</span><span class="n">Patients</span><span class="p">.</span><span class="n">Count</span><span class="w"> </span><span class="p">})</span></span></div><div class="ln"><span class="no">4</span><span class="src"><span class="w">    </span><span class="p">.</span><span class="n">OrderByDescending</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">x</span><span class="p">.</span><span class="n">PatientCount</span><span class="p">)</span></span></div><div class="ln"><span class="no">5</span><span class="src"><span class="w">    </span><span class="p">.</span><span class="n">ToListAsync</span><span class="p">();</span></span></div></code></pre></figure>
-</section><section><h1 id="11-aspnetcore">11. ASP.NET Core и Web API</h1>
+</section><section><h1 id="11-aspnetcore">11. ASP.NET Core</h1>
 <h2>HTTP и REST</h2>
 <h3 id="q11.1"><a class="anchor" href="#q11.1">#</a>11.1 Принципы HTTP; путь запроса от браузера до сервера 🔥</h3>
 <p><strong>HTTP</strong> — текстовый (до HTTP/2) протокол прикладного уровня, модель <strong>запрос–ответ</strong>, <strong>stateless</strong> (сервер не помнит предыдущие запросы — состояние передают через cookies/токены). Запрос: метод, URL, версия, заголовки, тело. Ответ: статус-код, заголовки, тело.</p>
@@ -5786,7 +5786,7 @@ app.MapGet("/api/deliveries", async ([AsParameters] DeliveryQuery q, AppDb db, C
 <li><strong>Сценарий «водители на карте автопарка»:</strong> приложение водителя отправляет координаты каждые несколько секунд → сервис геолокации (Redis Geo, <a href="#q9.21">9.21</a>) → событие в Kafka → сервис кабинета пушит обновления в группу автопарка, <strong>троттлинг</strong> (раз в 2–5 секунд, только изменившиеся) — браузеру не нужны все точки. На фронтенде — Observable из событий хаба, <code>throttleTime</code>, обновление маркеров вне change detection (сигналы, OnPush).</li>
 <li><strong>Надёжность:</strong> WebSocket — не гарантия доставки; после переподключения клиент запрашивает актуальное состояние по REST, а поток только догоняет изменения.</li>
 </ul>
-</section><section><h1 id="12-microservices">12. Микросервисы, сообщения и интеграции</h1>
+</section><section><h1 id="12-microservices">12. Микросервисы</h1>
 <h2>Микросервисы</h2>
 <h3 id="q12.1"><a class="anchor" href="#q12.1">#</a>12.1 Какую проблему решают микросервисы ⭐</h3>
 <p><strong>Коротко:</strong> микросервисы решают <strong>организационные проблемы масштабирования разработки</strong> и проблемы независимого масштабирования/развёртывания частей большой системы. Приложение делится на небольшие автономные сервисы, каждый отвечает за одну бизнес-возможность (bounded context), имеет свою БД и разворачивается независимо.</p>
@@ -6994,7 +6994,7 @@ await cache.RemoveByTagAsync($"fleet:{fleetId}");   // после изменен
 <li><strong>Уязвимости:</strong> OWASP Top 10 (<a href="#q15.3">15.3</a>), особенно контроль доступа к документам по id (IDOR) и SQL-инъекции в динамическом SQL PL/SQL (<code>EXECUTE IMMEDIATE</code> с конкатенацией) — только bind-переменные (<a href="#q10.18">10.18</a>).</li>
 <li><strong>Деньги и даты:</strong> <code>decimal</code>, а не <code>double</code>; часовой пояс Киева и переходы на летнее время (<a href="#q9.18">9.18</a>).</li>
 </ul>
-</section><section><h1 id="16-devops-cloud-git">16. DevOps, облака и Git</h1>
+</section><section><h1 id="16-devops-cloud-git">16. DevOps и Git</h1>
 <h2>Docker и CI/CD</h2>
 <h3 id="q16.1"><a class="anchor" href="#q16.1">#</a>16.1 Docker, multi-stage сборки ⭐</h3>
 <p><strong>Какую проблему решает:</strong> «у меня на машине работает». Docker упаковывает приложение вместе со всеми зависимостями (runtime, библиотеки, конфигурация ОС) в <strong>образ</strong>, который одинаково запускается везде — на ноутбуке разработчика, в CI, в проде. <strong>Контейнер</strong> — запущенный экземпляр образа, изолированный процесс (namespaces + cgroups Linux), который делит ядро ОС с хостом (в отличие от виртуальной машины).</p>
@@ -8302,7 +8302,7 @@ ALTER TABLE vehicle_bookings ADD CONSTRAINT no_overlap
 <li><strong>Интеграции:</strong> АБС банка, кадровая система (оргструктура и замещения), внешний ЭДО с контрагентами — через адаптеры (<a href="#q21.6">21.6</a>).</li>
 </ul>
 <p><strong>5. Узкие места и развитие:</strong> рост аудита и файлов (партиции, архив); тяжёлые отчёты — на реплику или в материализованные представления (<a href="#q27.4">27.4</a>); индексация файлов — асинхронно через очередь; монолит, разделённый на модули, — разумный старт; выделять сервисы (подпись, поиск, хранение) по мере необходимости (<a href="#q12.1">12.1</a>).</p>
-</section><section><h1 id="18-algorithms">18. Алгоритмы и live coding</h1>
+</section><section><h1 id="18-algorithms">18. Алгоритмы</h1>
 <h2>Сложность алгоритмов</h2>
 <h3 id="q18.1"><a class="anchor" href="#q18.1">#</a>18.1 Сложность алгоритмов (Big O) 🔥</h3>
 <p><strong>Коротко:</strong> O-нотация показывает, <strong>как растёт</strong> время работы (или память) с ростом размера входных данных <code>n</code>, отбрасывая константы. Важна не скорость на 10 элементах, а поведение на миллионе.</p>
@@ -8423,7 +8423,7 @@ ALTER TABLE vehicle_bookings ADD CONSTRAINT no_overlap
 <li><strong>В реальном проекте</strong> свой кеш не пишут: <code>IMemoryCache</code> с <code>SizeLimit</code>, <code>HybridCache</code> (вопрос <a href="#q17.6">17.6</a>), Redis с политикой <code>allkeys-lru</code>.</li>
 <li><strong>TTL</strong> — хранить время записи в узле и проверять при <code>Get</code>.</li>
 </ul>
-</section><section><h1 id="19-ai">19. ИИ в разработке: Claude Code, интеграции, резюме и сертификаты</h1>
+</section><section><h1 id="19-ai">19. ИИ в разработке</h1>
 <blockquote>
 <p><strong>Что проверяют работодатели.</strong> Под фразой «опыт работы с ИИ» скрываются <strong>два разных навыка</strong>, и в резюме лучше показать оба:</p>
 <ol>
@@ -8916,7 +8916,7 @@ ALTER TABLE vehicle_bookings ADD CONSTRAINT no_overlap
 <li>в код и промпты не попадают секреты и данные клиентов.</li>
 </ul>
 <p><strong>История для интервью (STAR) — подготовьте свою:</strong> <em>ситуация</em> — проект и команда; <em>задача</em> — скорость без потери качества и без утечки секретов; <em>действия</em> — правила проекта для агента (CLAUDE.md), skills для повторяемых процессов, проверки в CI (секреты, предупреждения как ошибки), тесты как барьер для сгенерированного кода, ревью каждого диффа; <em>результат</em> — в цифрах.</p>
-</section><section><h1 id="21-design-patterns">21. Паттерны проектирования</h1>
+</section><section><h1 id="21-design-patterns">21. Паттерны</h1>
 <blockquote>
 <p><strong>Как пользоваться разделом.</strong> Здесь каждый паттерн GoF с примером на C# и местом в .NET, сравнения похожих паттернов, антипаттерны и задача на рефакторинг. Обзорная таблица всех 23 паттернов — <a href="#q7.13">7.13</a>; Singleton — <a href="#q7.14">7.14</a>, Strategy — <a href="#q7.15">7.15</a>, Dependency Injection — <a href="#q7.16">7.16</a>, Specification — <a href="#q7.17">7.17</a>, Repository и Unit of Work — <a href="#q7.19">7.19</a>. Минимум на вечер перед собеседованием: <a href="#q21.1">21.1</a>, <a href="#q21.25">21.25</a> и вопросы с 🔥.</p>
 </blockquote>
@@ -9263,7 +9263,7 @@ ALTER TABLE vehicle_bookings ADD CONSTRAINT no_overlap
 <tr><td>Какой паттерн самый полезный?</td><td>Нет правильного ответа — назовите тот, что применяли, и объясните, какую проблему он решил. Хороший выбор — Strategy или Decorator: оба про расширение без изменения кода.</td></tr>
 </tbody>
 </table>
-</section><section><h1 id="23-frontend">23. Фронтенд: JavaScript, TypeScript, Angular</h1>
+</section><section><h1 id="23-frontend">23. Фронтенд</h1>
 <blockquote>
 <p><strong>Для кого раздел.</strong> Fullstack-вакансии (.NET + Angular) и backend-позиции, где «желательно знать фронтенд». Здесь — топ вопросов по JavaScript, TypeScript, браузеру, Angular, RxJS и NgRx.</p>
 <p><strong>Версии.</strong> Ответы по Angular — на ноябрь 2026: актуальна <strong>Angular 22</strong> (22.0 вышла 3 июня 2026, последняя минорная — 22.3). С v22 мажорные версии выходят <strong>раз в год, в июне</strong> (v23 — июнь 2027), минорные — примерно раз в два месяца. Angular 22 требует TypeScript 6. Что изменилось по версиям — <a href="#q23.42">23.42</a>.</p>
@@ -10279,7 +10279,7 @@ selectedId = linkedSignal(() =&gt; this.items()[0]?.id);
 <li><strong>Обратная совместимость при релизе:</strong> фронтенд и бэкенд выкатываются не одновременно — API должен поддерживать старую версию клиента (новые поля необязательные, старые не удаляются сразу).</li>
 <li><strong>Где хостить фронтенд:</strong> статика в S3 + CloudFront или в nginx-контейнере; <code>index.html</code> без кеширования, файлы с хешем в имени — с долгим кешем.</li>
 </ul>
-</section><section><h1 id="27-oracle">27. Oracle для .NET-разработчика</h1>
+</section><section><h1 id="27-oracle">27. Oracle</h1>
 <blockquote>
 <p><strong>Как пользоваться разделом.</strong> Здесь всё, что отличает Oracle от PostgreSQL и SQL Server: PL/SQL, объекты БД, планы выполнения, партиционирование, блокировки, работа из .NET, миграции и тестирование. Общие темы — в разделах <a href="#09-databases">9</a> (индексы, ACID, изоляция) и <a href="#10-sql-practice">10</a> (запросы и задачи), они работают и в Oracle. Версии актуальны на ноябрь 2026: текущий LTS-релиз — Oracle AI Database 26ai (сменил 23ai), в проектах банков часто ещё 19c.</p>
 </blockquote>

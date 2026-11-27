@@ -22,7 +22,7 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 "Segoe UI",s
 .clear-search:hover{background:var(--table);color:var(--text)}
 .clear-search:focus-visible{outline:2px solid var(--accent)}
 #filter{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--text);margin-bottom:8px}
-#side details{margin:2px 0}#side summary{cursor:pointer;padding:3px 4px;border-radius:4px}
+#side details{margin:2px 0}#side summary{cursor:pointer;padding:3px 4px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #side summary a{color:var(--text);text-decoration:none;font-weight:600}
 /* раздел без вопросов (компании, шпаргалка) раскрывать нечего — без стрелки, текст на одной линии с остальными */
 #side details:has(>ul:empty)>summary{list-style:none;padding-left:calc(4px + 1.15em)}
