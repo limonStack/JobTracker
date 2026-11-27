@@ -12,16 +12,16 @@
 
 Работает офлайн (PWA): данные копируются в браузер, правки уходят на сервер, когда он доступен.
 
-![База знаний: ответ, меню разделов и прогресс изучения](docs/screenshots/knowledge.png)
+![База знаний: ответ, меню разделов и прогресс изучения](docs/screenshots/knowledge-2026-11.png)
 
 | Поиск — даже в неверной раскладке | Календарь занятий | Трекер откликов |
 |---|---|---|
-| [![Поиск](docs/screenshots/search.png)](docs/screenshots/search.png) | [![Календарь](docs/screenshots/calendar.png)](docs/screenshots/calendar.png) | [![Отклики](docs/screenshots/tracker.png)](docs/screenshots/tracker.png) |
+| [![Поиск](docs/screenshots/search-2026-11.png)](docs/screenshots/search-2026-11.png) | [![Календарь](docs/screenshots/calendar-2026-11.png)](docs/screenshots/calendar-2026-11.png) | [![Отклики](docs/screenshots/tracker-2026-11.png)](docs/screenshots/tracker-2026-11.png) |
 
 Раздел под вакансию: вероятные вопросы, «Карта подготовки» со ссылками на темы базы и проход по ним по одной
 (панель внизу) — см. [`/interview-prep`](#interview-prep--подготовка-к-вакансии).
 
-![Раздел компании: карта подготовки и панель прохода по темам](docs/screenshots/company.png)
+![Раздел компании: карта подготовки и панель прохода по темам](docs/screenshots/company-2026-11.png)
 
 <sub>На скриншотах — демо-данные: компании выдуманные.</sub>
 
