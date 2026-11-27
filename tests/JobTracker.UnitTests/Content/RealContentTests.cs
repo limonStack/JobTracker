@@ -25,15 +25,15 @@ public class RealContentTests
     {
         var numbers = Sections.Value.Select(s => s.Number).ToList();
 
-        Assert.Equal([.. Enumerable.Range(1, 19), 22, 23], numbers);
+        Assert.Equal([.. Enumerable.Range(1, 19), 21, 22, 23], numbers);
     }
 
     [Fact]
-    public void PublicFile_Has383Questions_NumberedWithinSections()
+    public void PublicFile_Has408Questions_NumberedWithinSections()
     {
         var questions = Sections.Value.SelectMany(s => s.Questions).ToList();
 
-        Assert.Equal(383, questions.Count);
+        Assert.Equal(408, questions.Count);
         Assert.All(questions, q => Assert.False(string.IsNullOrWhiteSpace(q.BodyHtml), $"пустой ответ {q.Code}"));
         // номера в разделе — 1..N без пропусков
         foreach (var section in Sections.Value)
