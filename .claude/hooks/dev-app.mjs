@@ -3,7 +3,8 @@
 //   node dev-app.mjs before-build  — PreToolUse (Bash|PowerShell): команда собирает Debug → остановить
 //                                     приложение этого репозитория и запомнить, что остановили мы;
 //   node dev-app.mjs after-turn    — Stop (конец ответа Claude): если останавливали мы — запустить снова
-//                                     (`dotnet run`, уже без отладчика) и дождаться, пока поднимется.
+//                                     (`dotnet run`) и дождаться, пока поднимется. Если приложение было
+//                                     под отладчиком IDE — не запускать: порт 5196 остаётся свободным для F5.
 // Чужие процессы не трогаем: только JobTracker.Api из src/JobTracker.Api/bin/Debug этого репозитория,
 // по имени процесса не останавливаем. Любая ошибка — выход с кодом 0: хук не мешает работе.
 import { execFileSync, spawn } from 'node:child_process';
@@ -36,15 +37,26 @@ function powershell(script) {
   return execFileSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', script], { encoding: 'utf8', windowsHide: true, timeout: 30_000 });
 }
 
-/** PID приложения этого репозитория: JobTracker.Api.exe из bin/Debug или dotnet JobTracker.Api.dll оттуда же. */
-function findAppPids() {
+/** Родитель процесса — отладчик IDE: VS Code (vsdbg), Rider (JetBrains.Debugger.Worker), Visual Studio. */
+export function isDebuggerParent(name) {
+  return /vsdbg|debugger|devenv|msvsmon|VsDebugConsole/i.test(String(name ?? ''));
+}
+
+/** Приложение этого репозитория: JobTracker.Api.exe из bin/Debug или dotnet JobTracker.Api.dll оттуда же; с именем родителя. */
+export function findApps() {
   const bin = debugBin.replace(/'/g, "''");
   const out = powershell(`$bin = '${bin}'
 Get-CimInstance Win32_Process -Filter "Name='JobTracker.Api.exe' OR Name='dotnet.exe'" | Where-Object {
   ($_.ExecutablePath -and $_.ExecutablePath.StartsWith($bin, [StringComparison]::OrdinalIgnoreCase)) -or
   ($_.Name -eq 'dotnet.exe' -and $_.CommandLine -and $_.CommandLine.IndexOf($bin, [StringComparison]::OrdinalIgnoreCase) -ge 0 -and $_.CommandLine -match 'JobTracker\\.Api\\.dll')
-} | ForEach-Object { $_.ProcessId }`);
-  return out.split(/\s+/).filter(Boolean).map(Number).filter(n => n !== process.pid);
+} | ForEach-Object {
+  $parent = Get-CimInstance Win32_Process -Filter "ProcessId=$($_.ParentProcessId)"
+  "$($_.ProcessId)|$($parent.Name)"
+}`);
+  return out.split(/\r?\n/).filter(Boolean).map(line => {
+    const [pid, parent] = line.trim().split('|');
+    return { pid: Number(pid), parent };
+  }).filter(a => a.pid && a.pid !== process.pid);
 }
 
 function stopPids(pids) {
@@ -62,19 +74,29 @@ const say = message => console.log(JSON.stringify({ systemMessage: message }));
 async function beforeBuild(input) {
   const command = input.tool_input?.command ?? '';
   if (!needsStop(command)) return;
-  const pids = findAppPids();
-  if (!pids.length) return;
+  const apps = findApps();
+  if (!apps.length) return;
+  const pids = apps.map(a => a.pid);
+  // под отладчиком — не перезапускаем сами: фоновый экземпляр занял бы порт 5196, и F5 упал бы с «address already in use»
+  const debugged = apps.some(a => isDebuggerParent(a.parent));
   stopPids(pids);
   mkdirSync(stateDir, { recursive: true });
-  writeFileSync(stateFile(input.session_id), JSON.stringify({ stoppedAt: new Date().toISOString(), pids }));
-  say(`Остановлен JobTracker (PID ${pids.join(', ')}): он держал файлы bin/Debug, а Claude собирает проект. В конце ответа приложение запустится снова — уже без отладчика.`);
+  writeFileSync(stateFile(input.session_id), JSON.stringify({ stoppedAt: new Date().toISOString(), pids, debugged }));
+  say(`Остановлен JobTracker (PID ${pids.join(', ')}): он держал файлы bin/Debug, а Claude собирает проект. `
+    + (debugged ? 'Он был под отладчиком — после ответа запустите отладку снова (F5).' : 'В конце ответа приложение запустится снова.'));
 }
 
 async function afterTurn(input) {
   const file = stateFile(input.session_id);
   if (!existsSync(file)) return;                 // приложение останавливали не мы — не запускаем
+  let state = {};
+  try { state = JSON.parse(readFileSync(file, 'utf8')); } catch { /* старый или битый файл — как обычный запуск */ }
   rmSync(file, { force: true });
   if (await appResponds()) return;               // уже запустили (например, вы из IDE)
+  if (state.debugged) {                          // порт оставляем свободным для F5
+    say('JobTracker был под отладчиком и остановлен на время сборки — запустите отладку снова (F5).');
+    return;
+  }
 
   const log = join(stateDir, 'dotnet-run.log');
   // профиль http — как из IDE: Development, порт 5196 и новая вкладка (старую закроет single-tab.js);

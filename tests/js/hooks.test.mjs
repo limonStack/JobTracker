@@ -40,7 +40,14 @@ test('раздела нет — подсказка без него', () => {
 });
 
 // .claude/hooks/dev-app.mjs: какие команды мешают запущенному приложению (пишут в bin/Debug или занимают его порт)
-import { needsStop } from '../../.claude/hooks/dev-app.mjs';
+import { needsStop, isDebuggerParent } from '../../.claude/hooks/dev-app.mjs';
+
+test('под отладчиком IDE — не перезапускать самим, обычный запуск — перезапускать', () => {
+  for (const parent of ['vsdbg.exe', 'vsdbg-ui.exe', 'JetBrains.Debugger.Worker.exe', 'devenv.exe', 'msvsmon.exe', 'VsDebugConsole.exe'])
+    assert.equal(isDebuggerParent(parent), true, parent);
+  for (const parent of ['dotnet.exe', 'powershell.exe', 'Code.exe', 'explorer.exe', '', undefined])
+    assert.equal(isDebuggerParent(parent), false, String(parent));
+});
 
 test('Debug-сборка, тесты, миграции и запуск — останавливать приложение', () => {
   for (const cmd of ['dotnet build', 'dotnet test --filter "FullyQualifiedName~X"', 'dotnet ef migrations add X --project a',
