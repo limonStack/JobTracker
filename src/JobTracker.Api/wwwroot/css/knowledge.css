@@ -39,6 +39,12 @@ h4{font-size:17px;margin:26px 0 8px;color:var(--text)}
 h3 .anchor{position:absolute;left:-20px;color:var(--muted);text-decoration:none;opacity:0}h3:hover .anchor{opacity:1}
 a{color:var(--accent)}
 blockquote{margin:12px 0;padding:8px 16px;border-left:4px solid var(--accent);background:var(--panel);color:var(--muted)}
+/* «Вероятные вопросы» в разделах компаний: вопрос виден, ответ — по клику (сначала ответить самому) */
+details.qa{margin:6px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+details.qa>summary{cursor:pointer;padding:7px 12px;font-weight:600}
+details.qa>summary:hover{color:var(--accent)}
+details.qa[open]>summary{border-bottom:1px solid var(--line)}
+details.qa>:not(summary){margin-left:12px;margin-right:12px}
 :not(pre)>code{font-family:Cascadia Mono,Consolas,monospace;font-size:.88em;background:var(--table);padding:1px 5px;border-radius:4px}
 table{border-collapse:collapse;display:block;overflow-x:auto;margin:12px 0;font-size:14.5px}
 th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top;text-align:left}

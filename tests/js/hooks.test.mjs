@@ -40,13 +40,33 @@ test('раздела нет — подсказка без него', () => {
 });
 
 // .claude/hooks/dev-app.mjs: какие команды мешают запущенному приложению (пишут в bin/Debug или занимают его порт)
-import { needsStop, isDebuggerParent } from '../../.claude/hooks/dev-app.mjs';
+import { needsStop, newestChange, shouldRestart } from '../../.claude/hooks/dev-app.mjs';
+import { mkdtempSync, mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-test('под отладчиком IDE — не перезапускать самим, обычный запуск — перезапускать', () => {
-  for (const parent of ['vsdbg.exe', 'vsdbg-ui.exe', 'JetBrains.Debugger.Worker.exe', 'devenv.exe', 'msvsmon.exe', 'VsDebugConsole.exe'])
-    assert.equal(isDebuggerParent(parent), true, parent);
-  for (const parent of ['dotnet.exe', 'powershell.exe', 'Code.exe', 'explorer.exe', '', undefined])
-    assert.equal(isDebuggerParent(parent), false, String(parent));
+test('правки после начала ответа или остановка нами — перезапуск; иначе — не трогать', () => {
+  assert.equal(shouldRestart({ changedAt: 2000, turnStart: 1000, stoppedByUs: false }), true);
+  assert.equal(shouldRestart({ changedAt: 500, turnStart: 1000, stoppedByUs: true }), true);
+  assert.equal(shouldRestart({ changedAt: 500, turnStart: 1000, stoppedByUs: false }), false);
+  assert.equal(shouldRestart({ changedAt: 2000, turnStart: 0, stoppedByUs: false }), false);   // начало ответа неизвестно
+});
+
+test('newestChange: свежий файл в src виден, bin/obj/wwwroot не считаются', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'dev-app-'));
+  try {
+    const old = new Date('2026-01-01'), fresh = new Date('2026-06-01'), ignored = new Date('2026-12-01');
+    mkdirSync(join(dir, 'Api', 'bin'), { recursive: true });
+    mkdirSync(join(dir, 'Api', 'wwwroot'), { recursive: true });
+    for (const [file, time] of [['Api/Program.cs', old], ['Api/Endpoints.cs', fresh], ['Api/bin/app.dll', ignored], ['Api/wwwroot/app.js', ignored]]) {
+      writeFileSync(join(dir, file), '');
+      utimesSync(join(dir, file), time, time);
+    }
+    assert.equal(newestChange([dir]), fresh.getTime());
+    assert.equal(newestChange([join(dir, 'нет такой папки')]), 0);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('Debug-сборка, тесты, миграции и запуск — останавливать приложение', () => {

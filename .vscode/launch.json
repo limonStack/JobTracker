@@ -1,0 +1,24 @@
+{
+  // «Attach JobTracker» — подключиться отладчиком к приложению, которое запустил хук dev-app
+  // после правок Claude (порт 5196 уже занят им, поэтому запуск через «Launch» упадёт).
+  // «Launch JobTracker» — обычный запуск под отладчиком, когда приложение не запущено.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Attach JobTracker",
+      "type": "coreclr",
+      "request": "attach",
+      "processName": "JobTracker.Api.exe"
+    },
+    {
+      "name": "Launch JobTracker",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build JobTracker.Api",
+      "program": "${workspaceFolder}/src/JobTracker.Api/bin/Debug/net10.0/JobTracker.Api.exe",
+      "cwd": "${workspaceFolder}/src/JobTracker.Api",
+      "env": { "ASPNETCORE_ENVIRONMENT": "Development", "ASPNETCORE_URLS": "http://localhost:5196" },
+      "serverReadyAction": { "action": "openExternally", "pattern": "Now listening on:\\s+(http://\\S+)" }
+    }
+  ]
+}

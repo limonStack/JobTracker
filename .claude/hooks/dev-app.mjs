@@ -1,14 +1,17 @@
-// Хуки Claude Code: запущенное приложение (в том числе под отладчиком) держит файлы в bin/Debug,
-// и Debug-сборка падает. Один механизм из двух половин:
+// Хуки Claude Code: приложение JobTracker всегда работает с последними правками Claude.
+//   node dev-app.mjs turn-start    — UserPromptSubmit: запомнить начало ответа (от него считаются правки);
 //   node dev-app.mjs before-build  — PreToolUse (Bash|PowerShell): команда собирает Debug → остановить
-//                                     приложение этого репозитория и запомнить, что остановили мы;
-//   node dev-app.mjs after-turn    — Stop (конец ответа Claude): если останавливали мы — запустить снова
-//                                     (`dotnet run`) и дождаться, пока поднимется. Если приложение было
-//                                     под отладчиком IDE — не запускать: порт 5196 остаётся свободным для F5.
+//                                     приложение этого репозитория (оно держит файлы bin/Debug);
+//   node dev-app.mjs after-turn    — Stop (конец ответа): если за ответ менялись исходники в src/ или контент
+//                                     в content/ (или приложение останавливали мы) — остановить старый экземпляр,
+//                                     собрать и запустить заново (`dotnet run`), дождаться, пока поднимется.
+// Отладчик VS Code нельзя запустить извне, поэтому приложение стартует без него, а отладка подключается
+// конфигурацией «Attach JobTracker» из .vscode/launch.json (F5 с ней — подключиться к процессу по имени).
+// Правки только в wwwroot перезапуска не требуют: статика отдаётся с no-cache, достаточно обновить страницу.
 // Чужие процессы не трогаем: только JobTracker.Api из src/JobTracker.Api/bin/Debug этого репозитория,
 // по имени процесса не останавливаем. Любая ошибка — выход с кодом 0: хук не мешает работе.
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, openSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -18,6 +21,8 @@ const apiProject = join(root, 'src', 'JobTracker.Api');
 const debugBin = join(apiProject, 'bin', 'Debug');
 const appUrl = 'http://localhost:5196';
 const stateDir = join(tmpdir(), 'jobtracker-hooks');
+const watched = [join(root, 'src'), join(root, 'content')];
+const ignoredDirs = new Set(['bin', 'obj', 'node_modules', 'wwwroot', '.vs']);
 
 /** Пишет ли команда в bin/Debug (или занимает порт приложения): dotnet build/test/ef/run/watch без Release. */
 export function needsStop(command) {
@@ -33,13 +38,29 @@ export function needsStop(command) {
   });
 }
 
-function powershell(script) {
-  return execFileSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', script], { encoding: 'utf8', windowsHide: true, timeout: 30_000 });
+/** Время последнего изменения файла в папках (мс); bin, obj, wwwroot и подобные пропускаются. 0 — файлов нет. */
+export function newestChange(dirs, ignore = ignoredDirs) {
+  let newest = 0;
+  const walk = dir => {
+    let entries;
+    try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      const path = join(dir, e.name);
+      if (e.isDirectory()) { if (!ignore.has(e.name)) walk(path); }
+      else if (e.isFile()) { try { newest = Math.max(newest, statSync(path).mtimeMs); } catch { /* файл удалён на ходу */ } }
+    }
+  };
+  dirs.forEach(walk);
+  return newest;
 }
 
-/** Родитель процесса — отладчик IDE: VS Code (vsdbg), Rider (JetBrains.Debugger.Worker), Visual Studio. */
-export function isDebuggerParent(name) {
-  return /vsdbg|debugger|devenv|msvsmon|VsDebugConsole/i.test(String(name ?? ''));
+/** Перезапускать ли приложение в конце ответа: правки после начала ответа или его останавливали мы. */
+export function shouldRestart({ changedAt, turnStart, stoppedByUs }) {
+  return Boolean(stoppedByUs) || (turnStart > 0 && changedAt > turnStart);
+}
+
+function powershell(script) {
+  return execFileSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', script], { encoding: 'utf8', windowsHide: true, timeout: 30_000 });
 }
 
 /** Приложение этого репозитория: JobTracker.Api.exe из bin/Debug или dotnet JobTracker.Api.dll оттуда же; с именем родителя. */
@@ -68,8 +89,16 @@ async function appResponds() {
   try { await fetch(appUrl + '/api/content', { signal: AbortSignal.timeout(1500) }); return true; } catch { return false; }
 }
 
-const stateFile = sessionId => join(stateDir, `${String(sessionId || 'default').replace(/[^\w-]/g, '')}.json`);
+const session = id => String(id || 'default').replace(/[^\w-]/g, '');
+const stateFile = id => join(stateDir, `${session(id)}.json`);
+const turnFile = id => join(stateDir, `${session(id)}.turn`);
 const say = message => console.log(JSON.stringify({ systemMessage: message }));
+const attachHint = 'Отладка: F5 с конфигурацией «Attach JobTracker».';
+
+function turnStart(input) {
+  mkdirSync(stateDir, { recursive: true });
+  writeFileSync(turnFile(input.session_id), String(Date.now()));
+}
 
 async function beforeBuild(input) {
   const command = input.tool_input?.command ?? '';
@@ -77,24 +106,28 @@ async function beforeBuild(input) {
   const apps = findApps();
   if (!apps.length) return;
   const pids = apps.map(a => a.pid);
-  // под отладчиком — не перезапускаем сами: фоновый экземпляр занял бы порт 5196, и F5 упал бы с «address already in use»
-  const debugged = apps.some(a => isDebuggerParent(a.parent));
   stopPids(pids);
   mkdirSync(stateDir, { recursive: true });
-  writeFileSync(stateFile(input.session_id), JSON.stringify({ stoppedAt: new Date().toISOString(), pids, debugged }));
-  say(`Остановлен JobTracker (PID ${pids.join(', ')}): он держал файлы bin/Debug, а Claude собирает проект. `
-    + (debugged ? 'Он был под отладчиком — после ответа запустите отладку снова (F5).' : 'В конце ответа приложение запустится снова.'));
+  writeFileSync(stateFile(input.session_id), JSON.stringify({ stoppedAt: new Date().toISOString(), pids }));
+  say(`Остановлен JobTracker (PID ${pids.join(', ')}): он держал файлы bin/Debug, а Claude собирает проект. В конце ответа приложение запустится с правками.`);
 }
 
 async function afterTurn(input) {
-  const file = stateFile(input.session_id);
-  if (!existsSync(file)) return;                 // приложение останавливали не мы — не запускаем
-  let state = {};
-  try { state = JSON.parse(readFileSync(file, 'utf8')); } catch { /* старый или битый файл — как обычный запуск */ }
-  rmSync(file, { force: true });
-  if (await appResponds()) return;               // уже запустили (например, вы из IDE)
-  if (state.debugged) {                          // порт оставляем свободным для F5
-    say('JobTracker был под отладчиком и остановлен на время сборки — запустите отладку снова (F5).');
+  const state = stateFile(input.session_id), turn = turnFile(input.session_id);
+  const stoppedByUs = existsSync(state);
+  let started = 0;
+  try { started = Number(readFileSync(turn, 'utf8')) || 0; } catch { /* хук начала ответа ещё не срабатывал */ }
+  rmSync(state, { force: true });
+  rmSync(turn, { force: true });
+
+  const changedAt = started ? newestChange(watched) : 0;
+  if (!shouldRestart({ changedAt, turnStart: started, stoppedByUs })) return;
+
+  // старый экземпляр работает без правок — останавливаем (в том числе под отладчиком: сессия отладки завершится)
+  const running = findApps();
+  if (running.length) stopPids(running.map(a => a.pid));
+  if (await appResponds()) {
+    say(`Порт 5196 занят не приложением из bin/Debug этого репозитория — JobTracker с правками не запущен.`);
     return;
   }
 
@@ -104,6 +137,7 @@ async function afterTurn(input) {
   const args = process.env.JOBTRACKER_HOOK_NO_BROWSER === '1'
     ? ['run', '--project', apiProject, '--no-launch-profile', '--urls', appUrl]
     : ['run', '--project', apiProject, '--launch-profile', 'http'];
+  mkdirSync(stateDir, { recursive: true });
   const out = openSync(log, 'w');
   const child = spawn('dotnet', args, {
     cwd: root, detached: true, windowsHide: true, stdio: ['ignore', out, out],
@@ -111,11 +145,15 @@ async function afterTurn(input) {
   });
   child.unref();
 
-  for (let i = 0; i < 90; i++) {
-    if (await appResponds()) { say(`JobTracker снова запущен: ${appUrl} (без отладчика).`); return; }
+  for (let i = 0; i < 100; i++) {
+    if (await appResponds()) {
+      const why = changedAt > started ? 'с правками этого ответа' : 'после сборки';
+      say(`JobTracker перезапущен ${why}: ${appUrl}. ${attachHint}`);
+      return;
+    }
     await new Promise(r => setTimeout(r, 1000));
   }
-  say(`JobTracker не поднялся за 90 секунд — возможно, сборка не прошла. Журнал: ${log}`);
+  say(`JobTracker не поднялся за 100 секунд — возможно, сборка не прошла. Журнал: ${log}`);
 }
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
@@ -124,7 +162,8 @@ if (isMain) {
     let raw = '';
     for await (const chunk of process.stdin) raw += chunk;
     const input = raw.trim() ? JSON.parse(raw) : {};
-    if (process.argv[2] === 'before-build') await beforeBuild(input);
+    if (process.argv[2] === 'turn-start') turnStart(input);
+    else if (process.argv[2] === 'before-build') await beforeBuild(input);
     else if (process.argv[2] === 'after-turn') await afterTurn(input);
   } catch (err) {
     console.error(`dev-app hook: ${err.message}`);   // для отладки хука; на работу не влияет
